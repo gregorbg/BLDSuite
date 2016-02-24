@@ -3,14 +3,11 @@ package com.suushiemaniac.cubing.bld;
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.bld.algsheet.BldAlgSheet;
 import com.suushiemaniac.cubing.bld.algsheet.GregorBldExcel;
-import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
-import com.suushiemaniac.cubing.bld.analyze.cube.ThreeBldCube;
-import com.suushiemaniac.cubing.bld.analyze.stat.MassAnalyzer;
+import com.suushiemaniac.cubing.bld.analyze.stat.ThreeMassAnalyzer;
 import com.suushiemaniac.cubing.bld.enumeration.CubicPieceType;
+import com.suushiemaniac.cubing.bld.filter.ThreeBldScramble;
 import com.suushiemaniac.cubing.bld.verify.ExcelVerificator;
 import com.suushiemaniac.cubing.bld.verify.Verificator;
-import net.gnehzr.tnoodle.scrambles.Puzzle;
-import puzzle.NoInspectionThreeByThreeCubePuzzle;
 
 import java.io.File;
 import java.util.List;
@@ -18,17 +15,8 @@ import java.util.Map;
 
 public class Main {
     public static void main(String[] args) {
-        Puzzle threeNoodle = new NoInspectionThreeByThreeCubePuzzle();
-        BldCube threeAnalyze = new ThreeBldCube("");
-        ((ThreeBldCube) threeAnalyze).setCornerParityMethod(ThreeBldCube.CornerParityMethod.USE_ALG);
-        for (int i = 0; i < 5; i++) {
-            String scramble = threeNoodle.generateScramble();
-            threeAnalyze.parseScramble(scramble);
-            System.out.println(scramble + " //\t" + threeAnalyze.getStatString());
-            System.out.println(threeAnalyze.getSolutionPairs(true));
-            System.out.println();
-        }
-        //new ThreeMassAnalyzer().analyzeScrambleDist(1000);
+        //new ThreeMassAnalyzer().analyzeScrambleDist(10000);
+        ThreeBldScramble.fromStatString("C:  8  #  | E: 12  #").findScrambleThreadModel(12, 5);
     }
 
     public static void checkAndPrintParseableSolveable() {
@@ -60,9 +48,5 @@ public class Main {
         }
         System.out.println("TOTAL: " + totalIncorrect);
         System.out.println();
-    }
-
-    public static void scrambleDistAnalysis(MassAnalyzer analyzer, int numCubes) {
-        analyzer.analyzeScrambleDist(numCubes);
     }
 }

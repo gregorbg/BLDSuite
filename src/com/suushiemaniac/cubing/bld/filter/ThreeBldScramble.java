@@ -6,6 +6,8 @@ import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.NoInspectionThreeByThreeCubePuzzle;
 
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.suushiemaniac.cubing.bld.filter.BooleanCondition.*;
 import static com.suushiemaniac.cubing.bld.filter.IntCondition.*;
@@ -40,9 +42,9 @@ public class ThreeBldScramble extends TwoBldScramble {
 
     public static ThreeBldScramble mostCommonScramble() {
         return new ThreeBldScramble(
-                EXACT(7),
+                EXACT(8),
                 EXACT(1),
-                YES(),
+                NO(),
                 EXACT(0),
                 EXACT(0),
                 EXACT(12),
@@ -50,6 +52,35 @@ public class ThreeBldScramble extends TwoBldScramble {
                 EXACT(0),
                 EXACT(0)
         );
+    }
+
+    public static ThreeBldScramble fromStatString(String statString) {
+        Pattern statPattern = Pattern.compile("C:(_?)(0|[1-9][0-9]*)\\*?(#*)(~*)(\\+*)\\|E:(0|[1-9][1-9]*)\\*?(#*)(~*)(\\+*)");
+        Matcher statMatcher = statPattern.matcher(statString.replaceAll("\\s", ""));
+        if (statMatcher.find()) {
+            boolean hasParity = statMatcher.group(1).length() > 0;
+            int cornerLength = Integer.parseInt(statMatcher.group(2));
+            int cornerBreakIn = statMatcher.group(3).length();
+            int cornerTwisted = statMatcher.group(4).length();
+            int cornerSolved = statMatcher.group(5).length();
+
+            int edgeLength = Integer.parseInt(statMatcher.group(6));
+            int edgeBreakIn = statMatcher.group(7).length();
+            int edgeFlipped = statMatcher.group(8).length();
+            int edgeSolved = statMatcher.group(9).length();
+
+            return new ThreeBldScramble(
+                    EXACT(cornerLength),
+                    EXACT(cornerBreakIn),
+                    hasParity ? YES() : NO(),
+                    EXACT(cornerSolved),
+                    EXACT(cornerTwisted),
+                    EXACT(edgeLength),
+                    EXACT(edgeBreakIn),
+                    EXACT(edgeSolved),
+                    EXACT(edgeFlipped)
+            );
+        } else return null;
     }
 
     protected BooleanCondition edgeSingleCycle;
