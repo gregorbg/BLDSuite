@@ -1558,6 +1558,10 @@ public class SixBldCube extends FiveBldCube {
         return this.innerXCenterCycles.size() % 2 == 1;
     }
 
+    public boolean isInnerXCenterBufferSolved() {
+        return this.scrambledStateSolvedInnerXCenters[0];
+    }
+
     public int getInnerXCenterLength() {
         return this.innerXCenterCycles.size();
     }
@@ -1572,14 +1576,14 @@ public class SixBldCube extends FiveBldCube {
 
     public int getNumPreSolvedInnerXCenters() {
         int preSolved = 0;
-        for (boolean scrambledStateSolvedInnerXCenter : scrambledStateSolvedInnerXCenters)
-            if (scrambledStateSolvedInnerXCenter) preSolved++;
+        for (int i = 1; i < scrambledStateSolvedInnerXCenters.length; i++)
+            if (scrambledStateSolvedInnerXCenters[i]) preSolved++;
         return preSolved;
     }
 
     public String getPreSolvedInnerXCenters() {
         String solvedInnerXCenters = "";
-        for (int i = 0; i < scrambledStateSolvedInnerXCenters.length; i++)
+        for (int i = 1; i < scrambledStateSolvedInnerXCenters.length; i++)
             if (scrambledStateSolvedInnerXCenters[i])
                 solvedInnerXCenters += (solvedInnerXCenters.length() > 0 ? " " : "") + innerXCenterPositions[i];
         return solvedInnerXCenters;
@@ -1591,6 +1595,10 @@ public class SixBldCube extends FiveBldCube {
 
     public boolean hasInnerWingParity() {
         return this.innerWingCycles.size() % 2 == 1;
+    }
+
+    public boolean isInnerWingBufferSolved() {
+        return this.scrambledStateSolvedInnerWings[0];
     }
 
     public int getInnerWingLength() {
@@ -1607,14 +1615,14 @@ public class SixBldCube extends FiveBldCube {
 
     public int getNumPreSolvedInnerWings() {
         int preSolved = 0;
-        for (boolean scrambledStateSolvedWing : scrambledStateSolvedInnerWings)
-            if (scrambledStateSolvedWing) preSolved++;
+        for (int i = 1; i < scrambledStateSolvedInnerWings.length; i++)
+            if (scrambledStateSolvedInnerWings[i]) preSolved++;
         return preSolved;
     }
 
     public String getPreSolvedInnerWings() {
         String solvedInnerWings = "";
-        for (int i = 0; i < scrambledStateSolvedInnerWings.length; i++)
+        for (int i = 1; i < scrambledStateSolvedInnerWings.length; i++)
             if (scrambledStateSolvedInnerWings[i])
                 solvedInnerWings += (solvedInnerWings.length() > 0 ? " " : "") + innerWingPositions[i];
         return solvedInnerWings;
@@ -1626,6 +1634,10 @@ public class SixBldCube extends FiveBldCube {
 
     public boolean hasRightObliqueParity() {
         return this.rightObliqueCycles.size() % 2 == 1;
+    }
+
+    public boolean isRightObliqueBufferSolved() {
+        return this.scrambledStateSolvedRightObliques[0];
     }
 
     public int getRightObliqueLength() {
@@ -1642,14 +1654,14 @@ public class SixBldCube extends FiveBldCube {
 
     public int getNumPreSolvedRightObliques() {
         int preSolved = 0;
-        for (boolean scrambledStateSolvedRightOblique : scrambledStateSolvedRightObliques)
-            if (scrambledStateSolvedRightOblique) preSolved++;
+        for (int i = 1; i < scrambledStateSolvedRightObliques.length; i++)
+            if (scrambledStateSolvedRightObliques[i]) preSolved++;
         return preSolved;
     }
 
     public String getPreSolvedRightObliques() {
         String solvedRightObliques = "";
-        for (int i = 0; i < scrambledStateSolvedRightObliques.length; i++)
+        for (int i = 1; i < scrambledStateSolvedRightObliques.length; i++)
             if (scrambledStateSolvedRightObliques[i])
                 solvedRightObliques += (solvedRightObliques.length() > 0 ? " " : "") + rightObliquePositions[i];
         return solvedRightObliques;
@@ -1661,6 +1673,10 @@ public class SixBldCube extends FiveBldCube {
 
     public boolean hasLeftObliqueParity() {
         return this.leftObliqueCycles.size() % 2 == 1;
+    }
+
+    public boolean isLeftObliqueBufferSolved() {
+        return this.scrambledStateSolvedLeftObliques[0];
     }
 
     public int getLeftObliqueLength() {
@@ -1677,14 +1693,14 @@ public class SixBldCube extends FiveBldCube {
 
     public int getNumPreSolvedLeftObliques() {
         int preSolved = 0;
-        for (boolean scrambledStateSolvedLeftOblique : scrambledStateSolvedLeftObliques)
-            if (scrambledStateSolvedLeftOblique) preSolved++;
+        for (int i = 1; i < scrambledStateSolvedLeftObliques.length; i++)
+            if (scrambledStateSolvedLeftObliques[i]) preSolved++;
         return preSolved;
     }
 
     public String getPreSolvedLeftObliques() {
         String solvedLeftObliques = "";
-        for (int i = 0; i < scrambledStateSolvedLeftObliques.length; i++)
+        for (int i = 1; i < scrambledStateSolvedLeftObliques.length; i++)
             if (scrambledStateSolvedLeftObliques[i])
                 solvedLeftObliques += (solvedLeftObliques.length() > 0 ? " " : "") + leftObliquePositions[i];
         return solvedLeftObliques;

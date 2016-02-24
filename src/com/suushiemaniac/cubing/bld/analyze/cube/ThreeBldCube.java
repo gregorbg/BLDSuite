@@ -601,6 +601,10 @@ public class ThreeBldCube extends TwoBldCube {
         return this.isEdgeSingleCycle() && this.isCornerSingleCycle();
     }
 
+    public boolean isEdgeBufferSolved() {
+        return this.scrambledStateSolvedEdges[0];
+    }
+
     @Override
     public String getScramble() {
         return this.scramble;
@@ -644,14 +648,14 @@ public class ThreeBldCube extends TwoBldCube {
 
     protected int getNumPreEdges(boolean flipped, List<Integer> searchList) {
         int preSolved = 0;
-        for (int i = 0; i < scrambledStateSolvedEdges.length; i++)
+        for (int i = 1; i < scrambledStateSolvedEdges.length; i++)
             if (scrambledStateSolvedEdges[i] && flipped == searchList.contains(edgeCubies[i][0])) preSolved++;
         return preSolved;
     }
 
     protected String getPreEdges(boolean flipped, List<Integer> searchList) {
         String solvedEdges = "";
-        for (int i = 0; i < scrambledStateSolvedEdges.length; i++)
+        for (int i = 1; i < scrambledStateSolvedEdges.length; i++)
             if (scrambledStateSolvedEdges[i] && flipped == searchList.contains(edgeCubies[i][0]))
                 solvedEdges += (solvedEdges.length() > 0 ? " " : "") + edgePositions[i];
         return solvedEdges;

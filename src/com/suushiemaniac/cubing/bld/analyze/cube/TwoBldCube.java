@@ -479,6 +479,10 @@ public class TwoBldCube extends BldCube {
         return this.cornerCycles.size() % 2 == 1;
     }
 
+    public boolean isCornerBufferSolved() {
+        return this.scrambledStateSolvedCorners[0];
+    }
+
     public boolean isSingleCycle() {
         return this.isCornerSingleCycle();
     }
@@ -548,14 +552,14 @@ public class TwoBldCube extends BldCube {
 
     protected int getNumPreCorners(boolean twisted, List<Integer> searchList) {
         int preSolved = 0;
-        for (int i = 0; i < scrambledStateSolvedCorners.length; i++)
+        for (int i = 1; i < scrambledStateSolvedCorners.length; i++)
             if (scrambledStateSolvedCorners[i] && twisted == searchList.contains(cornerCubies[i][0])) preSolved++;
         return preSolved;
     }
 
     protected String getPreCorners(boolean twisted, List<Integer> searchList) {
         String solvedCorners = "";
-        for (int i = 0; i < scrambledStateSolvedCorners.length; i++)
+        for (int i = 1; i < scrambledStateSolvedCorners.length; i++)
             if (scrambledStateSolvedCorners[i] && twisted == searchList.contains(cornerCubies[i][0]))
                 solvedCorners += (solvedCorners.length() > 0 ? " " : "") + cornerPositions[i];
         return solvedCorners;

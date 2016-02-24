@@ -766,6 +766,10 @@ public class FourBldCube extends ThreeBldCube {
         return this.wingCycles.size() % 2 == 1;
     }
 
+    public boolean isWingBufferSolved() {
+        return this.scrambledStateSolvedWings[0];
+    }
+
     public int getWingLength() {
         return this.wingCycles.size();
     }
@@ -780,13 +784,13 @@ public class FourBldCube extends ThreeBldCube {
 
     public int getNumPreSolvedWings() {
         int preSolved = 0;
-        for (boolean scrambledStateSolvedWing : scrambledStateSolvedWings) if (scrambledStateSolvedWing) preSolved++;
+        for (int i = 1; i < scrambledStateSolvedWings.length; i++) if (scrambledStateSolvedWings[i]) preSolved++;
         return preSolved;
     }
 
     public String getPreSolvedWings() {
         String solvedEdges = "";
-        for (int i = 0; i < scrambledStateSolvedWings.length; i++)
+        for (int i = 1; i < scrambledStateSolvedWings.length; i++)
             if (scrambledStateSolvedWings[i])
                 solvedEdges += (solvedEdges.length() > 0 ? " " : "") + wingPositions[i];
         return solvedEdges;
@@ -798,6 +802,10 @@ public class FourBldCube extends ThreeBldCube {
 
     public boolean hasXCenterParity() {
         return this.xCenterCycles.size() % 2 == 1;
+    }
+
+    public boolean isXCenterBufferSolved() {
+        return this.scrambledStateSolvedXCenters[0];
     }
 
     public int getXCenterLength() {
@@ -814,14 +822,13 @@ public class FourBldCube extends ThreeBldCube {
 
     public int getNumPreSolvedXCenters() {
         int preSolved = 0;
-        for (boolean scrambledStateSolvedXCenter : scrambledStateSolvedXCenters)
-            if (scrambledStateSolvedXCenter) preSolved++;
+        for (int i = 1; i < scrambledStateSolvedXCenters.length; i++) if (scrambledStateSolvedXCenters[i]) preSolved++;
         return preSolved;
     }
 
     public String getPreSolvedXCenters() {
         String solvedXCenters = "";
-        for (int i = 0; i < scrambledStateSolvedXCenters.length; i++)
+        for (int i = 1; i < scrambledStateSolvedXCenters.length; i++)
             if (scrambledStateSolvedXCenters[i])
                 solvedXCenters += (solvedXCenters.length() > 0 ? " " : "") + xCenterPositions[i];
         return solvedXCenters;

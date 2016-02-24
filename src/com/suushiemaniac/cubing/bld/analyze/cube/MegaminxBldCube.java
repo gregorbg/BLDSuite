@@ -5,6 +5,7 @@ import com.suushiemaniac.cubing.bld.enumeration.PieceType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import static com.suushiemaniac.cubing.bld.enumeration.DodecahedronPieceType.*;
 
@@ -549,6 +550,10 @@ public class MegaminxBldCube extends BldCube {
         return this.cornerCycles.size() % 2 == 1 && this.edgeCycles.size() % 2 == 1;
     }
 
+    public boolean isCornerBufferSolved() {
+        return this.scrambledStateSolvedCorners[0];
+    }
+
     public boolean isSingleCycle() {
         return this.isCornerSingleCycle() && this.isEdgeSingleCycle();
     }
@@ -566,19 +571,42 @@ public class MegaminxBldCube extends BldCube {
     }
 
     public int getNumPreSolvedCorners() {
-        return this.getNumPreCorners(false);
+        return this.getNumPreCorners(false, this.getFullTwistedCorners());
     }
 
     public String getPreSolvedCorners() {
-        return this.getPreCorners(false);
+        return this.getPreCorners(false, this.getFullTwistedCorners());
     }
 
     public int getNumPreTwistedCorners() {
-        return this.getNumPreCorners(true);
+        return this.getNumPreCorners(true, this.getFullTwistedCorners());
     }
 
     public String getPreTwistedCorners() {
-        return this.getPreCorners(true);
+        return this.getPreCorners(true, this.getFullTwistedCorners());
+    }
+
+    protected List<Integer> getFullTwistedCorners() {
+        List<Integer> full = new ArrayList<>();
+        full.addAll(this.cwCorners);
+        full.addAll(this.ccwCorners);
+        return full;
+    }
+
+    public int getNumPreCWCorners() {
+        return this.getNumPreCorners(true, this.cwCorners);
+    }
+
+    public String getPreCWCorners() {
+        return this.getPreCorners(true, this.cwCorners);
+    }
+
+    public int getNumPreCCWCorners() {
+        return this.getNumPreCorners(true, this.ccwCorners);
+    }
+
+    public String getPreCCWCorners() {
+        return this.getPreCorners(true, this.ccwCorners);
     }
 
     public int getNumPrePermutedCorners() {
@@ -589,33 +617,18 @@ public class MegaminxBldCube extends BldCube {
         return this.getPreSolvedCorners() + this.getPreTwistedCorners();
     }
 
-    public int getNumPreCorners(boolean flipped) {
+    protected int getNumPreCorners(boolean twisted, List<Integer> searchList) {
         int preSolved = 0;
-        for (int i = 0; i < scrambledStateSolvedCorners.length; i++)
-            if (scrambledStateSolvedCorners[i]) {
-                if (flipped) {
-                    if (this.cwCorners.contains(cornerCubies[i][0]) || this.ccwCorners.contains(cornerCubies[i][0]))
-                        preSolved++;
-                } else {
-                    if (!this.cwCorners.contains(cornerCubies[i][0]) && !this.ccwCorners.contains(cornerCubies[i][0]))
-                        preSolved++;
-                }
-            }
+        for (int i = 1; i < scrambledStateSolvedCorners.length; i++)
+            if (scrambledStateSolvedCorners[i] && twisted == searchList.contains(cornerCubies[i][0])) preSolved++;
         return preSolved;
     }
 
-    public String getPreCorners(boolean flipped) {
+    protected String getPreCorners(boolean twisted, List<Integer> searchList) {
         String solvedCorners = "";
-        for (int i = 0; i < scrambledStateSolvedCorners.length; i++)
-            if (scrambledStateSolvedCorners[i]) {
-                if (flipped) {
-                    if (this.cwCorners.contains(cornerCubies[i][0]) || this.ccwCorners.contains(cornerCubies[i][0]))
-                        solvedCorners += (solvedCorners.length() > 0 ? " " : "") + cornerPositions[i];
-                } else {
-                    if (!this.cwCorners.contains(cornerCubies[i][0]) && !this.ccwCorners.contains(cornerCubies[i][0]))
-                        solvedCorners += (solvedCorners.length() > 0 ? " " : "") + cornerPositions[i];
-                }
-            }
+        for (int i = 1; i < scrambledStateSolvedCorners.length; i++)
+            if (scrambledStateSolvedCorners[i] && twisted == searchList.contains(cornerCubies[i][0]))
+                solvedCorners += (solvedCorners.length() > 0 ? " " : "") + cornerPositions[i];
         return solvedCorners;
     }
 
@@ -630,6 +643,10 @@ public class MegaminxBldCube extends BldCube {
         return this.edgeCycles.size();
     }
 
+    public boolean isEdgeBufferSolved() {
+        return this.scrambledStateSolvedEdges[0];
+    }
+
     public int getEdgeBreakInNum() {
         return this.edgeCycleNum;
     }
@@ -639,19 +656,19 @@ public class MegaminxBldCube extends BldCube {
     }
 
     public int getNumPreSolvedEdges() {
-        return this.getNumPreEdges(false);
+        return this.getNumPreEdges(false, this.flippedEdges);
     }
 
     public String getPreSolvedEdges() {
-        return this.getPreEdges(false);
+        return this.getPreEdges(false, this.flippedEdges);
     }
 
     public int getNumPreFlippedEdges() {
-        return this.getNumPreEdges(true);
+        return this.getNumPreEdges(true, this.flippedEdges);
     }
 
     public String getPreFlippedEdges() {
-        return this.getPreEdges(true);
+        return this.getPreEdges(true, this.flippedEdges);
     }
 
     public int getNumPrePermutedEdges() {
@@ -662,31 +679,18 @@ public class MegaminxBldCube extends BldCube {
         return this.getPreSolvedEdges() + this.getPreFlippedEdges();
     }
 
-    public int getNumPreEdges(boolean flipped) {
+    protected int getNumPreEdges(boolean flipped, List<Integer> searchList) {
         int preSolved = 0;
-        for (int i = 0; i < scrambledStateSolvedEdges.length; i++)
-            if (scrambledStateSolvedEdges[i]) {
-                if (flipped) {
-                    if (flippedEdges.contains(edgeCubies[i][0])) preSolved++;
-                } else {
-                    if (!flippedEdges.contains(edgeCubies[i][0])) preSolved++;
-                }
-            }
+        for (int i = 1; i < scrambledStateSolvedEdges.length; i++)
+            if (scrambledStateSolvedEdges[i] && flipped == searchList.contains(edgeCubies[i][0])) preSolved++;
         return preSolved;
     }
 
-    public String getPreEdges(boolean flipped) {
+    protected String getPreEdges(boolean flipped, List<Integer> searchList) {
         String solvedEdges = "";
-        for (int i = 0; i < scrambledStateSolvedEdges.length; i++)
-            if (scrambledStateSolvedEdges[i]) {
-                if (flipped) {
-                    if (this.flippedEdges.contains(edgeCubies[i][0]))
-                        solvedEdges += (solvedEdges.length() > 0 ? " " : "") + edgePositions[i];
-                } else {
-                    if (!this.flippedEdges.contains(edgeCubies[i][0]))
-                        solvedEdges += (solvedEdges.length() > 0 ? " " : "") + edgePositions[i];
-                }
-            }
+        for (int i = 1; i < scrambledStateSolvedEdges.length; i++)
+            if (scrambledStateSolvedEdges[i] && flipped == searchList.contains(edgeCubies[i][0]))
+                solvedEdges += (solvedEdges.length() > 0 ? " " : "") + edgePositions[i];
         return solvedEdges;
     }
 

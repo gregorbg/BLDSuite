@@ -683,6 +683,10 @@ public class SevenBldCube extends SixBldCube {
         return this.innerTCenterCycles.size() % 2 == 1;
     }
 
+    public boolean isInnerTCenterBufferSolved() {
+        return this.scrambledStateSolvedInnerTCenters[0];
+    }
+
     public int getInnerTCenterLength() {
         return this.innerTCenterCycles.size();
     }
@@ -697,14 +701,14 @@ public class SevenBldCube extends SixBldCube {
 
     public int getNumPreSolvedInnerTCenters() {
         int preSolved = 0;
-        for (boolean scrambledStateSolvedInnerTCenter : scrambledStateSolvedInnerTCenters)
-            if (scrambledStateSolvedInnerTCenter) preSolved++;
+        for (int i = 1; i < scrambledStateSolvedInnerTCenters.length; i++)
+            if (scrambledStateSolvedInnerTCenters[i]) preSolved++;
         return preSolved;
     }
 
     public String getPreSolvedInnerTCenters() {
         String solvedInnerTCenters = "";
-        for (int i = 0; i < scrambledStateSolvedInnerTCenters.length; i++)
+        for (int i = 1; i < scrambledStateSolvedInnerTCenters.length; i++)
             if (scrambledStateSolvedInnerTCenters[i])
                 solvedInnerTCenters += (solvedInnerTCenters.length() > 0 ? " " : "") + innerTCenterPositions[i];
         return solvedInnerTCenters;

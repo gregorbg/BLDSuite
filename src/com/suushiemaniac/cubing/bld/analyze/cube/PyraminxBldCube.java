@@ -4,6 +4,7 @@ import com.suushiemaniac.cubing.bld.enumeration.PieceType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import static com.suushiemaniac.cubing.bld.enumeration.TetrahedronPieceType.*;
 
@@ -526,6 +527,10 @@ public class PyraminxBldCube extends BldCube {
         return this.scramble;
     }
 
+    public boolean isEdgeBufferSolved() {
+        return this.scrambledStateSolvedEdges[0];
+    }
+
     public int getEdgeLength() {
         return this.edgeCycles.size();
     }
@@ -539,19 +544,19 @@ public class PyraminxBldCube extends BldCube {
     }
 
     public int getNumPreSolvedEdges() {
-        return this.getNumPreEdges(false);
+        return this.getNumPreEdges(false, this.flippedEdges);
     }
 
     public String getPreSolvedEdges() {
-        return this.getPreEdges(false);
+        return this.getPreEdges(false, this.flippedEdges);
     }
 
     public int getNumPreFlippedEdges() {
-        return this.getNumPreEdges(true);
+        return this.getNumPreEdges(true, this.flippedEdges);
     }
 
     public String getPreFlippedEdges() {
-        return this.getPreEdges(true);
+        return this.getPreEdges(true, this.flippedEdges);
     }
 
     public int getNumPrePermutedEdges() {
@@ -562,31 +567,18 @@ public class PyraminxBldCube extends BldCube {
         return this.getPreSolvedEdges() + this.getPreFlippedEdges();
     }
 
-    public int getNumPreEdges(boolean flipped) {
+    protected int getNumPreEdges(boolean flipped, List<Integer> searchList) {
         int preSolved = 0;
-        for (int i = 0; i < scrambledStateSolvedEdges.length; i++)
-            if (scrambledStateSolvedEdges[i]) {
-                if (flipped) {
-                    if (flippedEdges.contains(edgeCubies[i][0])) preSolved++;
-                } else {
-                    if (!flippedEdges.contains(edgeCubies[i][0])) preSolved++;
-                }
-            }
+        for (int i = 1; i < scrambledStateSolvedEdges.length; i++)
+            if (scrambledStateSolvedEdges[i] && flipped == searchList.contains(edgeCubies[i][0])) preSolved++;
         return preSolved;
     }
 
-    public String getPreEdges(boolean flipped) {
+    protected String getPreEdges(boolean flipped, List<Integer> searchList) {
         String solvedEdges = "";
-        for (int i = 0; i < scrambledStateSolvedEdges.length; i++)
-            if (scrambledStateSolvedEdges[i]) {
-                if (flipped) {
-                    if (this.flippedEdges.contains(edgeCubies[i][0]))
-                        solvedEdges += (solvedEdges.length() > 0 ? " " : "") + edgePositions[i];
-                } else {
-                    if (!this.flippedEdges.contains(edgeCubies[i][0]))
-                        solvedEdges += (solvedEdges.length() > 0 ? " " : "") + edgePositions[i];
-                }
-            }
+        for (int i = 1; i < scrambledStateSolvedEdges.length; i++)
+            if (scrambledStateSolvedEdges[i] && flipped == searchList.contains(edgeCubies[i][0]))
+                solvedEdges += (solvedEdges.length() > 0 ? " " : "") + edgePositions[i];
         return solvedEdges;
     }
 

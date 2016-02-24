@@ -3,6 +3,7 @@ package com.suushiemaniac.cubing.bld;
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.bld.algsheet.BldAlgSheet;
 import com.suushiemaniac.cubing.bld.algsheet.GregorBldExcel;
+import com.suushiemaniac.cubing.bld.analyze.cube.ThreeBldCube;
 import com.suushiemaniac.cubing.bld.analyze.stat.MassAnalyzer;
 import com.suushiemaniac.cubing.bld.analyze.stat.ThreeMassAnalyzer;
 import com.suushiemaniac.cubing.bld.enumeration.CubicPieceType;
@@ -15,7 +16,9 @@ import java.util.Map;
 
 public class Main {
     public static void main(String[] args) {
-        scrambleDistAnalysis(new ThreeMassAnalyzer(), 10000);
+        ThreeBldCube threeAnalyze = new ThreeBldCube("U R2 U R2 D' L2 D' U2 B' R' U' F' R' D' U' R2 F U L2 D' Rw");
+        System.out.println(threeAnalyze.getEdgeStatString());
+        System.out.println(threeAnalyze.isEdgeBufferSolved());
     }
 
     public static void checkAndPrintParseableSolveable() {

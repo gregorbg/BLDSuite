@@ -558,6 +558,10 @@ public class FiveBldCube extends FourBldCube {
         return this.tCenterCycles.size() % 2 == 1;
     }
 
+    public boolean isTCenterBufferSolved() {
+        return this.scrambledStateSolvedTCenters[0];
+    }
+
     public int getTCenterLength() {
         return this.tCenterCycles.size();
     }
@@ -572,14 +576,13 @@ public class FiveBldCube extends FourBldCube {
 
     public int getNumPreSolvedTCenters() {
         int preSolved = 0;
-        for (boolean scrambledStateSolvedTCenter : scrambledStateSolvedTCenters)
-            if (scrambledStateSolvedTCenter) preSolved++;
+        for (int i = 1; i < scrambledStateSolvedTCenters.length; i++) if (scrambledStateSolvedTCenters[i]) preSolved++;
         return preSolved;
     }
 
     public String getPreSolvedTCenters() {
         String solvedTCenters = "";
-        for (int i = 0; i < scrambledStateSolvedTCenters.length; i++)
+        for (int i = 1; i < scrambledStateSolvedTCenters.length; i++)
             if (scrambledStateSolvedTCenters[i])
                 solvedTCenters += (solvedTCenters.length() > 0 ? " " : "") + tCenterPositions[i];
         return solvedTCenters;
