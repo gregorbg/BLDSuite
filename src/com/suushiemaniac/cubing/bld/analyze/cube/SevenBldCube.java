@@ -668,6 +668,7 @@ public class SevenBldCube extends SixBldCube {
     public String getInnerTCenterStatString(boolean spaced) {
         String innerTCenterStat = this.hasInnerTCenterParity() ? "_" : " ";
         innerTCenterStat += this.getInnerTCenterLength();
+        innerTCenterStat += this.isInnerTCenterBufferSolved() ? "*" : " ";
         innerTCenterStat += spaced ? "\t" : " ";
         for (int i = 0; i < 11; i++) innerTCenterStat += i < this.getInnerTCenterBreakInNum() ? "#" : spaced ? " " : "";
         if (spaced || innerTCenterStat.endsWith("#")) innerTCenterStat += " ";

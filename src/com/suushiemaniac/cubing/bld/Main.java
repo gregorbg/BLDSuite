@@ -4,7 +4,10 @@ import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.bld.algsheet.BldAlgSheet;
 import com.suushiemaniac.cubing.bld.algsheet.GregorBldExcel;
 import com.suushiemaniac.cubing.bld.analyze.cube.ThreeBldCube;
+import com.suushiemaniac.cubing.bld.analyze.stat.FiveMassAnalyzer;
+import com.suushiemaniac.cubing.bld.analyze.stat.FourMassAnalyzer;
 import com.suushiemaniac.cubing.bld.analyze.stat.MassAnalyzer;
+import com.suushiemaniac.cubing.bld.analyze.stat.ThreeMassAnalyzer;
 import com.suushiemaniac.cubing.bld.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.verify.ExcelVerificator;
 import com.suushiemaniac.cubing.bld.verify.Verificator;
@@ -17,17 +20,7 @@ import java.util.Map;
 
 public class Main {
     public static void main(String[] args) {
-        Puzzle threeNoodle = new NoInspectionThreeByThreeCubePuzzle();
-        ThreeBldCube threeAnalyze = new ThreeBldCube("");
-        for (int i = 0; i < 100; i++) {
-            String scramble = threeNoodle.generateScramble();
-            threeAnalyze.parseScramble(scramble);
-            System.out.println(threeAnalyze.getStatString());
-            if (threeAnalyze.isCornerBufferSolved()) System.out.println("CBuf: " + scramble);
-            if (threeAnalyze.isEdgeBufferSolved()) System.out.println("EBuf: " + scramble);
-            System.out.println();
-        }
-        //new ThreeMassAnalyzer().analyzeProperties(1000);
+        new FiveMassAnalyzer().analyzeScrambleDist(50);
     }
 
     public static void checkAndPrintParseableSolveable() {

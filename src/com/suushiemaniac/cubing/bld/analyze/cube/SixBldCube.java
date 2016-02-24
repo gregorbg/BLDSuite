@@ -1501,6 +1501,7 @@ public class SixBldCube extends FiveBldCube {
     public String getInnerWingStatString(boolean spaced) {
         String innerWingStat = this.hasInnerWingParity() ? "_" : " ";
         innerWingStat += this.getInnerWingLength();
+        innerWingStat += this.isInnerWingBufferSolved() ? "*" : " ";
         innerWingStat += spaced ? "\t" : " ";
         for (int i = 0; i < 11; i++) innerWingStat += i < this.getInnerWingBreakInNum() ? "#" : spaced ? " " : "";
         if (spaced || innerWingStat.endsWith("#")) innerWingStat += " ";
@@ -1515,6 +1516,7 @@ public class SixBldCube extends FiveBldCube {
     public String getInnerXCenterStatString(boolean spaced) {
         String innerXCenterStat = this.hasInnerXCenterParity() ? "_" : " ";
         innerXCenterStat += this.getInnerXCenterLength();
+        innerXCenterStat += this.isInnerXCenterBufferSolved() ? "*" : " ";
         innerXCenterStat += spaced ? "\t" : " ";
         for (int i = 0; i < 11; i++) innerXCenterStat += i < this.getInnerXCenterBreakInNum() ? "#" : spaced ? " " : "";
         if (spaced || innerXCenterStat.endsWith("#")) innerXCenterStat += " ";
@@ -1529,6 +1531,7 @@ public class SixBldCube extends FiveBldCube {
     public String getRightObliqueStatString(boolean spaced) {
         String rightObliqueStat = this.hasRightObliqueParity() ? "_" : " ";
         rightObliqueStat += this.getRightObliqueLength();
+        rightObliqueStat += this.isRightObliqueBufferSolved() ? "*" : " ";
         rightObliqueStat += spaced ? "\t" : " ";
         for (int i = 0; i < 11; i++) rightObliqueStat += i < this.getRightObliqueBreakInNum() ? "#" : spaced ? " " : "";
         if (spaced || rightObliqueStat.endsWith("#")) rightObliqueStat += " ";
@@ -1543,6 +1546,7 @@ public class SixBldCube extends FiveBldCube {
     public String getLeftObliqueStatString(boolean spaced) {
         String leftObliqueStat = this.hasLeftObliqueParity() ? "_" : " ";
         leftObliqueStat += this.getLeftObliqueLength();
+        leftObliqueStat += this.isLeftObliqueBufferSolved() ? "*" : " ";
         leftObliqueStat += spaced ? "\t" : " ";
         for (int i = 0; i < 11; i++) leftObliqueStat += i < this.getLeftObliqueBreakInNum() ? "#" : spaced ? " " : "";
         if (spaced || leftObliqueStat.endsWith("#")) leftObliqueStat += " ";

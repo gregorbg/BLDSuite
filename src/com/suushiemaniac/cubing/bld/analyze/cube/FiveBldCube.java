@@ -543,6 +543,7 @@ public class FiveBldCube extends FourBldCube {
     public String getTCenterStatString(boolean spaced) {
         String tCenterStat = this.hasTCenterParity() ? "_" : " ";
         tCenterStat += this.getTCenterLength();
+        tCenterStat += this.isTCenterBufferSolved() ? "*" : " ";
         tCenterStat += spaced ? "\t" : " ";
         for (int i = 0; i < 11; i++) tCenterStat += i < this.getTCenterBreakInNum() ? "#" : spaced ? " " : "";
         if (spaced || tCenterStat.endsWith("#")) tCenterStat += " ";

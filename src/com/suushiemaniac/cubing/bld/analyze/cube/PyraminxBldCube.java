@@ -483,6 +483,7 @@ public class PyraminxBldCube extends BldCube {
 
     public String getEdgeStatString(boolean spaced) {
         String edgeStat = "" + this.getEdgeLength();
+        edgeStat += this.isEdgeBufferSolved() ? "*" : " ";
         edgeStat += spaced ? "\t" : " ";
         for (int i = 0; i < 2; i++) edgeStat += i < this.getEdgeBreakInNum() ? "#" : spaced ? " " : "";
         if (spaced || edgeStat.endsWith("#")) edgeStat += " ";

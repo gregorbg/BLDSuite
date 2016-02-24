@@ -479,6 +479,7 @@ public class MegaminxBldCube extends BldCube {
     public String getCornerStatString(boolean spaced) {
         String cornerStat = this.hasCornerParity() ? "_" : " ";
         cornerStat += this.getCornerLength();
+        cornerStat += this.isCornerBufferSolved() ? "*" : " ";
         cornerStat += spaced ? "\t" : " ";
         for (int i = 0; i < 9; i++) cornerStat += i < this.getCornerBreakInNum() ? "#" : spaced ? " " : "";
         if (spaced || cornerStat.endsWith("#")) cornerStat += " ";
@@ -494,6 +495,7 @@ public class MegaminxBldCube extends BldCube {
 
     private String getEdgeStatString(boolean spaced) {
         String edgeStat = "" + this.getEdgeLength();
+        edgeStat += this.isEdgeBufferSolved() ? "*" : " ";
         edgeStat += spaced ? "\t" : " ";
         for (int i = 0; i < 9; i++) edgeStat += i < this.getEdgeBreakInNum() ? "#" : spaced ? " " : "";
         if (spaced || edgeStat.endsWith("#")) edgeStat += " ";

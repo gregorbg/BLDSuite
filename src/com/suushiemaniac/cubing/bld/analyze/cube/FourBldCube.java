@@ -737,6 +737,7 @@ public class FourBldCube extends ThreeBldCube {
     public String getWingStatString(boolean spaced) {
         String wingStat = this.hasWingParity() ? "_" : " ";
         wingStat += this.getWingLength();
+        wingStat += this.isWingBufferSolved() ? "*" : " ";
         wingStat += spaced ? "\t" : " ";
         for (int i = 0; i < 11; i++) wingStat += i < this.getWingBreakInNum() ? "#" : spaced ? " " : "";
         if (spaced || wingStat.endsWith("#")) wingStat += " ";
@@ -751,6 +752,7 @@ public class FourBldCube extends ThreeBldCube {
     public String getXCenterStatString(boolean spaced) {
         String xCenterStat = this.hasXCenterParity() ? "_" : " ";
         xCenterStat += this.getXCenterLength();
+        xCenterStat += this.isXCenterBufferSolved() ? "*" : " ";
         xCenterStat += spaced ? "\t" : " ";
         for (int i = 0; i < 11; i++) xCenterStat += i < this.getXCenterBreakInNum() ? "#" : spaced ? " " : "";
         if (spaced || xCenterStat.endsWith("#")) xCenterStat += " ";
