@@ -11,6 +11,9 @@ public class ThreeMassAnalyzer extends MassAnalyzer {
     public void analyzeProperties(int numCubes) {
         long cornerParity = 0;
 
+        long cornerBufferSolved = 0;
+        long edgeBufferSolved = 0;
+
         Map<Integer, Integer> cornerTargets = new HashMap<>();
         Map<Integer, Integer> edgeTargets = new HashMap<>();
         Map<Integer, Integer> cornerBreakIn = new HashMap<>();
@@ -33,6 +36,9 @@ public class ThreeMassAnalyzer extends MassAnalyzer {
 
             cornerParity += threeAnalyze.hasCornerParity() ? 1 : 0;
 
+            cornerBufferSolved += threeAnalyze.isCornerBufferSolved() ? 1 : 0;
+            edgeBufferSolved += threeAnalyze.isEdgeBufferSolved() ? 1 : 0;
+
             cornerTargets.put(threeAnalyze.getCornerLength(), cornerTargets.getOrDefault(threeAnalyze.getCornerLength(), 0) + 1);
             edgeTargets.put(threeAnalyze.getEdgeLength(), edgeTargets.getOrDefault(threeAnalyze.getEdgeLength(), 0) + 1);
             cornerBreakIn.put(threeAnalyze.getCornerBreakInNum(), cornerBreakIn.getOrDefault(threeAnalyze.getCornerBreakInNum(), 0) + 1);
@@ -46,6 +52,12 @@ public class ThreeMassAnalyzer extends MassAnalyzer {
         System.out.println();
         System.out.println("Parity: " + cornerParity);
         System.out.println("Average: " + (cornerParity / (float) numCubes));
+        System.out.println();
+        System.out.println("Corner buffer solved: " + cornerBufferSolved);
+        System.out.println("Average: " + (cornerBufferSolved / (float) numCubes));
+        System.out.println();
+        System.out.println("Edge buffer solved: " + edgeBufferSolved);
+        System.out.println("Average: " + (edgeBufferSolved / (float) numCubes));
         System.out.println();
         System.out.println("Corner targets");
         numericMapPrint(cornerTargets);

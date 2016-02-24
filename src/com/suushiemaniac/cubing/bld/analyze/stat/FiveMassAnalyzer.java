@@ -14,6 +14,12 @@ public class FiveMassAnalyzer extends MassAnalyzer {
         long xCenterParity = 0;
         long tCenterParity = 0;
 
+        long cornerBufferSolved = 0;
+        long edgeBufferSolved = 0;
+        long wingBufferSolved = 0;
+        long xCenterBufferSolved = 0;
+        long tCenterBufferSolved = 0;
+
         Map<Integer, Integer> cornerTargets = new HashMap<>();
         Map<Integer, Integer> edgeTargets = new HashMap<>();
         Map<Integer, Integer> wingTargets = new HashMap<>();
@@ -44,6 +50,12 @@ public class FiveMassAnalyzer extends MassAnalyzer {
             wingParity += fiveAnalyze.hasWingParity() ? 1 : 0;
             xCenterParity += fiveAnalyze.hasXCenterParity() ? 1 : 0;
             tCenterParity += fiveAnalyze.hasTCenterParity() ? 1 : 0;
+
+            cornerBufferSolved += fiveAnalyze.isCornerBufferSolved() ? 1 : 0;
+            edgeBufferSolved += fiveAnalyze.isEdgeBufferSolved() ? 1 : 0;
+            wingBufferSolved += fiveAnalyze.isWingBufferSolved() ? 1 : 0;
+            xCenterBufferSolved += fiveAnalyze.isXCenterBufferSolved() ? 1 : 0;
+            tCenterBufferSolved += fiveAnalyze.isTCenterBufferSolved() ? 1 : 0;
 
             cornerTargets.put(fiveAnalyze.getCornerLength(), cornerTargets.getOrDefault(fiveAnalyze.getCornerLength(), 0) + 1);
             edgeTargets.put(fiveAnalyze.getEdgeLength(), edgeTargets.getOrDefault(fiveAnalyze.getEdgeLength(), 0) + 1);
@@ -76,6 +88,21 @@ public class FiveMassAnalyzer extends MassAnalyzer {
         System.out.println();
         System.out.println("TCenterParity: " + tCenterParity);
         System.out.println("Average: " + (tCenterParity / (float) numCubes));
+        System.out.println();
+        System.out.println("Corner buffer solved: " + cornerBufferSolved);
+        System.out.println("Average: " + (cornerBufferSolved / (float) numCubes));
+        System.out.println();
+        System.out.println("Edge buffer solved: " + edgeBufferSolved);
+        System.out.println("Average: " + (edgeBufferSolved / (float) numCubes));
+        System.out.println();
+        System.out.println("Wing buffer solved: " + wingBufferSolved);
+        System.out.println("Average: " + (wingBufferSolved / (float) numCubes));
+        System.out.println();
+        System.out.println("XCenter buffer solved: " + xCenterBufferSolved);
+        System.out.println("Average: " + (xCenterBufferSolved / (float) numCubes));
+        System.out.println();
+        System.out.println("TCenter buffer solved: " + tCenterBufferSolved);
+        System.out.println("Average: " + (tCenterBufferSolved / (float) numCubes));
         System.out.println();
         System.out.println("Corner targets");
         numericMapPrint(cornerTargets);

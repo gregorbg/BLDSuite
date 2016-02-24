@@ -5,10 +5,11 @@ import com.suushiemaniac.cubing.bld.algsheet.BldAlgSheet;
 import com.suushiemaniac.cubing.bld.algsheet.GregorBldExcel;
 import com.suushiemaniac.cubing.bld.analyze.cube.ThreeBldCube;
 import com.suushiemaniac.cubing.bld.analyze.stat.MassAnalyzer;
-import com.suushiemaniac.cubing.bld.analyze.stat.ThreeMassAnalyzer;
 import com.suushiemaniac.cubing.bld.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.verify.ExcelVerificator;
 import com.suushiemaniac.cubing.bld.verify.Verificator;
+import net.gnehzr.tnoodle.scrambles.Puzzle;
+import puzzle.NoInspectionThreeByThreeCubePuzzle;
 
 import java.io.File;
 import java.util.List;
@@ -16,9 +17,17 @@ import java.util.Map;
 
 public class Main {
     public static void main(String[] args) {
-        ThreeBldCube threeAnalyze = new ThreeBldCube("U R2 U R2 D' L2 D' U2 B' R' U' F' R' D' U' R2 F U L2 D' Rw");
-        System.out.println(threeAnalyze.getEdgeStatString());
-        System.out.println(threeAnalyze.isEdgeBufferSolved());
+        Puzzle threeNoodle = new NoInspectionThreeByThreeCubePuzzle();
+        ThreeBldCube threeAnalyze = new ThreeBldCube("");
+        for (int i = 0; i < 100; i++) {
+            String scramble = threeNoodle.generateScramble();
+            threeAnalyze.parseScramble(scramble);
+            System.out.println(threeAnalyze.getStatString());
+            if (threeAnalyze.isCornerBufferSolved()) System.out.println("CBuf: " + scramble);
+            if (threeAnalyze.isEdgeBufferSolved()) System.out.println("EBuf: " + scramble);
+            System.out.println();
+        }
+        //new ThreeMassAnalyzer().analyzeProperties(1000);
     }
 
     public static void checkAndPrintParseableSolveable() {
