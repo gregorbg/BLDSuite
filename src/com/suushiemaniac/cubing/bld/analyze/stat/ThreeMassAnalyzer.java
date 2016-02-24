@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class ThreeMassAnalyzer extends MassAnalyzer {
     @Override
-    public void analyzeProperty(int numCubes) {
+    public void analyzeProperties(int numCubes) {
         long cornerParity = 0;
 
         Map<Integer, Integer> cornerTargets = new HashMap<>();

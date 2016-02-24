@@ -3,7 +3,7 @@ package com.suushiemaniac.cubing.bld.analyze.stat;
 import java.util.*;
 
 public abstract class MassAnalyzer {
-    public abstract void analyzeProperty(int numCubes);
+    public abstract void analyzeProperties(int numCubes);
 
     public abstract void analyzeScrambleDist(int numCubes);
 

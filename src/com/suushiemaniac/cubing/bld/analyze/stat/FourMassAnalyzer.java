@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class FourMassAnalyzer extends MassAnalyzer {
     @Override
-    public void analyzeProperty(int numCubes) {
+    public void analyzeProperties(int numCubes) {
         long cornerParity = 0;
         long wingParity = 0;
         long xCenterParity = 0;
