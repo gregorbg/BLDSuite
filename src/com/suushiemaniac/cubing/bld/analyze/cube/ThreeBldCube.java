@@ -10,6 +10,17 @@ import java.util.List;
 import static com.suushiemaniac.cubing.bld.enumeration.CubicPieceType.*;
 
 public class ThreeBldCube extends TwoBldCube {
+    public enum CornerParityMethod {
+        SWAP_UB_UL, USE_ALG
+    }
+
+    //[U' Rw U' Rw' U ; M2]
+    public static String cornerParityAlg = "U' Rw U' Rw' U M2 U' Rw U Rw' U";
+
+    public static void setCornerParityAlg(String alg) {
+        cornerParityAlg = alg;
+    }
+
     public static boolean solves(CubicPieceType cubicPieceType, String alg, String lpCase) {
         ThreeBldCube referenceCube = new ThreeBldCube(invAlg(alg));
         String solutionPairs;
@@ -61,6 +72,8 @@ public class ThreeBldCube extends TwoBldCube {
     protected int edgeCycleNum = 0;
     protected ArrayList<Integer> edgeCycles = new ArrayList<>();
     protected ArrayList<Integer> flippedEdges = new ArrayList<>();
+
+    protected CornerParityMethod cornerParityMethod = CornerParityMethod.SWAP_UB_UL;
 
     /**
      * The constructor for creating a new ThreeBldCube object
@@ -321,6 +334,10 @@ public class ThreeBldCube extends TwoBldCube {
         solveEdges();
     }
 
+    public void setCornerParityMethod(CornerParityMethod cornerParityMethod) {
+        this.cornerParityMethod = cornerParityMethod;
+    }
+
     @Override
     protected void reorientCube() {
         this.centerRotations = "";
@@ -335,7 +352,7 @@ public class ThreeBldCube extends TwoBldCube {
     // Solves all 12 edges in the cube
     protected void solveEdges() {
         // Parity is solved by swapping UL and UB
-        if (cornerCycles.size() % 2 == 1) {
+        if (cornerCycles.size() % 2 == 1 && this.cornerParityMethod == CornerParityMethod.SWAP_UB_UL) {
             int UB = -1;
             int UL = -1;
 
@@ -490,6 +507,8 @@ public class ThreeBldCube extends TwoBldCube {
                 edgePairs += names[edgeCycles.get(i)];
                 if (forceGap || i % 2 == 1) edgePairs += " ";
             }
+            if (edgeCycles.size() % 2 == 1 && this.cornerParityMethod == CornerParityMethod.USE_ALG)
+                edgePairs += "\tParity: " + cornerParityAlg;
             if (withFlipped && flippedEdges.size() != 0) {
                 edgePairs += "\tFlip: ";
                 for (Integer flippedEdge : flippedEdges) edgePairs += names[flippedEdge] + " ";
