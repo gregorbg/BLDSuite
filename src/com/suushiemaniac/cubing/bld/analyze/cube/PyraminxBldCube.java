@@ -481,6 +481,11 @@ public class PyraminxBldCube extends BldCube {
         return "E: " + this.getEdgeStatString(spaced) + (newLine ? "\n" : " | ") + "Ce: " + this.getCenterStatString(spaced) + (newLine ? "\n" : " | ") + "Tp: " + this.getTipStatString(spaced);
     }
 
+    @Override
+    public String getPuzzleString() {
+        return "pyram";
+    }
+
     public String getEdgeStatString(boolean spaced) {
         String edgeStat = "" + this.getEdgeLength();
         edgeStat += this.isEdgeBufferSolved() ? "*" : " ";

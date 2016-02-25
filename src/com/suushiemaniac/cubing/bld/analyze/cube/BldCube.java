@@ -61,6 +61,8 @@ public abstract class BldCube {
         return this.getStatString(false, newLine);
     }
 
+    public abstract String getPuzzleString();
+
     /**
      * Parse a new scramble to be analyzed
      *

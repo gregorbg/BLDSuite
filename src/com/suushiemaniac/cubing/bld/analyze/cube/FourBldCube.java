@@ -735,6 +735,11 @@ public class FourBldCube extends ThreeBldCube {
         return "C: " + this.getCornerStatString(spaced) + (newLine ? "\n" : " | ") + "W: " + this.getWingStatString(spaced) + (newLine ? "\n" : " | ") + "X: " + this.getXCenterStatString(spaced);
     }
 
+    @Override
+    public String getPuzzleString() {
+        return "444";
+    }
+
     public String getWingStatString(boolean spaced) {
         String wingStat = this.hasWingParity() ? "_" : " ";
         wingStat += this.getWingLength();

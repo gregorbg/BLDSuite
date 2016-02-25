@@ -660,6 +660,11 @@ public class SevenBldCube extends SixBldCube {
         return "C:" + this.getCornerNoahtation() + " / E:" + this.getEdgeNoahtation() + " / W:" + this.getWingNoahtation() + " / iW:" + this.getInnerWingNoahtation() + " / X:" + this.getXCenterNoahtation() + " / iX:" + this.getInnerXCenterNoahtation() + " / T:" + this.getTCenterNoahtation() + " / iT:" + this.getInnerTCenterNoahtation() + " / RO:" + this.getRightObliqueNoahtation() + " / LO:" + this.getLeftObliqueNoahtation();
     }
 
+    @Override
+    public String getPuzzleString() {
+        return "777";
+    }
+
     public String getStatString(boolean spaced, boolean newLine) {
         return "C: " + this.getCornerStatString(spaced) + (newLine ? "\n" : " | ") + "E: " + this.getEdgeStatString(spaced) + (newLine ? "\n" : " | ") + "W: " + this.getWingStatString(spaced) + (newLine ? "\n" : " | ") + "iW: " + this.getInnerWingStatString(spaced) + (newLine ? "\n" : " | ") + "X: " + this.getXCenterStatString(spaced) + (newLine ? "\n" : " | ") + "iX: " + this.getInnerXCenterStatString(spaced) + (newLine ? "\n" : " | ") + "T: " + this.getTCenterStatString(spaced) + (newLine ? "\n" : " | ") + "iT: " + this.getInnerTCenterStatString(spaced) + (newLine ? "\n" : " | ") + "RO: " + this.getRightObliqueStatString(spaced) + (newLine ? "\n" : " | ") + "LO: " + this.getLeftObliqueStatString(spaced);
     }

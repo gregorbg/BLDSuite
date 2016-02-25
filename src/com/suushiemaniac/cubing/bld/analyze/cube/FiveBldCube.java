@@ -541,6 +541,11 @@ public class FiveBldCube extends FourBldCube {
         return "C: " + this.getCornerStatString(spaced) + (newLine ? "\n" : " | ") + "E: " + this.getEdgeStatString(spaced) + (newLine ? "\n" : " | ") + "W: " + this.getWingStatString(spaced) + (newLine ? "\n" : " | ") + "X: " + this.getXCenterStatString(spaced) + (newLine ? "\n" : " | ") + "T: " + this.getTCenterStatString(spaced);
     }
 
+    @Override
+    public String getPuzzleString() {
+        return "555";
+    }
+
     public String getTCenterStatString(boolean spaced) {
         String tCenterStat = this.hasTCenterParity() ? "_" : " ";
         tCenterStat += this.getTCenterLength();

@@ -454,6 +454,11 @@ public class TwoBldCube extends BldCube {
         return "C: " + this.getCornerStatString(spaced);
     }
 
+    @Override
+    public String getPuzzleString() {
+        return "222";
+    }
+
     public String getCornerStatString(boolean spaced) {
         String cornerStat = this.hasCornerParity() ? "_" : " ";
         cornerStat += this.getCornerLength();

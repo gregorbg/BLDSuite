@@ -598,6 +598,11 @@ public class ThreeBldCube extends TwoBldCube {
         return "C: " + this.getCornerStatString(spaced) + (newLine ? "\n" : " | ") + "E: " + this.getEdgeStatString(spaced);
     }
 
+    @Override
+    public String getPuzzleString() {
+        return "333";
+    }
+
     public String getEdgeStatString(boolean spaced) {
         String edgeStat = "" + this.getEdgeLength();
         edgeStat += this.isEdgeBufferSolved() ? "*" : " ";

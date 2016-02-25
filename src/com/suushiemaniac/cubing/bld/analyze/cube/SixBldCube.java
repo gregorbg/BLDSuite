@@ -1493,6 +1493,11 @@ public class SixBldCube extends FiveBldCube {
         return "C:" + this.getCornerNoahtation() + " / W:" + this.getWingNoahtation() + " / iW:" + this.getInnerWingNoahtation() + " / X:" + this.getXCenterNoahtation() + " / iX:" + this.getInnerXCenterNoahtation() + " / RO:" + this.getRightObliqueNoahtation() + " / LO:" + this.getLeftObliqueNoahtation();
     }
 
+    @Override
+    public String getPuzzleString() {
+        return "666";
+    }
+
     public String getStatString(boolean spaced, boolean newLine) {
         return "C: " + this.getCornerStatString(spaced) + (newLine ? "\n" : " | ") + "W: " + this.getWingStatString(spaced) + (newLine ? "\n" : " | ") + "iW: " + this.getInnerWingStatString(spaced) + (newLine ? "\n" : " | ") + "X: " + this.getXCenterStatString(spaced) + (newLine ? "\n" : " | ") + "iX: " + this.getInnerXCenterStatString(spaced) + (newLine ? "\n" : " | ") + "RO: " + this.getRightObliqueStatString(spaced) + (newLine ? "\n" : " | ") + "LO: " + this.getLeftObliqueStatString(spaced);
     }
