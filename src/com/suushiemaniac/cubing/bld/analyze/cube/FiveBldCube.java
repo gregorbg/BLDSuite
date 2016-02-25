@@ -1,13 +1,13 @@
 package com.suushiemaniac.cubing.bld.analyze.cube;
 
-import com.suushiemaniac.cubing.bld.enumeration.CubicPieceType;
-import com.suushiemaniac.cubing.bld.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import static com.suushiemaniac.cubing.bld.enumeration.CubicPieceType.*;
+import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
 
 public class FiveBldCube extends FourBldCube {
     public static boolean isCenterSensitive(String alg) {
@@ -20,10 +20,11 @@ public class FiveBldCube extends FourBldCube {
         return !Arrays.equals(referenceCube.xCenters, solvedX) || !Arrays.equals(referenceCube.tCenters, solvedT);
     }
 
-    public static boolean solves(CubicPieceType cubicPieceType, String alg, String lpCase) {
+    public static boolean solves(PieceType cubicPieceType, String alg, String lpCase) {
         FiveBldCube referenceCube = new FiveBldCube(invAlg(alg));
         String solutionPairs;
-        switch (cubicPieceType) {
+        if (!(cubicPieceType instanceof CubicPieceType)) return false;
+        switch ((CubicPieceType) cubicPieceType) {
             case CORNER:
                 solutionPairs = referenceCube.getCornerPairs();
                 break;

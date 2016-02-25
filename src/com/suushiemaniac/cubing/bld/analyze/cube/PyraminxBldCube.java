@@ -1,12 +1,12 @@
 package com.suushiemaniac.cubing.bld.analyze.cube;
 
-import com.suushiemaniac.cubing.bld.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static com.suushiemaniac.cubing.bld.enumeration.TetrahedronPieceType.*;
+import static com.suushiemaniac.cubing.bld.model.enumeration.TetrahedronPieceType.*;
 
 public class PyraminxBldCube extends BldCube {
     protected int[] tips = new int[12];

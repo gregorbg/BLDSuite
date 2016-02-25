@@ -1,12 +1,11 @@
 package com.suushiemaniac.cubing.bld.analyze.cube;
 
-import com.suushiemaniac.cubing.bld.enumeration.CubicPieceType;
-import com.suushiemaniac.cubing.bld.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import static com.suushiemaniac.cubing.bld.enumeration.CubicPieceType.*;
+import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
 
 public class SevenBldCube extends SixBldCube {
     protected int[] innerTCenters = new int[24];

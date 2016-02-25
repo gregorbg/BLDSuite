@@ -1,13 +1,12 @@
 package com.suushiemaniac.cubing.bld.analyze.cube;
 
-import com.suushiemaniac.cubing.bld.enumeration.CubicPieceType;
-import com.suushiemaniac.cubing.bld.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static com.suushiemaniac.cubing.bld.enumeration.CubicPieceType.*;
+import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
 
 public class TwoBldCube extends BldCube {
     protected int[] corners = new int[24]; // Position of all 24 corner stickers in the cube
