@@ -1,13 +1,13 @@
 package com.suushiemaniac.cubing.bld.analyze.cube;
 
-import com.suushiemaniac.cubing.bld.enumeration.CubicPieceType;
-import com.suushiemaniac.cubing.bld.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static com.suushiemaniac.cubing.bld.enumeration.CubicPieceType.*;
+import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
 
 public class ThreeBldCube extends TwoBldCube {
     public enum CornerParityMethod {
@@ -21,10 +21,11 @@ public class ThreeBldCube extends TwoBldCube {
         cornerParityAlg = alg;
     }
 
-    public static boolean solves(CubicPieceType cubicPieceType, String alg, String lpCase) {
+    public static boolean solves(PieceType cubicPieceType, String alg, String lpCase) {
         ThreeBldCube referenceCube = new ThreeBldCube(invAlg(alg));
         String solutionPairs;
-        switch (cubicPieceType) {
+        if (!(cubicPieceType instanceof CubicPieceType)) return false;
+        switch ((CubicPieceType) cubicPieceType) {
             case CORNER:
                 solutionPairs = referenceCube.getCornerPairs();
                 break;

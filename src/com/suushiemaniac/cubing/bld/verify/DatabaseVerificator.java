@@ -2,7 +2,7 @@ package com.suushiemaniac.cubing.bld.verify;
 
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.database.CubeH2;
-import com.suushiemaniac.cubing.bld.enumeration.CubicPieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 
 import java.sql.SQLException;
 import java.util.Collections;

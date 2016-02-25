@@ -4,7 +4,7 @@ import com.suushiemaniac.cubing.alglib.alg.SubGroup;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.alglib.util.ParseUtils;
 import com.suushiemaniac.cubing.bld.analyze.cube.FiveBldCube;
-import com.suushiemaniac.cubing.bld.enumeration.CubicPieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
 
 import java.util.ArrayList;
@@ -21,13 +21,13 @@ public abstract class Verificator {
         this.parser = parser;
     }
 
-    public Map<String, Map<String, Boolean>> verifyAll(CubicPieceType type) {
+    public Map<String, Map<String, Boolean>> verifyAll(PieceType type) {
         Map<String, Map<String, Boolean>> fullSolutionMap = new HashMap<String, Map<String, Boolean>>();
         for (String possPair : fullLetterPairs) fullSolutionMap.put(possPair, this.verifySingleCase(type, possPair));
         return fullSolutionMap;
     }
 
-    public Map<String, Boolean> verifySingleCase(CubicPieceType type, String letterPair) {
+    public Map<String, Boolean> verifySingleCase(PieceType type, String letterPair) {
         Map<String, Boolean> solutionMap = new HashMap<String, Boolean>();
         List<String> algStringList = this.getAlgStrings(type, letterPair);
         if (algStringList != null)
@@ -36,7 +36,7 @@ public abstract class Verificator {
         return solutionMap;
     }
 
-    public Map<String, List<String>> findMatchingSubGroup(CubicPieceType type, SubGroup group) {
+    public Map<String, List<String>> findMatchingSubGroup(PieceType type, SubGroup group) {
         Map<String, List<String>> sameGroupMap = new HashMap<String, List<String>>();
         for (String possPair : fullLetterPairs) {
             sameGroupMap.put(possPair, new ArrayList<String>());
@@ -49,7 +49,7 @@ public abstract class Verificator {
         return sameGroupMap;
     }
 
-    public Map<String, List<String>> checkParseable(CubicPieceType type) {
+    public Map<String, List<String>> checkParseable(PieceType type) {
         Map<String, List<String>> unparseableMap = new HashMap<String, List<String>>();
         for (String possPair : fullLetterPairs) {
             unparseableMap.put(possPair, new ArrayList<String>());
@@ -62,5 +62,5 @@ public abstract class Verificator {
         return unparseableMap;
     }
 
-    protected abstract List<String> getAlgStrings(CubicPieceType type, String letterPair);
+    protected abstract List<String> getAlgStrings(PieceType type, String letterPair);
 }

@@ -1,6 +1,6 @@
 package com.suushiemaniac.cubing.bld.analyze.cube;
 
-import com.suushiemaniac.cubing.bld.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 import com.suushiemaniac.cubing.bld.util.StringUtil;
 
 import java.util.ArrayList;

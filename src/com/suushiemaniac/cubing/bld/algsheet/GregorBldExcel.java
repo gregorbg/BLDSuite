@@ -1,11 +1,11 @@
 package com.suushiemaniac.cubing.bld.algsheet;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
-import com.suushiemaniac.cubing.alglib.exception.InvalidNotationException;
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
-import com.suushiemaniac.cubing.bld.enumeration.CubicPieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.exception.InvalidExcelMapSizeError;
 import com.suushiemaniac.cubing.bld.exception.InvalidPieceTypeException;
+import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 import com.suushiemaniac.cubing.bld.util.ExcelUtil;
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 import org.apache.poi.ss.usermodel.Cell;
@@ -21,8 +21,9 @@ public class GregorBldExcel extends BldAlgSheet {
         super(excelFile);
     }
 
-    private int getPageNum(CubicPieceType type) {
-        switch (type) {
+    private int getPageNum(PieceType type) {
+        if (!(type instanceof CubicPieceType)) return -1;
+        switch ((CubicPieceType) type) {
             case CORNER:
                 return 0;
             case EDGE:
@@ -38,7 +39,7 @@ public class GregorBldExcel extends BldAlgSheet {
         }
     }
 
-    private int getPrintPageNum(CubicPieceType type) {
+    private int getPrintPageNum(PieceType type) {
         return this.getPageNum(type) + 1;
     }
 
@@ -68,7 +69,7 @@ public class GregorBldExcel extends BldAlgSheet {
         return excelStringMap;
     }
 
-    public Map<String, Algorithm> getAlgsFromExcel(Workbook wb, CubicPieceType type) {
+    public Map<String, Algorithm> getAlgsFromExcel(Workbook wb, PieceType type) {
         Map<String, String> excelStringMap = getAlgStringsFromExcel(wb, this.getPageNum(type), type.getNumPiecesNoBuffer(), type.getTargetsPerPiece(), true);
 
         Map<String, Algorithm> algMap = new HashMap<String, Algorithm>();
@@ -86,12 +87,12 @@ public class GregorBldExcel extends BldAlgSheet {
     }
 
     @Override
-    protected Map<String, List<String>> algStringsFromExcel(Workbook wb, CubicPieceType type) throws InvalidPieceTypeException {
+    protected Map<String, List<String>> algStringsFromExcel(Workbook wb, PieceType type) throws InvalidPieceTypeException {
         return this.wrapToListMap(this.getAlgStringsFromExcel(wb, this.getPageNum(type), type.getNumPiecesNoBuffer(), type.getTargetsPerPiece(), false));
     }
 
     @Override
-    protected Map<String, List<Algorithm>> algsFromExcel(Workbook wb, CubicPieceType type) throws InvalidPieceTypeException {
+    protected Map<String, List<Algorithm>> algsFromExcel(Workbook wb, PieceType type) throws InvalidPieceTypeException {
         return this.wrapToListMap(this.getAlgsFromExcel(wb, type));
     }
 
@@ -102,7 +103,7 @@ public class GregorBldExcel extends BldAlgSheet {
         return toReturn;
     }
 
-    public void writeAlgSetToSpreadsheet(Workbook wb, Map<String, Algorithm> algMap, CubicPieceType type) {
+    public void writeAlgSetToSpreadsheet(Workbook wb, Map<String, Algorithm> algMap, PieceType type) {
         if (wb == null) return;
         int targetsPerPiece = type.getTargetsPerPiece();
         int numTargets = type.getNumPiecesNoBuffer();
@@ -134,7 +135,7 @@ public class GregorBldExcel extends BldAlgSheet {
         writeWorkbook(wb);
     }
 
-    public void referencePrint(Workbook wb, CubicPieceType type) {
+    public void referencePrint(Workbook wb, PieceType type) {
         if (wb == null) return;
         Sheet sheet = wb.getSheetAt(this.getPrintPageNum(type));
         String sheetName = sheet.getSheetName();
@@ -147,7 +148,7 @@ public class GregorBldExcel extends BldAlgSheet {
         writeWorkbook(wb);
     }
 
-    public void fixMissingPrintReferences(Workbook wb, CubicPieceType type) {
+    public void fixMissingPrintReferences(Workbook wb, PieceType type) {
         if (wb == null) return;
         int targetsPerPiece = type.getTargetsPerPiece();
         int numTargets = type.getNumPiecesNoBuffer();

@@ -1,4 +1,4 @@
-package com.suushiemaniac.cubing.bld.enumeration;
+package com.suushiemaniac.cubing.bld.model.enumeration;
 
 public enum CubicPieceType implements PieceType {
     CENTER(0, 6, 0),

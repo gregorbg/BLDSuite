@@ -1,8 +1,11 @@
 package com.suushiemaniac.cubing.bld.database;
 
+import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.util.StringUtils;
 import com.suushiemaniac.cubing.bld.analyze.cube.FiveBldCube;
-import com.suushiemaniac.cubing.bld.enumeration.CubicPieceType;
+import com.suushiemaniac.cubing.bld.model.AlgSource;
+import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 
 import java.io.File;
@@ -12,7 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
-public class CubeH2 {
+public class CubeH2 implements AlgSource {
     private Connection conn;
 
     public void setRefCube(FiveBldCube refCube) {
@@ -32,7 +35,7 @@ public class CubeH2 {
 
         try {
             Statement stat = conn.createStatement();
-            for (CubicPieceType type : FiveBldCube.getPieceTypeArray()) {
+            for (PieceType type : FiveBldCube.getPieceTypeArray()) {
                 stat.execute("create table if not exists " + type.name() + "s(letterpair char(2), alg varchar(255) primary key)");
                 stat.execute("create table if not exists " + type.name() + "scheme(letterpair char(2), alg varchar(255) primary key)");
             }
@@ -107,7 +110,7 @@ public class CubeH2 {
         }
     }
 
-    public void addAlgorithm(String letterPair, String alg, CubicPieceType type) throws SQLException {
+    public void addAlgorithm(String letterPair, String alg, PieceType type) throws SQLException {
         this.addAlgorithm(letterPair, alg, type.name());
     }
 
@@ -125,7 +128,7 @@ public class CubeH2 {
         return temp;
     }
 
-    public List<String> readAlgorithm(String letterPair, CubicPieceType type) throws SQLException {
+    public List<String> readAlgorithm(String letterPair, PieceType type) throws SQLException {
         return this.readAlgorithm(letterPair, type.name());
     }
 
@@ -141,7 +144,7 @@ public class CubeH2 {
         stat.execute();
     }
 
-    public void removeAlgorithm(String letterPair, String alg, CubicPieceType type) throws SQLException {
+    public void removeAlgorithm(String letterPair, String alg, PieceType type) throws SQLException {
         this.removeAlgorithm(letterPair, alg, type.name());
     }
 
@@ -154,7 +157,7 @@ public class CubeH2 {
         addAlgorithm(letterPair, newAlg, table);
     }
 
-    public void updateAlgorithm(String letterPair, String oldAlg, String newAlg, CubicPieceType cubicPieceType) throws SQLException {
+    public void updateAlgorithm(String letterPair, String oldAlg, String newAlg, PieceType cubicPieceType) throws SQLException {
         this.updateAlgorithm(letterPair, oldAlg, newAlg, cubicPieceType.name());
     }
 
@@ -168,5 +171,20 @@ public class CubeH2 {
 
     public File getDatabaseFile() throws SQLException {
         return new File(this.conn.getMetaData().getURL().replace("jdbc:h2:file:", "") + (this.isOldH2 ? ".h2.db" : ".mv.db"));
+    }
+
+    @Override
+    public List<Algorithm> getAlg(PieceType type, String letterPair) {
+        return null;
+    }
+
+    @Override
+    public List<String> getRawAlg(PieceType type, String letterPair) {
+        try {
+            return this.readAlgorithm(letterPair, type);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }

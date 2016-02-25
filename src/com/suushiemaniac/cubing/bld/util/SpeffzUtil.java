@@ -1,6 +1,9 @@
 package com.suushiemaniac.cubing.bld.util;
 
-import com.suushiemaniac.cubing.bld.enumeration.CubicPieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+
+import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
 
 public class SpeffzUtil {
     private static String[] fullSpeffz = {"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X"};
@@ -14,8 +17,9 @@ public class SpeffzUtil {
         return fullSpeffz;
     }
 
-    public static String speffzToSticker(String speffz, CubicPieceType type) {
-        switch (type) {
+    public static String speffzToSticker(String speffz, PieceType type) {
+        if (!(type instanceof CubicPieceType)) return "";
+        switch ((CubicPieceType) type) {
             case CORNER:
                 return ArrayUtil.mutualIndex(speffz, fullSpeffz, cornerMapping);
             case EDGE:
@@ -31,8 +35,9 @@ public class SpeffzUtil {
         }
     }
 
-    public static String stickerToSpeffz(String sticker, CubicPieceType type) {
-        switch (type) {
+    public static String stickerToSpeffz(String sticker, PieceType type) {
+        if (!(type instanceof CubicPieceType)) return "";
+        switch ((CubicPieceType) type) {
             case CORNER:
                 return ArrayUtil.mutualIndex(sticker, cornerMapping, fullSpeffz);
             case EDGE:
