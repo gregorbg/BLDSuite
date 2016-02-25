@@ -336,6 +336,7 @@ public class ThreeBldCube extends TwoBldCube {
 
     public void setCornerParityMethod(CornerParityMethod cornerParityMethod) {
         this.cornerParityMethod = cornerParityMethod;
+        this.parseScramble(this.getScramble());
     }
 
     @Override
