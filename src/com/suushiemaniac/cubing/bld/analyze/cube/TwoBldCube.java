@@ -451,7 +451,7 @@ public class TwoBldCube extends BldCube {
         return "C: " + this.getCornerNoahtation();
     }
 
-    public String getStatString(boolean spaced) {
+    public String getStatString(boolean spaced, boolean newLine) {
         return "C: " + this.getCornerStatString(spaced);
     }
 

@@ -50,10 +50,14 @@ public abstract class BldCube {
 
     public abstract String getNoahtation();
 
-    public abstract String getStatString(boolean spaced);
+    public abstract String getStatString(boolean spaced, boolean newLine);
 
     public String getStatString() {
-        return this.getStatString(false);
+        return this.getStatString(false, false);
+    }
+
+    public String getStatString(boolean newLine) {
+        return this.getStatString(false, newLine);
     }
 
     /**

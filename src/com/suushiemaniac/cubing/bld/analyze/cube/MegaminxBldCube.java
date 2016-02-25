@@ -472,8 +472,8 @@ public class MegaminxBldCube extends BldCube {
         return "C:" + this.getCornerNoahtation() + " / E:" + this.getEdgeNoahtation();
     }
 
-    public String getStatString(boolean spaced) {
-        return "C: " + this.getCornerStatString(spaced) + " | E: " + this.getEdgeStatString(spaced);
+    public String getStatString(boolean spaced, boolean newLine) {
+        return "C: " + this.getCornerStatString(spaced) + (newLine ? "\n" : " | ") + "E: " + this.getEdgeStatString(spaced);
     }
 
     public String getCornerStatString(boolean spaced) {
