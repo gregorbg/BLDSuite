@@ -58,14 +58,14 @@ public class FourBldCube extends ThreeBldCube {
     protected boolean[] scrambledStateSolvedWings = {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false};
     protected int[] scrambledStateWings = new int[24];
     protected int wingCycleNum = 0;
-    protected ArrayList<Integer> wingCycles = new ArrayList<>();
+    protected ArrayList<Integer> wingCycles = new ArrayList<Integer>();
 
     protected Integer[][] xCenterCubies = {{A, B, C, D}, {E, F, G, H}, {I, J, K, L}, {M, N, O, P}, {Q, R, S, T}, {U, V, W, X}};
     protected boolean[] solvedXCenters = {true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true};
     protected boolean[] scrambledStateSolvedXCenters = {true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true};
     protected int[] scrambledStateXCenters = new int[24];
     protected int xCenterCycleNum = 0;
-    protected ArrayList<Integer> xCenterCycles = new ArrayList<>();
+    protected ArrayList<Integer> xCenterCycles = new ArrayList<Integer>();
 
     private boolean optimizeCenters = true;
     private boolean avoidXBreakIns = true;
@@ -220,7 +220,7 @@ public class FourBldCube extends ThreeBldCube {
         };
         for (int i = 0; i < faceNames.length; i++) {
             HashMap<PieceType, Integer[]> tempMap = permutations.get(faceNames[i]);
-            if (tempMap == null) tempMap = new HashMap<>();
+            if (tempMap == null) tempMap = new HashMap<PieceType, Integer[]>();
             tempMap.put(CORNER, cornerFacePerms[i]);
             tempMap.put(EDGE, edgeFacePerms[i]);
             tempMap.put(CENTER, centerFacePerms[i]);
@@ -418,7 +418,7 @@ public class FourBldCube extends ThreeBldCube {
         };
         for (int i = 0; i < faceNames.length; i++) {
             HashMap<PieceType, Integer[]> tempMap = permutations.get(faceNames[i]);
-            if (tempMap == null) tempMap = new HashMap<>();
+            if (tempMap == null) tempMap = new HashMap<PieceType, Integer[]>();
             tempMap.put(WING, wingFacePerms[i]);
             tempMap.put(XCENTER, xCenterFacePerms[i]);
             permutations.put(faceNames[i], tempMap);
@@ -876,26 +876,16 @@ public class FourBldCube extends ThreeBldCube {
     }
 
     public void setScheme(String type, String[] scheme) {
-        switch (type.toLowerCase()) {
-            case "xcenter":
-                this.setXCenterScheme(scheme);
-                break;
-            case "wing":
-                this.setWingScheme(scheme);
-                break;
-            default:
-                super.setScheme(type, scheme);
-        }
+        String s = type.toLowerCase();
+        if (s.equals("xcenter")) this.setXCenterScheme(scheme);
+        else if (s.equals("wing")) this.setWingScheme(scheme);
+        else super.setScheme(type, scheme);
     }
 
     public String[] getScheme(String type) {
-        switch (type.toLowerCase()) {
-            case "xcenter":
-                return this.xCenterLettering;
-            case "wing":
-                return this.wingLettering;
-            default:
-                return super.getScheme(type);
-        }
+        String s = type.toLowerCase();
+        if (s.equals("xcenter")) return this.xCenterLettering;
+        else if (s.equals("wing")) return this.wingLettering;
+        else return super.getScheme(type);
     }
 }

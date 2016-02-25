@@ -10,7 +10,7 @@ public abstract class BldScramble {
     protected BldCube bldAnalyzerCube;
 
     public void findScrambleThreadModel(int numScrambles, int numThreads) {
-        BlockingQueue<String> scrambleQueue = new ArrayBlockingQueue<>(50);
+        BlockingQueue<String> scrambleQueue = new ArrayBlockingQueue<String>(50);
         ScrambleProducer producer = new ScrambleProducer(scrambleQueue);
         ScrambleConsumer consumer = new ScrambleConsumer(numScrambles, this.bldAnalyzerCube, scrambleQueue);
         for (int i = 0; i < numThreads; i++) {

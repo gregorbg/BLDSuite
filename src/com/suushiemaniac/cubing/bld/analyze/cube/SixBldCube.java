@@ -28,28 +28,28 @@ public class SixBldCube extends FiveBldCube {
     protected boolean[] scrambledStateSolvedInnerWings = {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false};
     protected int[] scrambledStateInnerWings = new int[24];
     protected int innerWingCycleNum = 0;
-    protected ArrayList<Integer> innerWingCycles = new ArrayList<>();
+    protected ArrayList<Integer> innerWingCycles = new ArrayList<Integer>();
 
     protected Integer[][] innerXCenterCubies = {{A, B, C, D}, {E, F, G, H}, {I, J, K, L}, {M, N, O, P}, {Q, R, S, T}, {U, V, W, X}};
     protected boolean[] solvedInnerXCenters = {true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true};
     protected boolean[] scrambledStateSolvedInnerXCenters = {true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true};
     protected int[] scrambledStateInnerXCenters = new int[24];
     protected int innerXCenterCycleNum = 0;
-    protected ArrayList<Integer> innerXCenterCycles = new ArrayList<>();
+    protected ArrayList<Integer> innerXCenterCycles = new ArrayList<Integer>();
 
     protected Integer[][] rightObliqueCubies = {{U, V, W, X}, {A, B, C, D}, {E, F, G, H}, {I, J, K, L}, {M, N, O, P}, {Q, R, S, T}};
     protected boolean[] solvedRightObliques = {true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true};
     protected boolean[] scrambledStateSolvedRightObliques = {true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true};
     protected int[] scrambledStateRightObliques = new int[24];
     protected int rightObliqueCycleNum = 0;
-    protected ArrayList<Integer> rightObliqueCycles = new ArrayList<>();
+    protected ArrayList<Integer> rightObliqueCycles = new ArrayList<Integer>();
 
     protected Integer[][] leftObliqueCubies = {{U, V, W, X}, {A, B, C, D}, {E, F, G, H}, {I, J, K, L}, {M, N, O, P}, {Q, R, S, T}};
     protected boolean[] solvedLeftObliques = {true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true};
     protected boolean[] scrambledStateSolvedLeftObliques = {true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true};
     protected int[] scrambledStateLeftObliques = new int[24];
     protected int leftObliqueCycleNum = 0;
-    protected ArrayList<Integer> leftObliqueCycles = new ArrayList<>();
+    protected ArrayList<Integer> leftObliqueCycles = new ArrayList<Integer>();
 
     private boolean optimizeCenters = true;
     private boolean avoidInnerXBreakIns = true;
@@ -317,7 +317,7 @@ public class SixBldCube extends FiveBldCube {
         };
         for (int i = 0; i < faceNames.length; i++) {
             HashMap<PieceType, Integer[]> tempMap = permutations.get(faceNames[i]);
-            if (tempMap == null) tempMap = new HashMap<>();
+            if (tempMap == null) tempMap = new HashMap<PieceType, Integer[]>();
             tempMap.put(CORNER, cornerFacePerms[i]);
             tempMap.put(EDGE, edgeFacePerms[i]);
             tempMap.put(WING, wingFacePerms[i]);
@@ -608,7 +608,7 @@ public class SixBldCube extends FiveBldCube {
         };
         for (int i = 0; i < faceNames.length; i++) {
             HashMap<PieceType, Integer[]> tempMap = permutations.get(faceNames[i]);
-            if (tempMap == null) tempMap = new HashMap<>();
+            if (tempMap == null) tempMap = new HashMap<PieceType, Integer[]>();
             tempMap.put(INNERWING, innerWingFacePerms[i]);
             tempMap.put(INNERXCENTER, innerXCenterFacePerms[i]);
             permutations.put(faceNames[i], tempMap);
@@ -895,7 +895,7 @@ public class SixBldCube extends FiveBldCube {
         };
         for (int i = 0; i < faceNames.length; i++) {
             HashMap<PieceType, Integer[]> tempMap = permutations.get(faceNames[i]);
-            if (tempMap == null) tempMap = new HashMap<>();
+            if (tempMap == null) tempMap = new HashMap<PieceType, Integer[]>();
             tempMap.put(RIGHTOBLIQUE, rightObliqueFacePerms[i]);
             tempMap.put(LEFTOBLIQUE, leftObliqueFacePerms[i]);
             permutations.put(faceNames[i], tempMap);

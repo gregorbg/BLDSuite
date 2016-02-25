@@ -28,9 +28,9 @@ public class TwoBldCube extends BldCube {
     protected boolean[] scrambledStateSolvedCorners = {false, false, false, false, false, false, false, false};
     protected int[] scrambledStateCorners = new int[24];
     protected int cornerCycleNum = 0;
-    protected ArrayList<Integer> cornerCycles = new ArrayList<>();
-    protected ArrayList<Integer> cwCorners = new ArrayList<>();
-    protected ArrayList<Integer> ccwCorners = new ArrayList<>();
+    protected ArrayList<Integer> cornerCycles = new ArrayList<Integer>();
+    protected ArrayList<Integer> cwCorners = new ArrayList<Integer>();
+    protected ArrayList<Integer> ccwCorners = new ArrayList<Integer>();
 
     protected int[] centerCubies = {UP, LEFT, FRONT, RIGHT, BACK, DOWN};
     protected int[] scrambledStateCenters = new int[6];
@@ -95,7 +95,7 @@ public class TwoBldCube extends BldCube {
         };
         for (int i = 0; i < faceNames.length; i++) {
             HashMap<PieceType, Integer[]> tempMap = permutations.get(faceNames[i]);
-            if (tempMap == null) tempMap = new HashMap<>();
+            if (tempMap == null) tempMap = new HashMap<PieceType, Integer[]>();
             tempMap.put(CORNER, cornerFacePerms[i]);
             permutations.put(faceNames[i], tempMap);
         }
@@ -521,7 +521,7 @@ public class TwoBldCube extends BldCube {
     }
 
     protected List<Integer> getFullTwistedCorners() {
-        List<Integer> full = new ArrayList<>();
+        List<Integer> full = new ArrayList<Integer>();
         full.addAll(this.cwCorners);
         full.addAll(this.ccwCorners);
         return full;
@@ -596,23 +596,15 @@ public class TwoBldCube extends BldCube {
     }
 
     public void setScheme(String type, String[] scheme) {
-        switch (type.toLowerCase()) {
-            case "corner":
-                this.setCornerScheme(scheme);
-                break;
-            case "color":
-                this.setColorScheme(scheme);
-        }
+        String s = type.toLowerCase();
+        if (s.equals("corner")) this.setCornerScheme(scheme);
+        else if (s.equals("color")) this.setColorScheme(scheme);
     }
 
     public String[] getScheme(String type) {
-        switch (type.toLowerCase()) {
-            case "corner":
-                return this.cornerLettering;
-            case "color":
-                return this.colorScheme;
-            default:
-                return null;
-        }
+        String s = type.toLowerCase();
+        if (s.equals("corner")) return this.cornerLettering;
+        else if (s.equals("color")) return this.colorScheme;
+        else return null;
     }
 }

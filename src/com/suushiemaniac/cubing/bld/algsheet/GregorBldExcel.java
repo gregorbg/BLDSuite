@@ -43,7 +43,7 @@ public class GregorBldExcel extends BldAlgSheet {
     }
 
     private Map<String, String> getAlgStringsFromExcel(Workbook wb, int sheetNum, int numNonBufferPieces, int targetsPerPiece, boolean includeInverse) {
-        Map<String, String> excelStringMap = new LinkedHashMap<>();
+        Map<String, String> excelStringMap = new LinkedHashMap<String, String>();
         Sheet sheet = wb.getSheetAt(sheetNum);
         String letterPair, lp1, lp2;
         int headerSpacing = 2, betweenColSpacing = 3;
@@ -71,16 +71,16 @@ public class GregorBldExcel extends BldAlgSheet {
     public Map<String, Algorithm> getAlgsFromExcel(Workbook wb, CubicPieceType type) {
         Map<String, String> excelStringMap = getAlgStringsFromExcel(wb, this.getPageNum(type), type.getNumPiecesNoBuffer(), type.getTargetsPerPiece(), true);
 
-        Map<String, Algorithm> algMap = new HashMap<>();
+        Map<String, Algorithm> algMap = new HashMap<String, Algorithm>();
         if (excelStringMap.size() == type.getNumAlgs()) {
             CubicAlgorithmReader cubicReader = new CubicAlgorithmReader();
-            excelStringMap.keySet().forEach(key -> {
+            for (String key : excelStringMap.keySet()) {
                 String algString = excelStringMap.get(key);
                 Algorithm parseAlg;
                 if (algString.startsWith("#")) parseAlg = cubicReader.parse(excelStringMap.get(algString.substring(1))).inverse();
                 else parseAlg = cubicReader.parse(algString);
                 algMap.put(key, parseAlg);
-            });
+            }
             return algMap;
         } else throw new InvalidExcelMapSizeError(excelStringMap.size(), type.getNumAlgs());
     }
@@ -96,7 +96,7 @@ public class GregorBldExcel extends BldAlgSheet {
     }
 
     private <T> Map<String, List<T>> wrapToListMap(Map<String, T> singleEntryMap) {
-        Map<String, List<T>> toReturn = new HashMap<>();
+        Map<String, List<T>> toReturn = new HashMap<String, List<T>>();
         for (String key : singleEntryMap.keySet())
             toReturn.put(key, Collections.singletonList(singleEntryMap.get(key)));
         return toReturn;
@@ -123,7 +123,7 @@ public class GregorBldExcel extends BldAlgSheet {
                         int j = block * targetsPerPiece + line;
                         Row blockRow = sheet.getRow((rowNum * totalRowCoeff) + headerSpacing + ((targetsPerPiece + 1) * block) + line);
                         if (blockRow == null) blockRow = sheet.createRow((rowNum * totalRowCoeff) + headerSpacing + ((targetsPerPiece + 1) * block) + line);
-                        Algorithm alg = algMap.getOrDefault(letterList.get(i) + letterList.get(j), null);
+                        Algorithm alg = algMap.get(letterList.get(i) + letterList.get(j));
                         String algString = alg == null ? "/" : alg.toFormatString();
                         if (colNum > block) algString = "#" + letterList.get(j) + letterList.get(i);
                         blockRow.createCell(colNum * totalColCoeff).setCellValue(SpeffzUtil.speffzToSticker(letterList.get(j), type));

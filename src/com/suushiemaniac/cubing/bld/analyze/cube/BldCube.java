@@ -1,6 +1,7 @@
 package com.suushiemaniac.cubing.bld.analyze.cube;
 
 import com.suushiemaniac.cubing.bld.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,7 +31,7 @@ public abstract class BldCube {
 
 
     // Definitions of available permutations and rotations
-    protected HashMap<String, HashMap<PieceType, Integer[]>> permutations = new HashMap<>();
+    protected HashMap<String, HashMap<PieceType, Integer[]>> permutations = new HashMap<String, HashMap<PieceType, Integer[]>>();
 
     abstract void initPermutations();
 
@@ -77,12 +78,12 @@ public abstract class BldCube {
         this.centerRotations = "";
 
         // unrecognized moves are ignored
-        ArrayList<String> validPermutations = new ArrayList<>();
+        ArrayList<String> validPermutations = new ArrayList<String>();
         String[] scramble = scrambleString.split("\\s+?");
         for (String scrambleSeq : scramble)
             if (this.permutations.keySet().contains(scrambleSeq)) validPermutations.add(scrambleSeq);
 
-        this.scramble = String.join(" ", validPermutations);
+        this.scramble = StringUtil.join(" ", validPermutations);
 
         if (this.solvingOrPremoves.length() > 0)
             validPermutations.addAll(0, Arrays.asList(this.solvingOrPremoves.split("\\s")));
@@ -92,14 +93,14 @@ public abstract class BldCube {
 
     protected String invertMoves(String moves) {
         String[] singleMoves = moves.split("\\s");
-        ArrayList<String> invertedMoves = new ArrayList<>(singleMoves.length);
+        ArrayList<String> invertedMoves = new ArrayList<String>(singleMoves.length);
         for (int i = singleMoves.length; i > 0; i--) {
             String move = singleMoves[i - 1];
             if (move.endsWith("'")) move = move.replace("'", "");
             else if (!move.endsWith("2")) move += "'";
             invertedMoves.add(move);
         }
-        return String.join(" ", invertedMoves);
+        return StringUtil.join(" ", invertedMoves);
     }
 
     protected <T> void cycleArrayLeft(T[] toCycle) {

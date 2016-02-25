@@ -17,16 +17,16 @@ public class FourMassAnalyzer extends MassAnalyzer {
         long wingBufferSolved = 0;
         long xCenterBufferSolved = 0;
 
-        Map<Integer, Integer> cornerTargets = new HashMap<>();
-        Map<Integer, Integer> wingTargets = new HashMap<>();
-        Map<Integer, Integer> xCenterTargets = new HashMap<>();
-        Map<Integer, Integer> cornerBreakIn = new HashMap<>();
-        Map<Integer, Integer> wingBreakIn = new HashMap<>();
-        Map<Integer, Integer> xCenterBreakIn = new HashMap<>();
-        Map<Integer, Integer> cornerSolved = new HashMap<>();
-        Map<Integer, Integer> wingSolved = new HashMap<>();
-        Map<Integer, Integer> xCenterSolved = new HashMap<>();
-        Map<Integer, Integer> cornerMisOrient = new HashMap<>();
+        DefaultHashMap<Integer, Integer> cornerTargets = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> wingTargets = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> xCenterTargets = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> cornerBreakIn = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> wingBreakIn = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> xCenterBreakIn = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> cornerSolved = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> wingSolved = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> xCenterSolved = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> cornerMisOrient = new DefaultHashMap<Integer, Integer>();
 
         NoInspectionFourByFourCubePuzzle fourNoodle = new NoInspectionFourByFourCubePuzzle();
         FourBldCube fourAnalyze = new FourBldCube("");
@@ -108,15 +108,15 @@ public class FourMassAnalyzer extends MassAnalyzer {
 
     @Override
     public void analyzeScrambleDist(int numCubes) {
-        Map<String, Integer> corner = new HashMap<>();
-        Map<String, Integer> wing = new HashMap<>();
-        Map<String, Integer> xCenter = new HashMap<>();
+        DefaultHashMap<String, Integer> corner = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> wing = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> xCenter = new DefaultHashMap<String, Integer>();
 
-        Map<String, Integer> cornerWing = new HashMap<>();
-        Map<String, Integer> cornerXCenter = new HashMap<>();
-        Map<String, Integer> wingXCenter = new HashMap<>();
+        DefaultHashMap<String, Integer> cornerWing = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> cornerXCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> wingXCenter = new DefaultHashMap<String, Integer>();
 
-        Map<String, Integer> overall = new HashMap<>();
+        DefaultHashMap<String, Integer> overall = new DefaultHashMap<String, Integer>();
 
         NoInspectionFourByFourCubePuzzle fourNoodle = new NoInspectionFourByFourCubePuzzle();
         FourBldCube fourAnalyze = new FourBldCube("");

@@ -26,23 +26,23 @@ public class PyraminxBldCube extends BldCube {
     protected boolean[] solvedTips = {true, true, true, true};
     protected boolean[] scrambledStateSolvedTips = {false, false, false, false};
     protected int[] scrambledStateTips = new int[12];
-    protected ArrayList<Integer> cwTips = new ArrayList<>();
-    protected ArrayList<Integer> ccwTips = new ArrayList<>();
+    protected ArrayList<Integer> cwTips = new ArrayList<Integer>();
+    protected ArrayList<Integer> ccwTips = new ArrayList<Integer>();
 
     protected Integer[][] centerCubies = {{A, G, D}, {B, F, J}, {C, L, H}, {E, I, K}};
     protected boolean[] solvedCenters = {true, true, true, true};
     protected boolean[] scrambledStateSolvedCenters = {false, false, false, false};
     protected int[] scrambledStateCenters = new int[12];
-    protected ArrayList<Integer> cwCenters = new ArrayList<>();
-    protected ArrayList<Integer> ccwCenters = new ArrayList<>();
+    protected ArrayList<Integer> cwCenters = new ArrayList<Integer>();
+    protected ArrayList<Integer> ccwCenters = new ArrayList<Integer>();
 
     protected Integer[][] edgeCubies = {{J, F}, {A, H}, {B, D}, {C, L}, {E, G}, {I, K}};
     protected boolean[] solvedEdges = {true, true, true, true, true, true};
     protected boolean[] scrambledStateSolvedEdges = {false, false, false, false, false, false};
     protected int[] scrambledStateEdges = new int[12];
     protected int edgeCycleNum = 0;
-    protected ArrayList<Integer> edgeCycles = new ArrayList<>();
-    protected ArrayList<Integer> flippedEdges = new ArrayList<>();
+    protected ArrayList<Integer> edgeCycles = new ArrayList<Integer>();
+    protected ArrayList<Integer> flippedEdges = new ArrayList<Integer>();
 
     protected int[] fixedCenterCubies = {LEFT, FRONT, RIGHT, DOWN};
 
@@ -154,7 +154,7 @@ public class PyraminxBldCube extends BldCube {
         };
         for (int i = 0; i < faceNames.length; i++) {
             HashMap<PieceType, Integer[]> tempMap = permutations.get(faceNames[i]);
-            if (tempMap == null) tempMap = new HashMap<>();
+            if (tempMap == null) tempMap = new HashMap<PieceType, Integer[]>();
             tempMap.put(TIP, tipFacePerms[i]);
             tempMap.put(CENTER, centerFacePerms[i]);
             tempMap.put(EDGE, edgeFacePerms[i]);

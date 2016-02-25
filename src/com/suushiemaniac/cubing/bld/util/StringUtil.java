@@ -12,4 +12,16 @@ public class StringUtil {
             if (!toCheck.contains(aContainOblig)) return false;
         return true;
     }
+
+    public static <T> String join(String glue, T[] elements) {
+        String joined = "";
+        for (T element : elements) joined += (joined.length() > 0 ? glue : "") + element.toString();
+        return joined;
+    }
+
+    public static <T> String join(String glue, Iterable<T> elements) {
+        String joined = "";
+        for (T element : elements) joined += (joined.length() > 0 ? glue : "") + element.toString();
+        return joined;
+    }
 }

@@ -1,14 +1,16 @@
 package com.suushiemaniac.cubing.bld.util;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MapUtil {
     public static <T extends Number> void freqMapPrint(Map<Integer, T> toPrint) {
-        List<Integer> sortedKeys = new ArrayList<>(toPrint.keySet());
-        sortedKeys.sort(Comparator.naturalOrder());
+        List<Integer> sortedKeys = new ArrayList<Integer>(toPrint.keySet());
+        Collections.sort(sortedKeys, new Comparator<Integer>() {
+            @Override
+            public int compare(Integer o1, Integer o2) {
+                return o1.compareTo(o2);
+            }
+        });
         for (int i : sortedKeys) System.out.println(i + ": " + toPrint.get(i));
         System.out.println("Average: " + freqMapAverage(toPrint));
     }

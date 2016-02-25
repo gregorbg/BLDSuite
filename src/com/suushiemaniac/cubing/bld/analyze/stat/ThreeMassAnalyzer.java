@@ -14,14 +14,14 @@ public class ThreeMassAnalyzer extends MassAnalyzer {
         long cornerBufferSolved = 0;
         long edgeBufferSolved = 0;
 
-        Map<Integer, Integer> cornerTargets = new HashMap<>();
-        Map<Integer, Integer> edgeTargets = new HashMap<>();
-        Map<Integer, Integer> cornerBreakIn = new HashMap<>();
-        Map<Integer, Integer> edgeBreakIn = new HashMap<>();
-        Map<Integer, Integer> cornerSolved = new HashMap<>();
-        Map<Integer, Integer> edgeSolved = new HashMap<>();
-        Map<Integer, Integer> cornerMisOrient = new HashMap<>();
-        Map<Integer, Integer> edgeMisOrient = new HashMap<>();
+        DefaultHashMap<Integer, Integer> cornerTargets = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> edgeTargets = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> cornerBreakIn = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> edgeBreakIn = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> cornerSolved = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> edgeSolved = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> cornerMisOrient = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> edgeMisOrient = new DefaultHashMap<Integer, Integer>();
 
         NoInspectionThreeByThreeCubePuzzle threeNoodle = new NoInspectionThreeByThreeCubePuzzle();
         ThreeBldCube threeAnalyze = new ThreeBldCube("");
@@ -86,10 +86,10 @@ public class ThreeMassAnalyzer extends MassAnalyzer {
 
     @Override
     public void analyzeScrambleDist(int numCubes) {
-        Map<String, Integer> corner = new HashMap<>();
-        Map<String, Integer> edge = new HashMap<>();
+        DefaultHashMap<String, Integer> corner = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> edge = new DefaultHashMap<String, Integer>();
 
-        Map<String, Integer> overall = new HashMap<>();
+        DefaultHashMap<String, Integer> overall = new DefaultHashMap<String, Integer>();
 
         NoInspectionThreeByThreeCubePuzzle threeNoodle = new NoInspectionThreeByThreeCubePuzzle();
         ThreeBldCube threeAnalyze = new ThreeBldCube("");

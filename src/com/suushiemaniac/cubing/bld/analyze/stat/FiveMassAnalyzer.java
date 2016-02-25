@@ -20,23 +20,23 @@ public class FiveMassAnalyzer extends MassAnalyzer {
         long xCenterBufferSolved = 0;
         long tCenterBufferSolved = 0;
 
-        Map<Integer, Integer> cornerTargets = new HashMap<>();
-        Map<Integer, Integer> edgeTargets = new HashMap<>();
-        Map<Integer, Integer> wingTargets = new HashMap<>();
-        Map<Integer, Integer> xCenterTargets = new HashMap<>();
-        Map<Integer, Integer> tCenterTargets = new HashMap<>();
-        Map<Integer, Integer> cornerBreakIn = new HashMap<>();
-        Map<Integer, Integer> edgeBreakIn = new HashMap<>();
-        Map<Integer, Integer> wingBreakIn = new HashMap<>();
-        Map<Integer, Integer> xCenterBreakIn = new HashMap<>();
-        Map<Integer, Integer> tCenterBreakIn = new HashMap<>();
-        Map<Integer, Integer> cornerSolved = new HashMap<>();
-        Map<Integer, Integer> edgeSolved = new HashMap<>();
-        Map<Integer, Integer> wingSolved = new HashMap<>();
-        Map<Integer, Integer> xCenterSolved = new HashMap<>();
-        Map<Integer, Integer> tCenterSolved = new HashMap<>();
-        Map<Integer, Integer> cornerMisOrient = new HashMap<>();
-        Map<Integer, Integer> edgeMisOrient = new HashMap<>();
+        DefaultHashMap<Integer, Integer> cornerTargets = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> edgeTargets = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> wingTargets = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> xCenterTargets = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> tCenterTargets = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> cornerBreakIn = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> edgeBreakIn = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> wingBreakIn = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> xCenterBreakIn = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> tCenterBreakIn = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> cornerSolved = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> edgeSolved = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> wingSolved = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> xCenterSolved = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> tCenterSolved = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> cornerMisOrient = new DefaultHashMap<Integer, Integer>();
+        DefaultHashMap<Integer, Integer> edgeMisOrient = new DefaultHashMap<Integer, Integer>();
 
         NoInspectionFiveByFiveCubePuzzle fiveNoodle = new NoInspectionFiveByFiveCubePuzzle();
         FiveBldCube fiveAnalyze = new FiveBldCube("");
@@ -158,41 +158,41 @@ public class FiveMassAnalyzer extends MassAnalyzer {
 
     @Override
     public void analyzeScrambleDist(int numCubes) {
-        Map<String, Integer> corner = new HashMap<>();
-        Map<String, Integer> edge = new HashMap<>();
-        Map<String, Integer> wing = new HashMap<>();
-        Map<String, Integer> xCenter = new HashMap<>();
-        Map<String, Integer> tCenter = new HashMap<>();
+        DefaultHashMap<String, Integer> corner = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> edge = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> wing = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> xCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> tCenter = new DefaultHashMap<String, Integer>();
 
-        Map<String, Integer> cornerEdge = new HashMap<>();
-        Map<String, Integer> cornerWing = new HashMap<>();
-        Map<String, Integer> cornerXCenter = new HashMap<>();
-        Map<String, Integer> cornerTCenter = new HashMap<>();
-        Map<String, Integer> edgeWing = new HashMap<>();
-        Map<String, Integer> edgeXCenter = new HashMap<>();
-        Map<String, Integer> edgeTCenter = new HashMap<>();
-        Map<String, Integer> wingXCenter = new HashMap<>();
-        Map<String, Integer> wingTCenter = new HashMap<>();
-        Map<String, Integer> xCenterTCenter = new HashMap<>();
+        DefaultHashMap<String, Integer> cornerEdge = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> cornerWing = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> cornerXCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> cornerTCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> edgeWing = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> edgeXCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> edgeTCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> wingXCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> wingTCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> xCenterTCenter = new DefaultHashMap<String, Integer>();
 
-        Map<String, Integer> cornerEdgeWing = new HashMap<>();
-        Map<String, Integer> cornerEdgeXCenter = new HashMap<>();
-        Map<String, Integer> cornerEdgeTCenter = new HashMap<>();
-        Map<String, Integer> cornerWingXCenter = new HashMap<>();
-        Map<String, Integer> cornerWingTCenter = new HashMap<>();
-        Map<String, Integer> cornerXCenterTCenter = new HashMap<>();
-        Map<String, Integer> edgeWingXCenter = new HashMap<>();
-        Map<String, Integer> edgeWingTCenter = new HashMap<>();
-        Map<String, Integer> edgeXCenterTCenter = new HashMap<>();
-        Map<String, Integer> wingXCenterTCenter = new HashMap<>();
+        DefaultHashMap<String, Integer> cornerEdgeWing = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> cornerEdgeXCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> cornerEdgeTCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> cornerWingXCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> cornerWingTCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> cornerXCenterTCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> edgeWingXCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> edgeWingTCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> edgeXCenterTCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> wingXCenterTCenter = new DefaultHashMap<String, Integer>();
 
-        Map<String, Integer> cornerEdgeWingXCenter = new HashMap<>();
-        Map<String, Integer> cornerEdgeWingTCenter = new HashMap<>();
-        Map<String, Integer> cornerEdgeXCenterTCenter = new HashMap<>();
-        Map<String, Integer> cornerWingXCenterTCenter = new HashMap<>();
-        Map<String, Integer> edgeWingXCenterTCenter = new HashMap<>();
+        DefaultHashMap<String, Integer> cornerEdgeWingXCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> cornerEdgeWingTCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> cornerEdgeXCenterTCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> cornerWingXCenterTCenter = new DefaultHashMap<String, Integer>();
+        DefaultHashMap<String, Integer> edgeWingXCenterTCenter = new DefaultHashMap<String, Integer>();
 
-        Map<String, Integer> overall = new HashMap<>();
+        DefaultHashMap<String, Integer> overall = new DefaultHashMap<String, Integer>();
 
         NoInspectionFiveByFiveCubePuzzle fiveNoodle = new NoInspectionFiveByFiveCubePuzzle();
         FiveBldCube fiveAnalyze = new FiveBldCube("");

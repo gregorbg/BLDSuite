@@ -22,8 +22,8 @@ public class SkewbBldCube {
     protected boolean[] scrambledStateSolvedCorners = {false, false, false, false, false, false, false, false};
     protected int[] scrambledStateCorners = new int[24];
     protected int cornerCycleNum = 0;
-    protected ArrayList<Integer> cornerCycles = new ArrayList<>();
-    protected ArrayList<Integer> cwCorners = new ArrayList<>();
-    protected ArrayList<Integer> ccwCorners = new ArrayList<>();
+    protected ArrayList<Integer> cornerCycles = new ArrayList<Integer>();
+    protected ArrayList<Integer> cwCorners = new ArrayList<Integer>();
+    protected ArrayList<Integer> ccwCorners = new ArrayList<Integer>();
 
 }

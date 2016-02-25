@@ -6,7 +6,6 @@ import com.suushiemaniac.cubing.alglib.util.ParseUtils;
 import com.suushiemaniac.cubing.bld.analyze.cube.FiveBldCube;
 import com.suushiemaniac.cubing.bld.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
-import com.suushiemaniac.cubing.bld.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,13 +22,13 @@ public abstract class Verificator {
     }
 
     public Map<String, Map<String, Boolean>> verifyAll(CubicPieceType type) {
-        Map<String, Map<String, Boolean>> fullSolutionMap = new HashMap<>();
+        Map<String, Map<String, Boolean>> fullSolutionMap = new HashMap<String, Map<String, Boolean>>();
         for (String possPair : fullLetterPairs) fullSolutionMap.put(possPair, this.verifySingleCase(type, possPair));
         return fullSolutionMap;
     }
 
     public Map<String, Boolean> verifySingleCase(CubicPieceType type, String letterPair) {
-        Map<String, Boolean> solutionMap = new HashMap<>();
+        Map<String, Boolean> solutionMap = new HashMap<String, Boolean>();
         List<String> algStringList = this.getAlgStrings(type, letterPair);
         if (algStringList != null)
             for (String alg : algStringList)
@@ -38,9 +37,9 @@ public abstract class Verificator {
     }
 
     public Map<String, List<String>> findMatchingSubGroup(CubicPieceType type, SubGroup group) {
-        Map<String, List<String>> sameGroupMap = new HashMap<>();
+        Map<String, List<String>> sameGroupMap = new HashMap<String, List<String>>();
         for (String possPair : fullLetterPairs) {
-            sameGroupMap.put(possPair, new ArrayList<>());
+            sameGroupMap.put(possPair, new ArrayList<String>());
             List<String> algStringList = this.getAlgStrings(type, possPair);
             if (algStringList != null)
                 for (String alg : algStringList)
@@ -51,9 +50,9 @@ public abstract class Verificator {
     }
 
     public Map<String, List<String>> checkParseable(CubicPieceType type) {
-        Map<String, List<String>> unparseableMap = new HashMap<>();
+        Map<String, List<String>> unparseableMap = new HashMap<String, List<String>>();
         for (String possPair : fullLetterPairs) {
-            unparseableMap.put(possPair, new ArrayList<>());
+            unparseableMap.put(possPair, new ArrayList<String>());
             List<String> algStringList = this.getAlgStrings(type, possPair);
             if (algStringList != null)
                 for (String alg : algStringList)

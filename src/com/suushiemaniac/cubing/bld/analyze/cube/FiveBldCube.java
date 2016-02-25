@@ -64,7 +64,7 @@ public class FiveBldCube extends FourBldCube {
     protected boolean[] scrambledStateSolvedTCenters = {true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true};
     protected int[] scrambledStateTCenters = new int[24];
     protected int tCenterCycleNum = 0;
-    protected ArrayList<Integer> tCenterCycles = new ArrayList<>();
+    protected ArrayList<Integer> tCenterCycles = new ArrayList<Integer>();
 
     private boolean avoidTBreakIns = true;
 
@@ -194,7 +194,7 @@ public class FiveBldCube extends FourBldCube {
         };
         for (int i = 0; i < faceNames.length; i++) {
             HashMap<PieceType, Integer[]> tempMap = permutations.get(faceNames[i]);
-            if (tempMap == null) tempMap = new HashMap<>();
+            if (tempMap == null) tempMap = new HashMap<PieceType, Integer[]>();
             tempMap.put(CORNER, cornerFacePerms[i]);
             tempMap.put(EDGE, edgeFacePerms[i]);
             tempMap.put(WING, wingFacePerms[i]);
@@ -342,7 +342,7 @@ public class FiveBldCube extends FourBldCube {
         };
         for (int i = 0; i < faceNames.length; i++) {
             HashMap<PieceType, Integer[]> tempMap = permutations.get(faceNames[i]);
-            if (tempMap == null) tempMap = new HashMap<>();
+            if (tempMap == null) tempMap = new HashMap<PieceType, Integer[]>();
             tempMap.put(TCENTER, tCenterFacePerms[i]);
             permutations.put(faceNames[i], tempMap);
         }
@@ -612,21 +612,14 @@ public class FiveBldCube extends FourBldCube {
     }
 
     public void setScheme(String type, String[] scheme) {
-        switch (type.toLowerCase()) {
-            case "tcenter":
-                this.setTCenterScheme(scheme);
-                break;
-            default:
-                super.setScheme(type, scheme);
-        }
+        String s = type.toLowerCase();
+        if (s.equals("tcenter")) this.setTCenterScheme(scheme);
+        else super.setScheme(type, scheme);
     }
 
     public String[] getScheme(String type) {
-        switch (type.toLowerCase()) {
-            case "tcenter":
-                return this.tCenterLettering;
-            default:
-                return super.getScheme(type);
-        }
+        String s = type.toLowerCase();
+        if (s.equals("tcenter")) return this.tCenterLettering;
+        return super.getScheme(type);
     }
 }

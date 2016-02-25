@@ -1,5 +1,6 @@
 package com.suushiemaniac.cubing.bld.database;
 
+import com.suushiemaniac.cubing.alglib.util.StringUtils;
 import com.suushiemaniac.cubing.bld.analyze.cube.FiveBldCube;
 import com.suushiemaniac.cubing.bld.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
@@ -74,7 +75,7 @@ public class CubeH2 {
         PreparedStatement stat;
         for (String type : this.getSchemeTypesArray()) {
             String[] scheme = this.refCube.getScheme(type);
-            String joinedScheme = String.join(",", scheme);
+            String joinedScheme = StringUtils.join(",", scheme);
             String typeColumn = type.equals("color") ? "color" : "letter";
             stat = conn.prepareStatement("delete from " + type + "scheme");
             stat.execute();
@@ -119,7 +120,7 @@ public class CubeH2 {
         PreparedStatement stat = conn.prepareStatement("select distinct alg from " + table + "s where letterpair=?");
         stat.setString(1, speffz);
         ResultSet search = stat.executeQuery();
-        ArrayList<String> temp = new ArrayList<>();
+        ArrayList<String> temp = new ArrayList<String>();
         while (search.next()) temp.add(search.getString("alg"));
         return temp;
     }

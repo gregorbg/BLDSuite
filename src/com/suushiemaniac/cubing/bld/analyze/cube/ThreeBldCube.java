@@ -39,11 +39,12 @@ public class ThreeBldCube extends TwoBldCube {
     }
 
     public static boolean isCenterSensitive(String alg) {
-        HashMap<String, Integer> rotMap = new HashMap<>();
+        HashMap<String, Integer> rotMap = new HashMap<String, Integer>();
         for (String move : alg.split("\\s")) {
             String pureMove = move;
             while (pureMove.endsWith("2") || pureMove.endsWith("'")) pureMove = pureMove.substring(0, pureMove.length() - 1);
-            Integer faceInt = rotMap.getOrDefault(pureMove, 0);
+            Integer faceInt = rotMap.get(pureMove);
+            if (faceInt == null) faceInt = 0;
             faceInt += move.endsWith("2") ? 2 : move.endsWith("'") ? -1 : 1;
             rotMap.put(pureMove, faceInt);
         }
@@ -70,8 +71,8 @@ public class ThreeBldCube extends TwoBldCube {
     protected boolean[] scrambledStateSolvedEdges = {false, false, false, false, false, false, false, false, false, false, false, false};
     protected int[] scrambledStateEdges = new int[24];
     protected int edgeCycleNum = 0;
-    protected ArrayList<Integer> edgeCycles = new ArrayList<>();
-    protected ArrayList<Integer> flippedEdges = new ArrayList<>();
+    protected ArrayList<Integer> edgeCycles = new ArrayList<Integer>();
+    protected ArrayList<Integer> flippedEdges = new ArrayList<Integer>();
 
     protected CornerParityMethod cornerParityMethod = CornerParityMethod.SWAP_UB_UL;
 
@@ -135,7 +136,7 @@ public class ThreeBldCube extends TwoBldCube {
         };
         for (int i = 0; i < faceNames.length; i++) {
             HashMap<PieceType, Integer[]> tempMap = permutations.get(faceNames[i]);
-            if (tempMap == null) tempMap = new HashMap<>();
+            if (tempMap == null) tempMap = new HashMap<PieceType, Integer[]>();
             tempMap.put(CORNER, cornerFacePerms[i]);
             permutations.put(faceNames[i], tempMap);
         }
@@ -286,7 +287,7 @@ public class ThreeBldCube extends TwoBldCube {
         };
         for (int i = 0; i < faceNames.length; i++) {
             HashMap<PieceType, Integer[]> tempMap = permutations.get(faceNames[i]);
-            if (tempMap == null) tempMap = new HashMap<>();
+            if (tempMap == null) tempMap = new HashMap<PieceType, Integer[]>();
             tempMap.put(EDGE, edgeFacePerms[i]);
             tempMap.put(CENTER, centerFacePerms[i]);
             permutations.put(faceNames[i], tempMap);
@@ -706,21 +707,14 @@ public class ThreeBldCube extends TwoBldCube {
     }
 
     public void setScheme(String type, String[] scheme) {
-        switch (type.toLowerCase()) {
-            case "edge":
-                this.setEdgeScheme(scheme);
-                break;
-            default:
-                super.setScheme(type, scheme);
-        }
+        String s = type.toLowerCase();
+        if (s.equals("edge")) this.setEdgeScheme(scheme);
+        else super.setScheme(type, scheme);
     }
 
     public String[] getScheme(String type) {
-        switch (type.toLowerCase()) {
-            case "edge":
-                return this.edgeLettering;
-            default:
-                return super.getScheme(type);
-        }
+        String s = type.toLowerCase();
+        if (s.equals("edge")) return this.edgeLettering;
+        return super.getScheme(type);
     }
 }

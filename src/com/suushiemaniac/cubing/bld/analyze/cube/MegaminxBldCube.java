@@ -27,17 +27,17 @@ public class MegaminxBldCube extends BldCube {
     protected boolean[] scrambledStateSolvedCorners = {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false};
     protected int[] scrambledStateCorners = new int[60];
     protected int cornerCycleNum = 0;
-    protected ArrayList<Integer> cornerCycles = new ArrayList<>();
-    protected ArrayList<Integer> cwCorners = new ArrayList<>();
-    protected ArrayList<Integer> ccwCorners = new ArrayList<>();
+    protected ArrayList<Integer> cornerCycles = new ArrayList<Integer>();
+    protected ArrayList<Integer> cwCorners = new ArrayList<Integer>();
+    protected ArrayList<Integer> ccwCorners = new ArrayList<Integer>();
 
     protected Integer[][] edgeCubies = {{BU, CA}, {BA, HA}, {BE, GA}, {BI, FA}, {BO, DA}, {CE, DU}, {CI, KA}, {CO, JE}, {CU, HE}, {DE, FU}, {DI, LA}, {DO, KE}, {FE, GU}, {FI, MA}, {FO, LE}, {GE, HU}, {GI, NA}, {GO, ME}, {HI, JA}, {HO, NE}, {JI, KU}, {JO, PU}, {JU, NI}, {KI, LU}, {KO, PA}, {LI, MU}, {LO, PE}, {MI, NU}, {MO, PI}, {NO, PO}};
     protected boolean[] solvedEdges = {true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true};
     protected boolean[] scrambledStateSolvedEdges = {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false};
     protected int[] scrambledStateEdges = new int[60];
     protected int edgeCycleNum = 0;
-    protected ArrayList<Integer> edgeCycles = new ArrayList<>();
-    protected ArrayList<Integer> flippedEdges = new ArrayList<>();
+    protected ArrayList<Integer> edgeCycles = new ArrayList<Integer>();
+    protected ArrayList<Integer> flippedEdges = new ArrayList<Integer>();
 
     protected int[] centerCubies = {UP, UPLEFT, FRONT, UPRIGHT, UPBACKRIGHT, UPBACKLEFT, DOWNBACKLEFT, DOWNLEFT, DOWNRIGHT, DOWNBACKRIGHT, BACK, DOWN};
     protected int[] scrambledStateCenters = new int[12];
@@ -173,7 +173,7 @@ public class MegaminxBldCube extends BldCube {
         };
         for (int i = 0; i < faceNames.length; i++) {
             HashMap<PieceType, Integer[]> tempMap = permutations.get(faceNames[i]);
-            if (tempMap == null) tempMap = new HashMap<>();
+            if (tempMap == null) tempMap = new HashMap<PieceType, Integer[]>();
             tempMap.put(CORNER, cornerFacePerms[i]);
             tempMap.put(EDGE, edgeFacePerms[i]);
             tempMap.put(CENTER, centerFacePerms[i]);
@@ -589,7 +589,7 @@ public class MegaminxBldCube extends BldCube {
     }
 
     protected List<Integer> getFullTwistedCorners() {
-        List<Integer> full = new ArrayList<>();
+        List<Integer> full = new ArrayList<Integer>();
         full.addAll(this.cwCorners);
         full.addAll(this.ccwCorners);
         return full;

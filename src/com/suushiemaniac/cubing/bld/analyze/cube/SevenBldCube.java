@@ -1,6 +1,5 @@
 package com.suushiemaniac.cubing.bld.analyze.cube;
 
-import com.suushiemaniac.cubing.bld.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.enumeration.PieceType;
 
 import java.util.ArrayList;
@@ -19,7 +18,7 @@ public class SevenBldCube extends SixBldCube {
     protected boolean[] scrambledStateSolvedInnerTCenters = {true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true};
     protected int[] scrambledStateInnerTCenters = new int[24];
     protected int innerTCenterCycleNum = 0;
-    protected ArrayList<Integer> innerTCenterCycles = new ArrayList<>();
+    protected ArrayList<Integer> innerTCenterCycles = new ArrayList<Integer>();
 
     private boolean avoidInnerTBreakIns = true;
 
@@ -243,7 +242,7 @@ public class SevenBldCube extends SixBldCube {
         };
         for (int i = 0; i < faceNames.length; i++) {
             HashMap<PieceType, Integer[]> tempMap = permutations.get(faceNames[i]);
-            if (tempMap == null) tempMap = new HashMap<>();
+            if (tempMap == null) tempMap = new HashMap<PieceType, Integer[]>();
             tempMap.put(CORNER, cornerFacePerms[i]);
             tempMap.put(EDGE, edgeFacePerms[i]);
             tempMap.put(WING, wingFacePerms[i]);
@@ -448,7 +447,7 @@ public class SevenBldCube extends SixBldCube {
         };
         for (int i = 0; i < faceNames.length; i++) {
             HashMap<PieceType, Integer[]> tempMap = permutations.get(faceNames[i]);
-            if (tempMap == null) tempMap = new HashMap<>();
+            if (tempMap == null) tempMap = new HashMap<PieceType, Integer[]>();
             tempMap.put(INNERTCENTER, innerTCenterFacePerms[i]);
             permutations.put(faceNames[i], tempMap);
         }

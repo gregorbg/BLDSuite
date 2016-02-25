@@ -21,8 +21,11 @@ public abstract class BldAlgSheet {
     }
 
     protected Workbook getWorkbook() {
-        try (FileInputStream fis = new FileInputStream(this.excelFile)) {
-            return new XSSFWorkbook(fis);
+        try {
+            FileInputStream fis = new FileInputStream(this.excelFile);
+            Workbook wb = new XSSFWorkbook(fis);
+            fis.close();
+            return wb;
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -30,8 +33,10 @@ public abstract class BldAlgSheet {
     }
 
     protected void writeWorkbook(Workbook workbook) {
-        try (FileOutputStream fos = new FileOutputStream(excelFile)) {
+        try {
+            FileOutputStream fos = new FileOutputStream(excelFile);
             workbook.write(fos);
+            fos.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
