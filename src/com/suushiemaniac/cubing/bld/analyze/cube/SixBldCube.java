@@ -1494,8 +1494,8 @@ public class SixBldCube extends FiveBldCube {
         return "C:" + this.getCornerNoahtation() + " / W:" + this.getWingNoahtation() + " / iW:" + this.getInnerWingNoahtation() + " / X:" + this.getXCenterNoahtation() + " / iX:" + this.getInnerXCenterNoahtation() + " / RO:" + this.getRightObliqueNoahtation() + " / LO:" + this.getLeftObliqueNoahtation();
     }
 
-    public String getStatString(boolean spaced) {
-        return "C: " + this.getCornerStatString(spaced) + " | W: " + this.getWingStatString(spaced) + " | iW: " + this.getInnerWingStatString(spaced) + " | X: " + this.getXCenterStatString(spaced) + " | iX: " + this.getInnerXCenterStatString(spaced) + " | RO: " + this.getRightObliqueStatString(spaced) + " | LO: " + this.getLeftObliqueStatString(spaced);
+    public String getStatString(boolean spaced, boolean newLine) {
+        return "C: " + this.getCornerStatString(spaced) + (newLine ? "\n" : " | ") + "W: " + this.getWingStatString(spaced) + (newLine ? "\n" : " | ") + "iW: " + this.getInnerWingStatString(spaced) + (newLine ? "\n" : " | ") + "X: " + this.getXCenterStatString(spaced) + (newLine ? "\n" : " | ") + "iX: " + this.getInnerXCenterStatString(spaced) + (newLine ? "\n" : " | ") + "RO: " + this.getRightObliqueStatString(spaced) + (newLine ? "\n" : " | ") + "LO: " + this.getLeftObliqueStatString(spaced);
     }
 
     public String getInnerWingStatString(boolean spaced) {

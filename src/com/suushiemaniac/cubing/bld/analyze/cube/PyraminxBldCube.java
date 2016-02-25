@@ -477,8 +477,8 @@ public class PyraminxBldCube extends BldCube {
         return "E:" + this.getEdgeNoahtation() + " / Ce:" + this.getCenterNoahtation() + " / Tp:" + this.getTipNoahtation();
     }
 
-    public String getStatString(boolean spaced) {
-        return "E: " + this.getEdgeStatString(spaced) + " | Ce: " + this.getCenterStatString(spaced) + " | Tp: " + this.getTipStatString(spaced);
+    public String getStatString(boolean spaced, boolean newLine) {
+        return "E: " + this.getEdgeStatString(spaced) + (newLine ? "\n" : " | ") + "Ce: " + this.getCenterStatString(spaced) + (newLine ? "\n" : " | ") + "Tp: " + this.getTipStatString(spaced);
     }
 
     public String getEdgeStatString(boolean spaced) {

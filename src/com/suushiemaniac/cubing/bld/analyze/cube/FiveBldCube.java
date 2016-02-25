@@ -536,8 +536,8 @@ public class FiveBldCube extends FourBldCube {
         return "C:" + this.getCornerNoahtation() + " / E:" + this.getEdgeNoahtation() + " / W:" + this.getWingNoahtation() + " / X:" + this.getXCenterNoahtation() + " / T:" + this.getTCenterNoahtation();
     }
 
-    public String getStatString(boolean spaced) {
-        return "C: " + this.getCornerStatString(spaced) + " | E: " + this.getEdgeStatString(spaced) + " | W: " + this.getWingStatString(spaced) + " | X: " + this.getXCenterStatString(spaced) + " | T: " + this.getTCenterStatString(spaced);
+    public String getStatString(boolean spaced, boolean newLine) {
+        return "C: " + this.getCornerStatString(spaced) + (newLine ? "\n" : " | ") + "E: " + this.getEdgeStatString(spaced) + (newLine ? "\n" : " | ") + "W: " + this.getWingStatString(spaced) + (newLine ? "\n" : " | ") + "X: " + this.getXCenterStatString(spaced) + (newLine ? "\n" : " | ") + "T: " + this.getTCenterStatString(spaced);
     }
 
     public String getTCenterStatString(boolean spaced) {

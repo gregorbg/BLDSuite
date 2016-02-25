@@ -730,8 +730,8 @@ public class FourBldCube extends ThreeBldCube {
     }
 
     @Override
-    public String getStatString(boolean spaced) {
-        return "C: " + this.getCornerStatString(spaced) + " | W: " + this.getWingStatString(spaced) + " | X: " + this.getXCenterStatString(spaced);
+    public String getStatString(boolean spaced, boolean newLine) {
+        return "C: " + this.getCornerStatString(spaced) + (newLine ? "\n" : " | ") + "W: " + this.getWingStatString(spaced) + (newLine ? "\n" : " | ") + "X: " + this.getXCenterStatString(spaced);
     }
 
     public String getWingStatString(boolean spaced) {
