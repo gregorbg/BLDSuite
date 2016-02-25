@@ -3,6 +3,7 @@ package com.suushiemaniac.cubing.bld.verify;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.database.CubeH2;
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 
 import java.sql.SQLException;
 import java.util.Collections;
@@ -17,7 +18,7 @@ public class DatabaseVerificator extends Verificator {
     }
 
     @Override
-    protected List<String> getAlgStrings(CubicPieceType type, String letterPair) {
+    protected List<String> getAlgStrings(PieceType type, String letterPair) {
         try {
             return this.databaseToCheck.readAlgorithm(letterPair, type);
         } catch (SQLException e) {

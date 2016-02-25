@@ -475,6 +475,11 @@ public class MegaminxBldCube extends BldCube {
         return "C: " + this.getCornerStatString(spaced) + (newLine ? "\n" : " | ") + "E: " + this.getEdgeStatString(spaced);
     }
 
+    @Override
+    public String getPuzzleString() {
+        return "minx";
+    }
+
     public String getCornerStatString(boolean spaced) {
         String cornerStat = this.hasCornerParity() ? "_" : " ";
         cornerStat += this.getCornerLength();

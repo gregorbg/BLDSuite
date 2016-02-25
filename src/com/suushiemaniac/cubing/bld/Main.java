@@ -1,6 +1,7 @@
 package com.suushiemaniac.cubing.bld;
 
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
+import com.suushiemaniac.cubing.alglib.util.ParseUtils;
 import com.suushiemaniac.cubing.bld.algsheet.BldAlgSheet;
 import com.suushiemaniac.cubing.bld.algsheet.GregorBldExcel;
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
@@ -15,7 +16,8 @@ import java.util.Map;
 public class Main {
     public static void main(String[] args) {
         //new ThreeMassAnalyzer().analyzeScrambleDist(10000);
-        ThreeBldScramble.fromStatString("C:  8  #  | E: 12  #").findScrambleThreadModel(12, 5);
+        //ThreeBldScramble.fromStatString("C:  8  #  | E: 12  #").findScrambleThreadModel(12, 5);
+        System.out.println(ParseUtils.getReaderForPuzzle("333"));
     }
 
     public static void checkAndPrintParseableSolveable() {
