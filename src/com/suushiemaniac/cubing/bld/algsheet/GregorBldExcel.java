@@ -1,6 +1,7 @@
 package com.suushiemaniac.cubing.bld.algsheet;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
+import com.suushiemaniac.cubing.alglib.exception.InvalidNotationException;
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.exception.InvalidExcelMapSizeError;

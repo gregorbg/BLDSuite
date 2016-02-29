@@ -4,64 +4,64 @@ import com.suushiemaniac.cubing.alglib.alg.SubGroup;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.alglib.util.ParseUtils;
 import com.suushiemaniac.cubing.bld.analyze.cube.FiveBldCube;
+import com.suushiemaniac.cubing.bld.model.AlgSource;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
-import com.suushiemaniac.cubing.bld.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class Verificator {
+public class Verificator {
     protected static String[] fullLetterPairs = BruteForceUtil.genBlockString(BruteForceUtil.ALPHABET, 2, false);
 
-    private NotationReader parser;
+    private NotationReader reader;
+    private AlgSource source;
 
-    protected Verificator(NotationReader parser) {
-        this.parser = parser;
+    public Verificator(NotationReader reader, AlgSource source) {
+        this.reader = reader;
+        this.source = source;
     }
 
     public Map<String, Map<String, Boolean>> verifyAll(PieceType type) {
-        Map<String, Map<String, Boolean>> fullSolutionMap = new HashMap<String, Map<String, Boolean>>();
+        Map<String, Map<String, Boolean>> fullSolutionMap = new HashMap<>();
         for (String possPair : fullLetterPairs) fullSolutionMap.put(possPair, this.verifySingleCase(type, possPair));
         return fullSolutionMap;
     }
 
     public Map<String, Boolean> verifySingleCase(PieceType type, String letterPair) {
-        Map<String, Boolean> solutionMap = new HashMap<String, Boolean>();
-        List<String> algStringList = this.getAlgStrings(type, letterPair);
+        Map<String, Boolean> solutionMap = new HashMap<>();
+        List<String> algStringList = this.source.getRawAlg(type, letterPair);
         if (algStringList != null)
             for (String alg : algStringList)
-                solutionMap.put(alg, ParseUtils.isParseable(alg, this.parser) && FiveBldCube.solves(type, this.parser.parse(alg).plain().toFormatString(), letterPair));
+                solutionMap.put(alg, ParseUtils.isParseable(alg, this.reader) && FiveBldCube.solves(type, this.reader.parse(alg).plain().toFormatString(), letterPair));
         return solutionMap;
     }
 
     public Map<String, List<String>> findMatchingSubGroup(PieceType type, SubGroup group) {
-        Map<String, List<String>> sameGroupMap = new HashMap<String, List<String>>();
+        Map<String, List<String>> sameGroupMap = new HashMap<>();
         for (String possPair : fullLetterPairs) {
             sameGroupMap.put(possPair, new ArrayList<>());
-            List<String> algStringList = this.getAlgStrings(type, possPair);
+            List<String> algStringList = this.source.getRawAlg(type, possPair);
             if (algStringList != null)
                 for (String alg : algStringList)
-                    if (ParseUtils.isParseable(alg, this.parser) && this.parser.parse(alg).getSubGroup().sameOrLargerSubGroup(group))
+                    if (ParseUtils.isParseable(alg, this.reader) && this.reader.parse(alg).getSubGroup().sameOrLargerSubGroup(group))
                         sameGroupMap.get(possPair).add(alg);
         }
         return sameGroupMap;
     }
 
     public Map<String, List<String>> checkParseable(PieceType type) {
-        Map<String, List<String>> unparseableMap = new HashMap<String, List<String>>();
+        Map<String, List<String>> unparseableMap = new HashMap<>();
         for (String possPair : fullLetterPairs) {
             unparseableMap.put(possPair, new ArrayList<>());
-            List<String> algStringList = this.getAlgStrings(type, possPair);
+            List<String> algStringList = this.source.getRawAlg(type, possPair);
             if (algStringList != null)
                 for (String alg : algStringList)
-                    if (!ParseUtils.isParseable(alg, this.parser))
+                    if (!ParseUtils.isParseable(alg, this.reader))
                         unparseableMap.get(possPair).add(alg);
         }
         return unparseableMap;
     }
-
-    protected abstract List<String> getAlgStrings(PieceType type, String letterPair);
 }

@@ -24,7 +24,8 @@ public class BreakInOptim {
         }
         Collections.sort(algList, (o1, o2) -> o1.getSubGroup().toFormatString().compareTo(o2.getSubGroup().toFormatString()));
         Collections.sort(algList, (o1, o2) -> Integer.compare(o1.getSubGroup().size(), o2.getSubGroup().size()));
-        Collections.sort(algList, (o1, o2) -> Integer.compare(o1.length(), o2.length()));
+        Collections.sort(algList, (o1, o2) -> Integer.compare(o1.algLength(), o2.algLength()));
+        Collections.sort(algList, (o1, o2) -> Integer.compare(o1.moveLength(), o2.moveLength()));
         return algList;
     }
 }
