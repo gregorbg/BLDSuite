@@ -56,6 +56,18 @@ public class IntCondition {
         return this.min <= compareTo && compareTo <= this.max;
     }
 
+    public boolean isPrecise() {
+        return this.min == this.max;
+    }
+
+    public int getInterval() {
+        return this.max - this.min;
+    }
+
+    public float getAverage() {
+        return (this.min + this.max) / 2.f;
+    }
+
     public void setMax(int max) {
         this.max = max;
         if (this.min > max) this.min = max;

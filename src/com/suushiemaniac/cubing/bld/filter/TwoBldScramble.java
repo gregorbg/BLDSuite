@@ -46,6 +46,27 @@ public class TwoBldScramble extends BldScramble {
         if (this.cornerTargets.getMin() == this.cornerTargets.getMax()) hasCornerParity.setValue(this.cornerTargets.getMax() % 2 == 1);
         this.hasCornerParity = hasCornerParity;
     }
+    
+    public void setSolvedTwistedCorners(IntCondition solvedCorners, IntCondition twistedCorners) {
+        int leftOverMin = Math.max(0, 7 + this.cornerBreakIns.getMax() - this.cornerTargets.getMax());
+        int sumMin = solvedCorners.getMin() + twistedCorners.getMin();
+        int sumMax = solvedCorners.getMax() + twistedCorners.getMax();
+
+        if (sumMin > leftOverMin) {
+            if (solvedCorners.isPrecise() || !twistedCorners.isPrecise())
+                twistedCorners.setMin(twistedCorners.getMin() - sumMin + leftOverMin);
+            if (twistedCorners.isPrecise() || !solvedCorners.isPrecise())
+                solvedCorners.setMin(solvedCorners.getMin() - sumMin + leftOverMin);
+        } else if (sumMax < leftOverMin) {
+            if (solvedCorners.isPrecise() || !twistedCorners.isPrecise())
+                twistedCorners.setMax(twistedCorners.getMax() + leftOverMin - sumMax);
+            if (twistedCorners.isPrecise() || !solvedCorners.isPrecise())
+                solvedCorners.setMax(twistedCorners.getMax() + leftOverMin - sumMax);
+        }
+
+        this.solvedCorners = solvedCorners;
+        this.twistedCorners = twistedCorners;
+    }
 
     protected void setSolvedCorners(IntCondition solvedCorners, boolean balanceAfter) {
         solvedCorners.capMin(Math.max(0, 7 + this.cornerBreakIns.getMax() - this.cornerTargets.getMax()));

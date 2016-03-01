@@ -36,9 +36,7 @@ public class FiveBldScramble extends FourBldScramble {
         this.setEdgeTargets(edgeTargets);
         this.setEdgeBreakIns(edgeBreakIns);
         this.setEdgeSingleCycle();
-        this.setSolvedEdges(solvedEdges, false);
-        this.setFlippedEdges(flippedEdges, false);
-        this.balanceLeftOverEdges();
+        this.setSolvedFlippedEdges(solvedEdges, flippedEdges);
         this.setTCenterTargets(tCenterTargets);
         this.setTCenterBreakIns(tCenterBreakIns);
         this.setTCenterSingleCycle();

@@ -4,6 +4,7 @@ import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.bld.algsheet.BldAlgSheet;
 import com.suushiemaniac.cubing.bld.algsheet.GregorBldExcel;
+import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
 import com.suushiemaniac.cubing.bld.analyze.cube.ThreeBldCube;
 import com.suushiemaniac.cubing.bld.filter.ThreeBldScramble;
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
@@ -19,12 +20,18 @@ public class Main {
     public static void main(String[] args) {
         //ThreeBldScramble.fromStatString("C:  4  # ~ +++ | E: 14  ###").findScrambleThreadModel(1, 12);
         //new ThreeMassAnalyzer().analyzeScrambleDist(10000);
-        System.out.println(ThreeBldScramble.levelScramble(2).findScrambleOnThread());
         //ThreeBldScramble.fromStatString("C:  8  #  | E: 12  #").findScrambleThreadModel(12, 5);
         //optimizeBreakIns();
         //evaluateOPAlgs();
         //developAndPrintComm(CubicPieceType.CORNER, "TX");
         //threeBldTraining(12);
+        for (int i = 1; i < 11; i++) {
+            String scr = ThreeBldScramble.levelScramble(i).findScrambleOnThread();
+            BldCube cube = new ThreeBldCube(scr);
+            System.out.println(scr);
+            System.out.println(cube.getStatString());
+            System.out.println();
+        }
     }
 
     public static void threeBldTraining(int num) {

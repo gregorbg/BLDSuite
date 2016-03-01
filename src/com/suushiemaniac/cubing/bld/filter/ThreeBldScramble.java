@@ -92,7 +92,7 @@ public class ThreeBldScramble extends TwoBldScramble {
     }
 
     public static ThreeBldScramble fromStatString(String statString) {
-        Pattern statPattern = Pattern.compile("C:(_?)(0|[1-9][0-9]*)\\*?(#*)(~*)(\\+*)\\|E:(0|[1-9][1-9]*)\\*?(#*)(~*)(\\+*)");
+        Pattern statPattern = Pattern.compile("C:(_?)(0|[1-9][0-9]*)\\*?(#*)(~*)(\\+*)\\|E:(0|[1-9][0-9]*)\\*?(#*)(~*)(\\+*)");
         Matcher statMatcher = statPattern.matcher(statString.replaceAll("\\s", ""));
         if (statMatcher.find()) {
             boolean hasParity = statMatcher.group(1).length() > 0;
@@ -136,9 +136,7 @@ public class ThreeBldScramble extends TwoBldScramble {
         this.setEdgeTargets(edgeTargets);
         this.setEdgeBreakIns(edgeBreakIns);
         this.setEdgeSingleCycle();
-        this.setSolvedEdges(solvedEdges, false);
-        this.setFlippedEdges(flippedEdges, false);
-        this.balanceLeftOverEdges();
+        this.setSolvedFlippedEdges(solvedEdges, flippedEdges);
     }
 
     public void setEdgeTargets(IntCondition edgeTargets) {
@@ -163,36 +161,21 @@ public class ThreeBldScramble extends TwoBldScramble {
         this.edgeSingleCycle = edgeBreakIns.getMax() == 0 ? YES() : edgeBreakIns.getMin() == 0 ? UNIMPORTANT() : NO();
     }
 
-    protected void setSolvedEdges(IntCondition solvedEdges, boolean balaceAfter) {
-        solvedEdges.capMin(Math.max(0, 11 + this.edgeBreakIns.getMax() - this.edgeTargets.getMax()));
-        solvedEdges.capMax(Math.max(0, 11 + this.edgeBreakIns.getMin() - this.edgeTargets.getMin()));
-        this.solvedEdges = solvedEdges;
-        if (balaceAfter) this.balanceLeftOverEdges();
-    }
-
-    public void setSolvedEdges(IntCondition solvedEdges) {
-        this.setSolvedEdges(solvedEdges, true);
-    }
-
-    protected void setFlippedEdges(IntCondition flippedEdges, boolean balanceAfter) {
-        flippedEdges.capMin(Math.max(0, 11 + edgeBreakIns.getMax() - this.edgeTargets.getMax()));
-        flippedEdges.capMax(Math.max(0, 11 + edgeBreakIns.getMin() - this.edgeTargets.getMin()));
-        this.flippedEdges = flippedEdges;
-        if (balanceAfter) this.balanceLeftOverEdges();
-    }
-
-    public void setFlippedEdges(IntCondition flippedEdges) {
-        this.setFlippedEdges(flippedEdges, true);
-    }
-
-    protected void balanceLeftOverEdges() {
+    public void setSolvedFlippedEdges(IntCondition solvedEdges, IntCondition flippedEdges) {
         int leftOverMin = Math.max(0, 11 + this.edgeBreakIns.getMax() - this.edgeTargets.getMax());
-        int pieceMinSum = this.flippedEdges.getMin() + this.solvedEdges.getMin();
-        while (pieceMinSum > leftOverMin) {
-            this.flippedEdges.setMin(Math.max(0, this.flippedEdges.getMin() - pieceMinSum + leftOverMin));
-            this.solvedEdges.setMin(Math.max(0, this.solvedEdges.getMin() - pieceMinSum + leftOverMin));
-            pieceMinSum = this.flippedEdges.getMin() + this.solvedEdges.getMin();
+        int sumMin = solvedEdges.getMin() + flippedEdges.getMin();
+        int sumMax = solvedEdges.getMax() + flippedEdges.getMax();
+
+        if (sumMin > leftOverMin) {
+            if (solvedEdges.isPrecise() || !flippedEdges.isPrecise()) flippedEdges.setMin(flippedEdges.getMin() - sumMin + leftOverMin);
+            if (flippedEdges.isPrecise() || !solvedEdges.isPrecise()) solvedEdges.setMin(solvedEdges.getMin() - sumMin + leftOverMin);
+        } else if (sumMax < leftOverMin) {
+            if (solvedEdges.isPrecise() || !flippedEdges.isPrecise()) flippedEdges.setMax(flippedEdges.getMax() + leftOverMin - sumMax);
+            if (flippedEdges.isPrecise() || !solvedEdges.isPrecise()) solvedEdges.setMax(flippedEdges.getMax() + leftOverMin - sumMax);
         }
+
+        this.solvedEdges = solvedEdges;
+        this.flippedEdges = flippedEdges;
     }
 
     public static ThreeBldScramble cloneFrom(String scramble, boolean strict) {
