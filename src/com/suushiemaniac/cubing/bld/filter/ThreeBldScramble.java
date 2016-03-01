@@ -54,6 +54,34 @@ public class ThreeBldScramble extends TwoBldScramble {
         );
     }
 
+    public static ThreeBldScramble mostCommonEdge() {
+        return new ThreeBldScramble(
+                ANY(),
+                ANY(),
+                UNIMPORTANT(),
+                ANY(),
+                ANY(),
+                EXACT(12),
+                EXACT(1),
+                EXACT(0),
+                EXACT(0)
+        );
+    }
+
+    public static ThreeBldScramble mostCommonCorner() {
+        return new ThreeBldScramble(
+                EXACT(8),
+                EXACT(1),
+                NO(),
+                EXACT(0),
+                EXACT(0),
+                ANY(),
+                ANY(),
+                ANY(),
+                ANY()
+        );
+    }
+
     public static ThreeBldScramble fromStatString(String statString) {
         Pattern statPattern = Pattern.compile("C:(_?)(0|[1-9][0-9]*)\\*?(#*)(~*)(\\+*)\\|E:(0|[1-9][1-9]*)\\*?(#*)(~*)(\\+*)");
         Matcher statMatcher = statPattern.matcher(statString.replaceAll("\\s", ""));
@@ -102,7 +130,6 @@ public class ThreeBldScramble extends TwoBldScramble {
         this.setSolvedEdges(solvedEdges, false);
         this.setFlippedEdges(flippedEdges, false);
         this.balanceLeftOverEdges();
-        this.bldAnalyzerCube = new ThreeBldCube("");
     }
 
     public void setEdgeTargets(IntCondition edgeTargets) {
@@ -194,5 +221,10 @@ public class ThreeBldScramble extends TwoBldScramble {
     @Override
     protected Puzzle getScramblingPuzzle() {
         return new NoInspectionThreeByThreeCubePuzzle();
+    }
+
+    @Override
+    protected BldCube getAnalyzingPuzzle() {
+        return new ThreeBldCube("");
     }
 }

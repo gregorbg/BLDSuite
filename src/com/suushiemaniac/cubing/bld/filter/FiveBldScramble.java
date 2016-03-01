@@ -6,7 +6,6 @@ import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.NoInspectionFiveByFiveCubePuzzle;
 
 import static com.suushiemaniac.cubing.bld.filter.BooleanCondition.*;
-import static com.suushiemaniac.cubing.bld.filter.IntCondition.*;
 
 public class FiveBldScramble extends FourBldScramble {
     protected BooleanCondition hasTCenterParity, tCenterSingleCycle;
@@ -45,7 +44,6 @@ public class FiveBldScramble extends FourBldScramble {
         this.setTCenterSingleCycle();
         this.setTCenterParity(hasTCenterParity);
         this.setSolvedTCenters(solvedTCenters);
-        this.bldAnalyzerCube = new FiveBldCube("");
     }
 
     public void setTCenterTargets(IntCondition tCenterTargets) {
@@ -111,5 +109,10 @@ public class FiveBldScramble extends FourBldScramble {
     @Override
     protected Puzzle getScramblingPuzzle() {
         return new NoInspectionFiveByFiveCubePuzzle();
+    }
+
+    @Override
+    protected BldCube getAnalyzingPuzzle() {
+        return new FiveBldCube("");
     }
 }

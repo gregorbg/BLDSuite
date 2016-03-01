@@ -36,7 +36,6 @@ public class FourBldScramble extends ThreeBldScramble {
         this.setXCenterSingleCycle();
         this.setXCenterParity(hasXCenterParity);
         this.setSolvedXCenters(solvedXCenters);
-        this.bldAnalyzerCube = new FourBldCube("");
     }
 
     public void setWingTargets(IntCondition wingTargets) {
@@ -119,5 +118,10 @@ public class FourBldScramble extends ThreeBldScramble {
     @Override
     protected Puzzle getScramblingPuzzle() {
         return new NoInspectionFourByFourCubePuzzle();
+    }
+
+    @Override
+    protected BldCube getAnalyzingPuzzle() {
+        return new FourBldCube("");
     }
 }

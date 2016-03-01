@@ -5,7 +5,10 @@ import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.bld.algsheet.BldAlgSheet;
 import com.suushiemaniac.cubing.bld.algsheet.GregorBldExcel;
 import com.suushiemaniac.cubing.bld.analyze.cube.ThreeBldCube;
+import com.suushiemaniac.cubing.bld.analyze.stat.ThreeMassAnalyzer;
+import com.suushiemaniac.cubing.bld.filter.ThreeBldScramble;
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 import com.suushiemaniac.cubing.bld.optim.BreakInOptim;
 import com.suushiemaniac.cubing.bld.verify.Verificator;
 
@@ -15,9 +18,23 @@ import java.util.Map;
 
 public class Main {
     public static void main(String[] args) {
-        //new ThreeMassAnalyzer().analyzeScrambleDist(10000);
+        //ThreeBldScramble.fromStatString("C:  4  # ~ +++ | E: 14  ###").findScrambleThreadModel(1, 12);
+        new ThreeMassAnalyzer().analyzeScrambleDist(10000);
         //ThreeBldScramble.fromStatString("C:  8  #  | E: 12  #").findScrambleThreadModel(12, 5);
-        optimizeBreakIns();
+        //optimizeBreakIns();
+        //evaluateOPAlgs();
+        //developAndPrintComm(CubicPieceType.CORNER, "TX");
+        //threeBldTraining(12);
+    }
+
+    public static void threeBldTraining(int num) {
+        ThreeBldScramble.mostCommonScramble().findScrambleThreadModel(num, 16);
+    }
+
+    public static void evaluateOPAlgs(List<Algorithm> algList) {
+        algList.sort((o1, o2) -> Boolean.compare(o1.getSubGroup().hasRotation(), o2.getSubGroup().hasRotation()));
+        algList.sort((o1, o2) -> o1.getSubGroup().toFormatString().compareTo(o2.getSubGroup().toFormatString()));
+        algList.sort((o1, o2) -> Integer.compare(o1.getSubGroup().size(), o2.getSubGroup().size()));
     }
 
     public static void optimizeBreakIns() {
@@ -25,16 +42,21 @@ public class Main {
         BldAlgSheet g = new GregorBldExcel(excelFile);
         BreakInOptim optim = new BreakInOptim(g);
         ThreeBldCube cube = new ThreeBldCube("");
-        for (Algorithm alg : g.getAlg(CubicPieceType.CORNER, "TX")) {
-            System.out.println(alg.plain().toFormatString());
-            System.out.println(alg.inverse().plain().toFormatString());
-            System.out.println();
-        }
         for (char c = 'A'; c < 'Y'; c++) {
             for (Algorithm alg : optim.optimizeBreakInsAfter(c, CubicPieceType.CORNER)) {
                 cube.parseScramble(alg.plain().toFormatString());
                 System.out.println(alg.moveLength() + ": " + alg.toFormatString() + " : " + alg.getSubGroup().toFormatString() + " // " + new StringBuilder(cube.getCornerPairs()).reverse().toString());
             }
+            System.out.println();
+        }
+    }
+
+    public static void developAndPrintComm(PieceType type, String lp) {
+        File excelFile = new File("/home/suushie_maniac/Schreibtisch/3Style_Gregor.xlsx");
+        BldAlgSheet g = new GregorBldExcel(excelFile);
+        for (Algorithm alg : g.getAlg(type, lp)) {
+            System.out.println(alg.plain().toFormatString());
+            System.out.println(alg.inverse().plain().toFormatString());
             System.out.println();
         }
     }

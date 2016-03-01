@@ -24,7 +24,6 @@ public class TwoBldScramble extends BldScramble {
         this.setSolvedCorners(solvedCorners, false);
         this.setTwistedCorners(twistedCorners, false);
         this.balanceLeftOverCorners();
-        this.bldAnalyzerCube = new TwoBldCube("");
     }
 
     public void setCornerTargets(IntCondition cornerTargets) {
@@ -105,5 +104,10 @@ public class TwoBldScramble extends BldScramble {
     @Override
     protected Puzzle getScramblingPuzzle() {
         return new TwoByTwoCubePuzzle();
+    }
+
+    @Override
+    protected BldCube getAnalyzingPuzzle() {
+        return new TwoBldCube("");
     }
 }

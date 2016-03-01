@@ -7,12 +7,23 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 public abstract class BldScramble {
-    protected BldCube bldAnalyzerCube;
+    public String findScrambleOnThread() {
+        BldCube testCube = this.getAnalyzingPuzzle();
+        Puzzle tNoodle = this.getScramblingPuzzle();
+
+        String scramble;
+        do {
+            scramble = tNoodle.generateScramble();
+            testCube.parseScramble(scramble);
+        } while (!this.matchingConditions(testCube));
+
+        return scramble;
+    }
 
     public void findScrambleThreadModel(int numScrambles, int numThreads) {
         BlockingQueue<String> scrambleQueue = new ArrayBlockingQueue<>(50);
         ScrambleProducer producer = new ScrambleProducer(scrambleQueue);
-        ScrambleConsumer consumer = new ScrambleConsumer(numScrambles, this.bldAnalyzerCube, scrambleQueue);
+        ScrambleConsumer consumer = new ScrambleConsumer(numScrambles, scrambleQueue);
         for (int i = 0; i < numThreads; i++) {
             Thread genThread = new Thread(producer, "Producer " + (i + 1));
             genThread.setDaemon(true);
@@ -47,9 +58,9 @@ public abstract class BldScramble {
         private final BldCube testCube;
         private final BlockingQueue<String> scrambleQueue;
 
-        public ScrambleConsumer(int numScrambles, BldCube testCube, BlockingQueue<String> queue) {
+        public ScrambleConsumer(int numScrambles, BlockingQueue<String> queue) {
             this.numScrambles = numScrambles;
-            this.testCube = testCube;
+            this.testCube = BldScramble.this.getAnalyzingPuzzle();
             this.scrambleQueue = queue;
         }
 
@@ -74,6 +85,8 @@ public abstract class BldScramble {
     protected abstract <T extends BldCube> boolean matchingConditions(T inCube);
 
     protected abstract Puzzle getScramblingPuzzle();
+
+    protected abstract BldCube getAnalyzingPuzzle();
 
     protected static int getNumInStatArray(int[] stat, int pos, int offset, int scale) {
         int mem = 0;
