@@ -5,7 +5,6 @@ import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.bld.algsheet.BldAlgSheet;
 import com.suushiemaniac.cubing.bld.algsheet.GregorBldExcel;
 import com.suushiemaniac.cubing.bld.analyze.cube.ThreeBldCube;
-import com.suushiemaniac.cubing.bld.analyze.stat.ThreeMassAnalyzer;
 import com.suushiemaniac.cubing.bld.filter.ThreeBldScramble;
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
@@ -19,7 +18,8 @@ import java.util.Map;
 public class Main {
     public static void main(String[] args) {
         //ThreeBldScramble.fromStatString("C:  4  # ~ +++ | E: 14  ###").findScrambleThreadModel(1, 12);
-        new ThreeMassAnalyzer().analyzeScrambleDist(10000);
+        //new ThreeMassAnalyzer().analyzeScrambleDist(10000);
+        System.out.println(ThreeBldScramble.levelScramble(2).findScrambleOnThread());
         //ThreeBldScramble.fromStatString("C:  8  #  | E: 12  #").findScrambleThreadModel(12, 5);
         //optimizeBreakIns();
         //evaluateOPAlgs();
