@@ -83,11 +83,10 @@ public class ThreeBldScramble extends TwoBldScramble {
     }
 
     public static ThreeBldScramble levelScramble(int level) {
-        level = Math.min(10, level);
-        level = Math.max(1, level);
-        level -= 1;
-        String[] cLevel = {"8 #","_7","_7 # ~","6 ~","_9 ##","_7 # +","8 #","8 #","8 #","8 #"};
-        String[] eLevel = {"12 #", "12 #", "12 #", "12 #", "12 #", "12 #", "12 ## +", "10 ~", "10 +", "12 ## ~"};
+        level = Math.min(11, level);
+        level = Math.max(0, level);
+        String[] cLevel = {"8 #", "_7", "_7 # ~", "6 ~", "_9 ##", "_7 # +", "8 #", "8 #", "8 #", "8 #", "6 +", "8 #"};
+        String[] eLevel = {"12 #", "12 #", "12 #", "12 #", "12 #", "12 #", "12 ## +", "10 ~", "10 +", "12 ## ~", "12 #", "10 # ~ +"};
         return ThreeBldScramble.fromStatString("C: " + cLevel[level] + " | E: " + eLevel[level]);
     }
 

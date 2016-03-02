@@ -25,12 +25,10 @@ public class Main {
         //evaluateOPAlgs();
         //developAndPrintComm(CubicPieceType.CORNER, "TX");
         //threeBldTraining(12);
-        for (int i = 1; i < 11; i++) {
-            String scr = ThreeBldScramble.levelScramble(i).findScrambleOnThread();
-            BldCube cube = new ThreeBldCube(scr);
-            System.out.println(scr);
-            System.out.println(cube.getStatString());
-            System.out.println();
+        for (int j = 0; j < 12; j++) {
+            String scr = ThreeBldScramble.levelScramble(j).findScrambleOnThread();
+            ThreeBldCube cube = new ThreeBldCube(scr);
+            System.out.println(j + ":\t" + scr + ":\t\t" + cube.getStatString());
         }
     }
 
