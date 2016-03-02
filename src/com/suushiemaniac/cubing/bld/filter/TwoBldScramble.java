@@ -21,9 +21,7 @@ public class TwoBldScramble extends BldScramble {
         this.setCornerBreakIns(cornerBreakIns);
         this.setCornerSingleCycle();
         this.setCornerParity(hasCornerParity);
-        this.setSolvedCorners(solvedCorners, false);
-        this.setTwistedCorners(twistedCorners, false);
-        this.balanceLeftOverCorners();
+        this.setSolvedTwistedCorners(solvedCorners, twistedCorners);
     }
 
     public void setCornerTargets(IntCondition cornerTargets) {
@@ -66,38 +64,6 @@ public class TwoBldScramble extends BldScramble {
 
         this.solvedCorners = solvedCorners;
         this.twistedCorners = twistedCorners;
-    }
-
-    protected void setSolvedCorners(IntCondition solvedCorners, boolean balanceAfter) {
-        solvedCorners.capMin(Math.max(0, 7 + this.cornerBreakIns.getMax() - this.cornerTargets.getMax()));
-        solvedCorners.capMax(Math.max(0, 7 + this.cornerBreakIns.getMin() - this.cornerTargets.getMin()));
-        this.solvedCorners = solvedCorners;
-        if (balanceAfter) this.balanceLeftOverCorners();
-    }
-
-    public void setSolvedCorners(IntCondition solvedCorners) {
-        this.setSolvedCorners(solvedCorners, true);
-    }
-
-    protected void setTwistedCorners(IntCondition twistedCorners, boolean balanceAfter) {
-        twistedCorners.capMin(Math.max(0, 7 + this.cornerBreakIns.getMax() - this.cornerTargets.getMax()));
-        twistedCorners.capMax(Math.max(0, 7 + this.cornerBreakIns.getMin() - this.cornerTargets.getMin()));
-        this.twistedCorners = twistedCorners;
-        if (balanceAfter) this.balanceLeftOverCorners();
-    }
-
-    public void setTwistedCorners(IntCondition twistedCorners) {
-        this.setTwistedCorners(twistedCorners, true);
-    }
-
-    protected void balanceLeftOverCorners() {
-        int leftOverMin = Math.max(0, 7 + this.cornerBreakIns.getMax() - this.cornerTargets.getMax());
-        int pieceMinSum = this.twistedCorners.getMin() + this.solvedCorners.getMin();
-        while (pieceMinSum > leftOverMin) {
-            this.twistedCorners.setMin(Math.max(0, this.twistedCorners.getMin() - pieceMinSum + leftOverMin));
-            this.solvedCorners.setMin(Math.max(0, this.solvedCorners.getMin() - pieceMinSum + leftOverMin));
-            pieceMinSum = this.twistedCorners.getMin() + this.solvedCorners.getMin();
-        }
     }
 
     public static BldScramble cloneFrom(String scramble, boolean strict) {
