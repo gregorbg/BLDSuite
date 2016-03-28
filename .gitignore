@@ -47,6 +47,7 @@ crashlytics.properties
 crashlytics-build.properties
 ### Java template
 *.class
+src/Main.java
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/

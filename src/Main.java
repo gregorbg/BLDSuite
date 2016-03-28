@@ -1,10 +1,7 @@
-package com.suushiemaniac.cubing.bld;
-
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.bld.algsheet.BldAlgSheet;
 import com.suushiemaniac.cubing.bld.algsheet.GregorBldExcel;
-import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
 import com.suushiemaniac.cubing.bld.analyze.cube.ThreeBldCube;
 import com.suushiemaniac.cubing.bld.filter.ThreeBldScramble;
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
@@ -16,6 +13,9 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
+import static com.suushiemaniac.cubing.bld.filter.IntCondition.*;
+import static com.suushiemaniac.cubing.bld.filter.BooleanCondition.*;
+
 public class Main {
     public static void main(String[] args) {
         //ThreeBldScramble.fromStatString("C:  4  # ~ +++ | E: 14  ###").findScrambleThreadModel(1, 12);
@@ -25,11 +25,18 @@ public class Main {
         //evaluateOPAlgs();
         //developAndPrintComm(CubicPieceType.CORNER, "TX");
         //threeBldTraining(12);
+
+        /*
         for (int j = 0; j < 12; j++) {
             String scr = ThreeBldScramble.levelScramble(j).findScrambleOnThread();
             ThreeBldCube cube = new ThreeBldCube(scr);
             System.out.println(j + ":\t" + scr + ":\t\t" + cube.getStatString());
         }
+        */
+
+        System.out.println(new ThreeBldCube("B2 R2 U F2 U L2 D' U2 L2 F2 R U B F2 U' L' D B D2 U'").getStatString());
+        new ThreeBldScramble(EXACT(7), NONE(), YES(), NONE(), NONE(), EXACT(11), NONE(), NONE(), NONE()).findScrambleThreadModel(1, 12);
+        //new ThreeBldScramble(ANY(), ANY(), UNIMPORTANT(), ANY(), ANY(), EXACT(12), NONE(), NONE(), NONE()).findScrambleThreadModel(1, 12);
     }
 
     public static void threeBldTraining(int num) {

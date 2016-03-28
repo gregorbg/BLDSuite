@@ -47,6 +47,13 @@ public class TwoBldScramble extends BldScramble {
     
     public void setSolvedTwistedCorners(IntCondition solvedCorners, IntCondition twistedCorners) {
         int leftOverMin = Math.max(0, 7 + this.cornerBreakIns.getMax() - this.cornerTargets.getMax());
+
+        solvedCorners.capMin(0);
+        twistedCorners.capMin(0);
+
+        solvedCorners.capMax(8);
+        twistedCorners.capMax(8);
+
         int sumMin = solvedCorners.getMin() + twistedCorners.getMin();
         int sumMax = solvedCorners.getMax() + twistedCorners.getMax();
 

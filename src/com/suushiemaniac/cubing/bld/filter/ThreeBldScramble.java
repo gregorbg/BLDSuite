@@ -162,6 +162,13 @@ public class ThreeBldScramble extends TwoBldScramble {
 
     public void setSolvedFlippedEdges(IntCondition solvedEdges, IntCondition flippedEdges) {
         int leftOverMin = Math.max(0, 11 + this.edgeBreakIns.getMax() - this.edgeTargets.getMax());
+
+        solvedEdges.capMin(0);
+        flippedEdges.capMin(0);
+
+        solvedEdges.capMax(12);
+        flippedEdges.capMax(12);
+
         int sumMin = solvedEdges.getMin() + flippedEdges.getMin();
         int sumMax = solvedEdges.getMax() + flippedEdges.getMax();
 
