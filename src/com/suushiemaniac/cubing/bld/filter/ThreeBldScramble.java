@@ -144,7 +144,7 @@ public class ThreeBldScramble extends TwoBldScramble {
 
         if (edgeTargets.getMin() == edgeTargets.getMax() && edgeTargets.getMin() % 2 == 1) {
             edgeTargets.setMin(edgeTargets.getMin() - 1);
-            edgeTargets.setMax(edgeTargets.getMax() + 1);
+            edgeTargets.setMax(this.hasCornerParity.getNegative() ? edgeTargets.getMin() : edgeTargets.getMax() + 1);
         }
 
         this.edgeTargets = edgeTargets;
