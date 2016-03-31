@@ -1,6 +1,7 @@
 package com.suushiemaniac.cubing.bld.database;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
+import com.suushiemaniac.cubing.alglib.util.ParseUtils;
 import com.suushiemaniac.cubing.bld.analyze.cube.FiveBldCube;
 import com.suushiemaniac.cubing.bld.model.AlgSource;
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
@@ -12,6 +13,8 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
 public class CubeH2 implements AlgSource {
@@ -98,9 +101,8 @@ public class CubeH2 implements AlgSource {
         }
     }
 
-    private void addAlgorithm(String letterPair, String alg, String table) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(table));
-        boolean duplicate = readAlgorithm(letterPair, table).contains(alg);
+    private void addAlgorithm(String speffz, String alg, String table) throws SQLException {
+        boolean duplicate = readAlgorithm(speffz, table).contains(alg);
         if (!duplicate) {
             PreparedStatement stat = conn.prepareStatement("insert into " + table + "s (letterpair, alg) values (?, ?)");
             stat.setString(1, speffz);
@@ -110,15 +112,15 @@ public class CubeH2 implements AlgSource {
     }
 
     public void addAlgorithm(String letterPair, String alg, PieceType type) throws SQLException {
-        this.addAlgorithm(letterPair, alg, type.name());
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(type.name()));
+        this.addAlgorithm(speffz, alg, type.name());
     }
 
     public void addLpi(String letterPair, String image) throws SQLException {
         this.addAlgorithm(letterPair, image, "lpi");
     }
 
-    private List<String> readAlgorithm(String letterPair, String table) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(table));
+    private List<String> readAlgorithm(String speffz, String table) throws SQLException {
         PreparedStatement stat = conn.prepareStatement("select distinct alg from " + table + "s where letterpair=?");
         stat.setString(1, speffz);
         ResultSet search = stat.executeQuery();
@@ -128,15 +130,15 @@ public class CubeH2 implements AlgSource {
     }
 
     public List<String> readAlgorithm(String letterPair, PieceType type) throws SQLException {
-        return this.readAlgorithm(letterPair, type.name());
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(type.name()));
+        return this.readAlgorithm(speffz, type.name());
     }
 
     public List<String> readLpi(String letterPair) throws SQLException {
         return this.readAlgorithm(letterPair, "lpi");
     }
 
-    private void removeAlgorithm(String letterPair, String alg, String table) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(table));
+    private void removeAlgorithm(String speffz, String alg, String table) throws SQLException {
         PreparedStatement stat = conn.prepareStatement("delete from " + table + "s where alg=? and letterpair=?");
         stat.setString(1, alg);
         stat.setString(2, speffz);
@@ -144,20 +146,22 @@ public class CubeH2 implements AlgSource {
     }
 
     public void removeAlgorithm(String letterPair, String alg, PieceType type) throws SQLException {
-        this.removeAlgorithm(letterPair, alg, type.name());
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(type.name()));
+        this.removeAlgorithm(speffz, alg, type.name());
     }
 
     public void removeLpi(String letterPair, String image) throws SQLException {
         this.removeAlgorithm(letterPair, image, "lpi");
     }
 
-    private void updateAlgorithm(String letterPair, String oldAlg, String newAlg, String table) throws SQLException {
-        removeAlgorithm(letterPair, oldAlg, table);
-        addAlgorithm(letterPair, newAlg, table);
+    private void updateAlgorithm(String speffz, String oldAlg, String newAlg, String table) throws SQLException {
+        removeAlgorithm(speffz, oldAlg, table);
+        addAlgorithm(speffz, newAlg, table);
     }
 
-    public void updateAlgorithm(String letterPair, String oldAlg, String newAlg, PieceType cubicPieceType) throws SQLException {
-        this.updateAlgorithm(letterPair, oldAlg, newAlg, cubicPieceType.name());
+    public void updateAlgorithm(String letterPair, String oldAlg, String newAlg, PieceType pieceType) throws SQLException {
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(pieceType.name()));
+        this.updateAlgorithm(speffz, oldAlg, newAlg, pieceType.name());
     }
 
     public void updateLpi(String letterPair, String oldImage, String newImage) throws SQLException {
@@ -174,7 +178,7 @@ public class CubeH2 implements AlgSource {
 
     @Override
     public List<Algorithm> getAlg(PieceType type, String letterPair) {
-        return null;
+        return this.getRawAlg(type, letterPair).stream().map(rawAlg -> ParseUtils.guessReaderForAlgString(rawAlg).parse(rawAlg)).collect(Collectors.toList());
     }
 
     @Override
