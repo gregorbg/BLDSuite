@@ -10,9 +10,7 @@ import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 
 import java.io.File;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -136,6 +134,24 @@ public class CubeH2 implements AlgSource {
 
     public List<String> readLpi(String letterPair) throws SQLException {
         return this.readAlgorithm(letterPair, "lpi");
+    }
+
+    public Map<String, List<String>> getAllLpiWords() throws SQLException {
+        ResultSet res = this.conn.createStatement().executeQuery("SELECT * FROM LPIS");
+        Map<String, List<String>> words = new HashMap<>();
+
+        while (res.next()) {
+            String lpKey = res.getString("LETTERPAIR");
+
+            List<String> otherLps = words.get(lpKey);
+            if (otherLps == null) otherLps = new ArrayList<>();
+
+            otherLps.add(res.getString("ALG"));
+
+            words.put(lpKey, otherLps);
+        }
+
+        return words;
     }
 
     private void removeAlgorithm(String speffz, String alg, String table) throws SQLException {
