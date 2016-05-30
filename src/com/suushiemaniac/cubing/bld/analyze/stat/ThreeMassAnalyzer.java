@@ -113,4 +113,41 @@ public class ThreeMassAnalyzer extends MassAnalyzer {
         System.out.println("Overall");
         stringMapPrint(overall);
     }
+
+    @Override
+    public void analyzeLetterPairs(int numCubes, boolean singleLetter) {
+        Map<String, Integer> corner = new HashMap<>();
+        Map<String, Integer> edge = new HashMap<>();
+
+        NoInspectionThreeByThreeCubePuzzle threeNoodle = new NoInspectionThreeByThreeCubePuzzle();
+        ThreeBldCube threeAnalyze = new ThreeBldCube("");
+        int steps = numCubes / Math.min(100, numCubes);
+        for (int i = 0; i < numCubes; i++) {
+            if (i % steps == 0) System.out.println("Cube " + i);
+            threeAnalyze.parseScramble(threeNoodle.generateScramble());
+
+            if (threeAnalyze.getCornerLength() > 0) {
+                String[] cornerPairs = threeAnalyze.getCornerPairs(false).replaceAll(singleLetter ? "\\s+?" : "$.", "").split(singleLetter ? "" : "\\s+?");
+
+                for (String pair : cornerPairs) {
+                    corner.put(pair, corner.getOrDefault(pair, 0) + 1);
+                }
+            }
+
+            if (threeAnalyze.getEdgeLength() > 0) {
+                String[] edgePairs = threeAnalyze.getEdgePairs(false).replaceAll(singleLetter ? "\\s+?" : "$.", "").split(singleLetter ? "" : "\\s+?");
+
+                for (String pair : edgePairs) {
+                    edge.put(pair, edge.getOrDefault(pair, 0) + 1);
+                }
+            }
+        }
+
+        System.out.println();
+        System.out.println("Corner");
+        stringMapPrint(corner);
+        System.out.println();
+        System.out.println("Edge");
+        stringMapPrint(edge);
+    }
 }

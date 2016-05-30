@@ -7,6 +7,12 @@ public abstract class MassAnalyzer {
 
     public abstract void analyzeScrambleDist(int numCubes);
 
+    public abstract void analyzeLetterPairs(int numCubes, boolean singleLetter);
+
+    public void analyzeLetterPairs(int numCubes) {
+        this.analyzeLetterPairs(numCubes, false);
+    }
+
     protected static void numericMapPrint(Map<Integer, Integer> toPrint) {
         List<Integer> sortedKeys = new ArrayList<>(toPrint.keySet());
         sortedKeys.sort(Comparator.naturalOrder());

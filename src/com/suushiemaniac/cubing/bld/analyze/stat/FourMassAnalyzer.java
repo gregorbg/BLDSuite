@@ -160,4 +160,9 @@ public class FourMassAnalyzer extends MassAnalyzer {
         System.out.println("Overall");
         stringMapPrint(overall);
     }
+
+    @Override
+    public void analyzeLetterPairs(int numCubes, boolean singleLetter) {
+        //TODO
+    }
 }
