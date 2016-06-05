@@ -36,10 +36,10 @@ public class CubeH2 implements AlgSource {
         try {
             Statement stat = conn.createStatement();
             for (PieceType type : FiveBldCube.getPieceTypeArray()) {
-                stat.execute("create table if not exists " + type.name() + "s(letterpair char(2), alg varchar(255) primary key)");
+                stat.execute("create table if not exists " + type.name() + "s(letterpair char(2), alg varchar(255) primary key, score int)");
                 stat.execute("create table if not exists " + type.name() + "scheme(letterpair char(2), alg varchar(255) primary key)");
             }
-            stat.execute("create table if not exists lpis(letterpair char(2), alg varchar(255))");
+            stat.execute("create table if not exists lpis(letterpair char(2), alg varchar(255), score int)");
             stat.execute("create table if not exists colorscheme(colorlist varchar(255))");
         } catch (SQLException e) {
             e.printStackTrace();
@@ -134,6 +134,34 @@ public class CubeH2 implements AlgSource {
 
     public List<String> readLpi(String letterPair) throws SQLException {
         return this.readAlgorithm(letterPair, "lpi");
+    }
+
+    private void resetScore(String content, String table) throws SQLException {
+        PreparedStatement stat = this.conn.prepareStatement("update " + table + "s set score = 0 where alg = ?");
+        stat.setString(1, content);
+        stat.execute();
+    }
+
+    private void resetScore(String alg, PieceType type) throws SQLException {
+        this.resetScore(alg, type.name());
+    }
+
+    private void resetScore(String lpi) throws SQLException {
+        this.resetScore(lpi, "lpi");
+    }
+
+    private void increaseScore(String content, String table) throws SQLException {
+        PreparedStatement stat = this.conn.prepareStatement("update " + table + "s set score = score + 1 where alg = ?");
+        stat.setString(1, content);
+        stat.execute();
+    }
+
+    private void increaseScore(String alg, PieceType type) throws SQLException {
+        this.increaseScore(alg, type.name());
+    }
+
+    private void increaseScore(String lpi) throws SQLException {
+        this.increaseScore(lpi, "lpi");
     }
 
     public Map<String, List<String>> getAllLpiWords() throws SQLException {
