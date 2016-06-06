@@ -142,11 +142,11 @@ public class CubeH2 implements AlgSource {
         stat.execute();
     }
 
-    private void resetScore(String alg, PieceType type) throws SQLException {
+    public void resetScore(String alg, PieceType type) throws SQLException {
         this.resetScore(alg, type.name());
     }
 
-    private void resetScore(String lpi) throws SQLException {
+    public void resetScore(String lpi) throws SQLException {
         this.resetScore(lpi, "lpi");
     }
 
@@ -156,11 +156,11 @@ public class CubeH2 implements AlgSource {
         stat.execute();
     }
 
-    private void increaseScore(String alg, PieceType type) throws SQLException {
+    public void increaseScore(String alg, PieceType type) throws SQLException {
         this.increaseScore(alg, type.name());
     }
 
-    private void increaseScore(String lpi) throws SQLException {
+    public void increaseScore(String lpi) throws SQLException {
         this.increaseScore(lpi, "lpi");
     }
 
