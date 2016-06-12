@@ -11,11 +11,10 @@ import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 import java.io.File;
 import java.sql.*;
 import java.util.*;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
-public class CubeH2 implements AlgSource {
+public class CubeSQL implements AlgSource {
     private Connection conn;
 
     public void setRefCube(FiveBldCube refCube) {
@@ -23,29 +22,50 @@ public class CubeH2 implements AlgSource {
     }
 
     private FiveBldCube refCube;
-    private boolean isOldH2;
 
-    public CubeH2(File dbFile, boolean isOldH2) throws SQLException {
+    public CubeSQL(File dbFile) throws SQLException {
+        boolean isOldH2 = dbFile.getAbsolutePath().endsWith(".h2.db");
         String pathString = dbFile.getAbsolutePath().replace(isOldH2 ? ".h2.db" : ".mv.db", "");
         String connString = "jdbc:h2:file:" + pathString;
+
         if (isOldH2) connString += ";TRACE_LEVEL_FILE=0;TRACE_LEVEL_SYSTEM_OUT=0;MV_STORE=FALSE;MVCC=FALSE";
         else connString += ";MV_STORE=TRUE;MVCC=TRUE";
-        this.isOldH2 = isOldH2;
+
         this.conn = DriverManager.getConnection(connString);
 
         try {
-            Statement stat = conn.createStatement();
-            for (PieceType type : FiveBldCube.getPieceTypeArray()) {
-                stat.execute("create table if not exists " + type.name() + "s(letterpair char(2), alg varchar(255) primary key, score int)");
-                stat.execute("create table if not exists " + type.name() + "scheme(letterpair char(2), alg varchar(255) primary key)");
-            }
-            stat.execute("create table if not exists lpis(letterpair char(2), alg varchar(255), score int)");
-            stat.execute("create table if not exists colorscheme(colorlist varchar(255))");
+            this.createTables();
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
         this.refCube = new FiveBldCube("");
+    }
+
+    public CubeSQL(String connString) throws SQLException {
+        this.conn = DriverManager.getConnection(connString);
+
+        try {
+            this.createTables();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        this.refCube = new FiveBldCube("");
+    }
+
+    private void createTables() throws SQLException {
+        Statement stat = conn.createStatement();
+        for (PieceType type : FiveBldCube.getPieceTypeArray()) {
+            stat.execute("create table if not exists " + type.name() + "s(letterpair char(2), alg varchar(255) primary key, score int)");
+            stat.execute("create table if not exists " + type.name() + "scheme(letterpair char(2), alg varchar(255) primary key)");
+        }
+        stat.execute("create table if not exists lpis(letterpair char(2), alg varchar(255), score int)");
+        stat.execute("create table if not exists colorscheme(colorlist varchar(255))");
+    }
+
+    public void setConnection(String connUrl) throws SQLException {
+        this.conn = DriverManager.getConnection(connUrl);
     }
 
     public boolean isFirstStart() throws SQLException {
@@ -102,7 +122,7 @@ public class CubeH2 implements AlgSource {
     private void addAlgorithm(String speffz, String alg, String table) throws SQLException {
         boolean duplicate = readAlgorithm(speffz, table).contains(alg);
         if (!duplicate) {
-            PreparedStatement stat = conn.prepareStatement("insert into " + table + "s (letterpair, alg) values (?, ?)");
+            PreparedStatement stat = conn.prepareStatement("insert into " + table.toUpperCase() + "S (letterpair, alg) values (?, ?)");
             stat.setString(1, speffz);
             stat.setString(2, alg);
             stat.execute();
@@ -119,7 +139,7 @@ public class CubeH2 implements AlgSource {
     }
 
     private List<String> readAlgorithm(String speffz, String table) throws SQLException {
-        PreparedStatement stat = conn.prepareStatement("select distinct alg from " + table + "s where letterpair=?");
+        PreparedStatement stat = conn.prepareStatement("select distinct alg from " + table.toUpperCase() + "S where letterpair=?");
         stat.setString(1, speffz);
         ResultSet search = stat.executeQuery();
         ArrayList<String> temp = new ArrayList<>();
@@ -137,7 +157,7 @@ public class CubeH2 implements AlgSource {
     }
 
     private void resetScore(String content, String table) throws SQLException {
-        PreparedStatement stat = this.conn.prepareStatement("update " + table + "s set score = 0 where alg = ?");
+        PreparedStatement stat = this.conn.prepareStatement("update " + table.toUpperCase() + "S set score = 0 where alg = ?");
         stat.setString(1, content);
         stat.execute();
     }
@@ -151,7 +171,7 @@ public class CubeH2 implements AlgSource {
     }
 
     private void increaseScore(String content, String table) throws SQLException {
-        PreparedStatement stat = this.conn.prepareStatement("update " + table + "s set score = score + 1 where alg = ?");
+        PreparedStatement stat = this.conn.prepareStatement("update " + table.toUpperCase() + "S set score = score + 1 where alg = ?");
         stat.setString(1, content);
         stat.execute();
     }
@@ -183,7 +203,7 @@ public class CubeH2 implements AlgSource {
     }
 
     private void removeAlgorithm(String speffz, String alg, String table) throws SQLException {
-        PreparedStatement stat = conn.prepareStatement("delete from " + table + "s where alg=? and letterpair=?");
+        PreparedStatement stat = conn.prepareStatement("delete from " + table.toUpperCase() + "S where alg=? and letterpair=?");
         stat.setString(1, alg);
         stat.setString(2, speffz);
         stat.execute();
@@ -216,8 +236,8 @@ public class CubeH2 implements AlgSource {
         conn.close();
     }
 
-    public File getDatabaseFile() throws SQLException {
-        return new File(this.conn.getMetaData().getURL().replace("jdbc:h2:file:", "") + (this.isOldH2 ? ".h2.db" : ".mv.db"));
+    public String getDatabaseConnString() throws SQLException {
+        return this.conn.getMetaData().getURL();
     }
 
     @Override
