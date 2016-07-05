@@ -121,6 +121,7 @@ public class ThreeBldScramble extends TwoBldScramble {
 
     protected BooleanCondition edgeSingleCycle;
     protected IntCondition edgeTargets, edgeBreakIns, solvedEdges, flippedEdges;
+    protected String edgeMemoRegex;
 
     public ThreeBldScramble(IntCondition cornerTargets,
                             IntCondition cornerBreakIns,
@@ -136,6 +137,8 @@ public class ThreeBldScramble extends TwoBldScramble {
         this.setEdgeBreakIns(edgeBreakIns);
         this.setEdgeSingleCycle();
         this.setSolvedFlippedEdges(solvedEdges, flippedEdges);
+
+        this.edgeMemoRegex = BldScramble.REGEX_UNIV;
     }
 
     public void setEdgeTargets(IntCondition edgeTargets) {
@@ -158,6 +161,10 @@ public class ThreeBldScramble extends TwoBldScramble {
 
     public void setEdgeSingleCycle() {
         this.edgeSingleCycle = edgeBreakIns.getMax() == 0 ? YES() : edgeBreakIns.getMin() == 0 ? UNIMPORTANT() : NO();
+    }
+
+    public void setEdgeMemoRegex(String regex) {
+        this.edgeMemoRegex = regex;
     }
 
     public void setSolvedFlippedEdges(IntCondition solvedEdges, IntCondition flippedEdges) {
@@ -212,7 +219,9 @@ public class ThreeBldScramble extends TwoBldScramble {
                     && this.solvedCorners.evaluate(randCube.getNumPreSolvedCorners())
                     && this.solvedEdges.evaluate(randCube.getNumPreSolvedEdges())
                     && this.twistedCorners.evaluate(randCube.getNumPreTwistedCorners())
-                    && this.flippedEdges.evaluate(randCube.getNumPreFlippedEdges());
+                    && this.flippedEdges.evaluate(randCube.getNumPreFlippedEdges())
+                    && randCube.getCornerPairs(false).replaceAll("\\s*", "").matches(this.cornerMemoRegex)
+                    && randCube.getEdgePairs(false).replaceAll("\\s*", "").matches(this.edgeMemoRegex);
         } else return false;
     }
 

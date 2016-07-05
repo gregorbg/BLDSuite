@@ -20,4 +20,5 @@ public final class ScrambleLib {
     public static final BldScramble fiveTrainingScramble = new FiveBldScramble(ANY(), ANY(), UNIMPORTANT(), ANY(), ANY(), ANY(), ANY(), ANY(), ANY(), ANY(), NONE(), NO(), ANY(), ANY(), ANY(), UNIMPORTANT(), ANY(), ANY(), ANY(), UNIMPORTANT(), ANY());
     public static final BldScramble twoLolScramble = new TwoBldScramble(MAXIMUM(1), NONE(), YES(), ANY(), NONE());
     public static final BldScramble rileyScramble = new ThreeBldScramble(EXACT(3), NONE(), YES(), EXACT(4), NONE(), EXACT(10), EXACT(1), EXACT(2), NONE());
+    public static final BldScramble threeAnyScramble = new ThreeBldScramble(ANY(), ANY(), UNIMPORTANT(), ANY(), ANY(), ANY(), ANY(), ANY(), ANY());
 }

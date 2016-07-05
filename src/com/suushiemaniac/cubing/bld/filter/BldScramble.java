@@ -7,6 +7,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 public abstract class BldScramble {
+    public static final String REGEX_UNIV = ".*";
+
     public String findScrambleOnThread() {
         BldCube testCube = this.getAnalyzingPuzzle();
         Puzzle tNoodle = this.getScramblingPuzzle();

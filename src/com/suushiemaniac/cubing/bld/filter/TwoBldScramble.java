@@ -11,6 +11,7 @@ import static com.suushiemaniac.cubing.bld.filter.IntCondition.*;
 public class TwoBldScramble extends BldScramble {
     protected BooleanCondition hasCornerParity, cornerSingleCycle;
     protected IntCondition cornerTargets, cornerBreakIns, solvedCorners, twistedCorners;
+    protected String cornerMemoRegex;
 
     public TwoBldScramble(IntCondition cornerTargets,
                           IntCondition cornerBreakIns,
@@ -22,6 +23,8 @@ public class TwoBldScramble extends BldScramble {
         this.setCornerSingleCycle();
         this.setCornerParity(hasCornerParity);
         this.setSolvedTwistedCorners(solvedCorners, twistedCorners);
+
+        this.cornerMemoRegex = BldScramble.REGEX_UNIV;
     }
 
     public void setCornerTargets(IntCondition cornerTargets) {
@@ -43,6 +46,10 @@ public class TwoBldScramble extends BldScramble {
     public void setCornerParity(BooleanCondition hasCornerParity) {
         if (this.cornerTargets.getMin() == this.cornerTargets.getMax()) hasCornerParity.setValue(this.cornerTargets.getMax() % 2 == 1);
         this.hasCornerParity = hasCornerParity;
+    }
+
+    public void setCornerMemoRegex(String regex) {
+        this.cornerMemoRegex = regex;
     }
     
     public void setSolvedTwistedCorners(IntCondition solvedCorners, IntCondition twistedCorners) {
@@ -91,7 +98,8 @@ public class TwoBldScramble extends BldScramble {
                     && this.cornerBreakIns.evaluate(randCube.getCornerBreakInNum())
                     && this.cornerTargets.evaluate(randCube.getCornerLength())
                     && this.solvedCorners.evaluate(randCube.getNumPreSolvedCorners())
-                    && this.twistedCorners.evaluate(randCube.getNumPreTwistedCorners());
+                    && this.twistedCorners.evaluate(randCube.getNumPreTwistedCorners())
+                    && randCube.getCornerPairs(false).replaceAll("\\s*", "").matches(this.cornerMemoRegex);
         } else return false;
     }
 
