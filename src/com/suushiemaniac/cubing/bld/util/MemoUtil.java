@@ -1,6 +1,6 @@
 package com.suushiemaniac.cubing.bld.util;
 
-import com.suushiemaniac.cubing.bld.database.CubeSQL;
+import com.suushiemaniac.cubing.bld.database.LegacyCubeDb;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.List;
 
 public abstract class MemoUtil {
-    public static List<String> genMemoTree(String pairs, CubeSQL db, int lpiListSizeLimit) throws SQLException {
+    public static List<String> genMemoTree(String pairs, LegacyCubeDb db, int lpiListSizeLimit) throws SQLException {
         List<String> treeList = new ArrayList<>(Collections.singletonList(""));
 
         for (String pair : pairs.split("\\s+?")) {
@@ -30,7 +30,7 @@ public abstract class MemoUtil {
         return treeList;
     }
 
-    public static List<String> genMemoTree(String pairs, CubeSQL db) throws SQLException {
+    public static List<String> genMemoTree(String pairs, LegacyCubeDb db) throws SQLException {
         return genMemoTree(pairs, db, Integer.MAX_VALUE);
     }
 }

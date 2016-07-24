@@ -14,7 +14,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
-public class CubeSQL implements AlgSource {
+public class LegacyCubeDb implements AlgSource {
     private Connection conn;
 
     public void setRefCube(FiveBldCube refCube) {
@@ -23,7 +23,7 @@ public class CubeSQL implements AlgSource {
 
     private FiveBldCube refCube;
 
-    public CubeSQL(File dbFile) throws SQLException {
+    public LegacyCubeDb(File dbFile) throws SQLException {
         boolean isOldH2 = dbFile.getAbsolutePath().endsWith(".h2.db");
         String pathString = dbFile.getAbsolutePath().replace(isOldH2 ? ".h2.db" : ".mv.db", "");
         String connString = "jdbc:h2:file:" + pathString;
@@ -42,7 +42,7 @@ public class CubeSQL implements AlgSource {
         this.refCube = new FiveBldCube("");
     }
 
-    public CubeSQL(String connString) throws SQLException {
+    public LegacyCubeDb(String connString) throws SQLException {
         this.conn = DriverManager.getConnection(connString);
 
         try {

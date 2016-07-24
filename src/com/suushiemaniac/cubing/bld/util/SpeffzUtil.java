@@ -54,6 +54,9 @@ public class SpeffzUtil {
     }
 
     public static String normalize(String denormLp, String[] denormScheme) {
-        return ArrayUtil.mutualIndex(denormLp, denormScheme, fullSpeffz);
+        String[] denormSingleLetters = denormLp.split("");
+
+        return ArrayUtil.mutualIndex(denormSingleLetters[0], denormScheme, fullSpeffz)
+                + ArrayUtil.mutualIndex(denormSingleLetters[1], denormScheme, fullSpeffz);
     }
 }
