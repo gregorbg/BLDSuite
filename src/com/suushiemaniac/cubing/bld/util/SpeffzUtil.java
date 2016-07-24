@@ -3,10 +3,8 @@ package com.suushiemaniac.cubing.bld.util;
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 
-import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
-
 public class SpeffzUtil {
-    private static String[] fullSpeffz = {"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X"};
+    public static String[] FULL_SPEFFZ = {"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X"};
     private static String[] cornerMapping = {"UBL", "URB", "UFR", "ULF", "LUB", "LFU", "LDF", "LBD", "FUL", "FRU", "FDR", "FLD", "RUF", "RBU", "RDB", "RFD", "BUR", "BLU", "BDL", "BRD", "DFL", "DRF", "DBR", "DLB"};
     private static String[] edgeMapping = {"UB", "UR", "UF", "UL", "LU", "LF", "LD", "LB", "FU", "FR", "FD", "FL", "RU", "RB", "RD", "RF", "BU", "BL", "BD", "BR", "DF", "DR", "DB", "DL"};
     private static String[] xCenterMapping = {"Ubl", "Urb", "Ufr", "Ulf", "Lub", "Lfu", "Ldf", "Lbd", "Ful", "Fru", "Fdr", "Fld", "Ruf", "Rbu", "Rdb", "Rfd", "Bur", "Blu", "Bdl", "Brd", "Dfl", "Drf", "Dbr", "Dlb"};
@@ -14,22 +12,22 @@ public class SpeffzUtil {
     private static String[] tCenterMapping = {"Df", "Dr", "Db", "Dl", "Ub", "Ur", "Uf", "Ul", "Lu", "Lf", "Ld", "Lb", "Fu", "Fr", "Fd", "Fl", "Ru", "Rb", "Rd", "Rf", "Bu", "Bl", "Bd", "Br"};
 
     public static String[] fullSpeffz() {
-        return fullSpeffz;
+        return FULL_SPEFFZ;
     }
 
     public static String speffzToSticker(String speffz, PieceType type) {
         if (!(type instanceof CubicPieceType)) return "";
         switch ((CubicPieceType) type) {
             case CORNER:
-                return ArrayUtil.mutualIndex(speffz, fullSpeffz, cornerMapping);
+                return ArrayUtil.mutualIndex(speffz, FULL_SPEFFZ, cornerMapping);
             case EDGE:
-                return ArrayUtil.mutualIndex(speffz, fullSpeffz, edgeMapping);
+                return ArrayUtil.mutualIndex(speffz, FULL_SPEFFZ, edgeMapping);
             case XCENTER:
-                return ArrayUtil.mutualIndex(speffz, fullSpeffz, xCenterMapping);
+                return ArrayUtil.mutualIndex(speffz, FULL_SPEFFZ, xCenterMapping);
             case WING:
-                return ArrayUtil.mutualIndex(speffz, fullSpeffz, wingMapping);
+                return ArrayUtil.mutualIndex(speffz, FULL_SPEFFZ, wingMapping);
             case TCENTER:
-                return ArrayUtil.mutualIndex(speffz, fullSpeffz, tCenterMapping);
+                return ArrayUtil.mutualIndex(speffz, FULL_SPEFFZ, tCenterMapping);
             default:
                 return "";
         }
@@ -39,15 +37,15 @@ public class SpeffzUtil {
         if (!(type instanceof CubicPieceType)) return "";
         switch ((CubicPieceType) type) {
             case CORNER:
-                return ArrayUtil.mutualIndex(sticker, cornerMapping, fullSpeffz);
+                return ArrayUtil.mutualIndex(sticker, cornerMapping, FULL_SPEFFZ);
             case EDGE:
-                return ArrayUtil.mutualIndex(sticker, edgeMapping, fullSpeffz);
+                return ArrayUtil.mutualIndex(sticker, edgeMapping, FULL_SPEFFZ);
             case XCENTER:
-                return ArrayUtil.mutualIndex(sticker, xCenterMapping, fullSpeffz);
+                return ArrayUtil.mutualIndex(sticker, xCenterMapping, FULL_SPEFFZ);
             case WING:
-                return ArrayUtil.mutualIndex(sticker, wingMapping, fullSpeffz);
+                return ArrayUtil.mutualIndex(sticker, wingMapping, FULL_SPEFFZ);
             case TCENTER:
-                return ArrayUtil.mutualIndex(sticker, tCenterMapping, fullSpeffz);
+                return ArrayUtil.mutualIndex(sticker, tCenterMapping, FULL_SPEFFZ);
             default:
                 return "";
         }
@@ -56,7 +54,7 @@ public class SpeffzUtil {
     public static String normalize(String denormLp, String[] denormScheme) {
         String[] denormSingleLetters = denormLp.split("");
 
-        return ArrayUtil.mutualIndex(denormSingleLetters[0], denormScheme, fullSpeffz)
-                + ArrayUtil.mutualIndex(denormSingleLetters[1], denormScheme, fullSpeffz);
+        return ArrayUtil.mutualIndex(denormSingleLetters[0], denormScheme, FULL_SPEFFZ)
+                + ArrayUtil.mutualIndex(denormSingleLetters[1], denormScheme, FULL_SPEFFZ);
     }
 }

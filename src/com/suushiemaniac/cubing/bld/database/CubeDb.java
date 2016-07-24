@@ -1,6 +1,7 @@
 package com.suushiemaniac.cubing.bld.database;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
+import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.alglib.util.ParseUtils;
 import com.suushiemaniac.cubing.bld.analyze.cube.FiveBldCube;
 import com.suushiemaniac.cubing.bld.model.AlgSource;
@@ -94,6 +95,27 @@ public class CubeDb implements AlgSource {
         return words;
     }
 
+    public Map<String, List<String>> getAllAlgorithms(PieceType type) throws SQLException {
+        PreparedStatement stat = this.conn.prepareStatement("SELECT * FROM Algorithms WHERE `type` = ?");
+        stat.setString(1, type.name().toLowerCase());
+
+        ResultSet res = stat.executeQuery();
+        Map<String, List<String>> words = new HashMap<>();
+
+        while (res.next()) {
+            String lpKey = res.getString("case");
+
+            List<String> otherLps = words.get(lpKey);
+            if (otherLps == null) otherLps = new ArrayList<>();
+
+            otherLps.add(res.getString("alg"));
+
+            words.put(lpKey, otherLps);
+        }
+
+        return words;
+    }
+
     private void resetScore(String lpi) throws SQLException {
         PreparedStatement stat = this.conn.prepareStatement("UPDATE Images SET score = 0 WHERE image = ?");
         stat.setString(1, lpi);
@@ -149,7 +171,7 @@ public class CubeDb implements AlgSource {
 
     @Override
     public List<Algorithm> getAlg(PieceType type, String letterPair) {
-        return this.getRawAlg(type, letterPair).stream().map(rawAlg -> ParseUtils.guessReaderForAlgString(rawAlg).parse(rawAlg)).collect(Collectors.toList());
+        return this.getRawAlg(type, letterPair).stream().map(rawAlg -> new CubicAlgorithmReader().parse(rawAlg)).collect(Collectors.toList());
     }
 
     @Override

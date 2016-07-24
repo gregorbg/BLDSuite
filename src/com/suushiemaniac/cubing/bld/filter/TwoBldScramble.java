@@ -1,9 +1,21 @@
 package com.suushiemaniac.cubing.bld.filter;
 
+import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
 import com.suushiemaniac.cubing.bld.analyze.cube.TwoBldCube;
+import com.suushiemaniac.cubing.bld.model.AlgSource;
+import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
+import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
+import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.TwoByTwoCubePuzzle;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static com.suushiemaniac.cubing.bld.filter.BooleanCondition.*;
 import static com.suushiemaniac.cubing.bld.filter.IntCondition.*;
@@ -50,6 +62,19 @@ public class TwoBldScramble extends BldScramble {
 
     public void setCornerMemoRegex(String regex) {
         this.cornerMemoRegex = regex;
+    }
+
+    public void filterCornerExecution(AlgSource algSource, Predicate<Algorithm> filter) {
+        Set<String> matches = new HashSet<>();
+        String[] possPairs = BruteForceUtil.genBlockString(SpeffzUtil.FULL_SPEFFZ, 2, false);
+
+        for (String pair : possPairs) {
+            matches.addAll(algSource.getAlg(CubicPieceType.CORNER, pair).stream().filter(filter).map(alg -> pair).collect(Collectors.toList()));
+        }
+
+        if (matches.size() > 0)
+            this.setCornerMemoRegex("(" + String.join("|", matches) + ")*");
+        //TODO allow dangling extra letter at the end if parity possible
     }
     
     public void setSolvedTwistedCorners(IntCondition solvedCorners, IntCondition twistedCorners) {

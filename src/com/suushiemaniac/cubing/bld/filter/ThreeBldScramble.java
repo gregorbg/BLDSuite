@@ -1,13 +1,21 @@
 package com.suushiemaniac.cubing.bld.filter;
 
+import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
 import com.suushiemaniac.cubing.bld.analyze.cube.ThreeBldCube;
+import com.suushiemaniac.cubing.bld.model.AlgSource;
+import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
+import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.NoInspectionThreeByThreeCubePuzzle;
 
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.suushiemaniac.cubing.bld.filter.BooleanCondition.*;
 import static com.suushiemaniac.cubing.bld.filter.IntCondition.*;
@@ -165,6 +173,18 @@ public class ThreeBldScramble extends TwoBldScramble {
 
     public void setEdgeMemoRegex(String regex) {
         this.edgeMemoRegex = regex;
+    }
+
+    public void filterEdgeExecution(AlgSource algSource, Predicate<Algorithm> filter) {
+        Set<String> matches = new HashSet<>();
+        String[] possPairs = BruteForceUtil.genBlockString(BruteForceUtil.ALPHABET, 2, false);
+
+        for (String pair : possPairs) {
+            matches.addAll(algSource.getAlg(CubicPieceType.EDGE, pair).stream().filter(filter).map(alg -> pair).collect(Collectors.toList()));
+        }
+
+        if (matches.size() > 0)
+            this.setCornerMemoRegex("(" + String.join("|", matches) + ")*");
     }
 
     public void setSolvedFlippedEdges(IntCondition solvedEdges, IntCondition flippedEdges) {
