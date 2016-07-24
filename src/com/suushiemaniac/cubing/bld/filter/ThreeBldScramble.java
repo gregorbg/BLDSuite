@@ -1,17 +1,17 @@
 package com.suushiemaniac.cubing.bld.filter;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
+import com.suushiemaniac.cubing.alglib.exception.InvalidNotationException;
 import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
 import com.suushiemaniac.cubing.bld.analyze.cube.ThreeBldCube;
 import com.suushiemaniac.cubing.bld.model.AlgSource;
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
+import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.NoInspectionThreeByThreeCubePuzzle;
 
-import java.util.HashSet;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -129,7 +129,7 @@ public class ThreeBldScramble extends TwoBldScramble {
 
     protected BooleanCondition edgeSingleCycle;
     protected IntCondition edgeTargets, edgeBreakIns, solvedEdges, flippedEdges;
-    protected String edgeMemoRegex;
+    protected String edgeMemoRegex, edgePredicateRegex;
 
     public ThreeBldScramble(IntCondition cornerTargets,
                             IntCondition cornerBreakIns,
@@ -147,6 +147,7 @@ public class ThreeBldScramble extends TwoBldScramble {
         this.setSolvedFlippedEdges(solvedEdges, flippedEdges);
 
         this.edgeMemoRegex = BldScramble.REGEX_UNIV;
+        this.edgePredicateRegex = BldScramble.REGEX_UNIV;
     }
 
     public void setEdgeTargets(IntCondition edgeTargets) {
@@ -176,15 +177,19 @@ public class ThreeBldScramble extends TwoBldScramble {
     }
 
     public void filterEdgeExecution(AlgSource algSource, Predicate<Algorithm> filter) {
-        Set<String> matches = new HashSet<>();
-        String[] possPairs = BruteForceUtil.genBlockString(BruteForceUtil.ALPHABET, 2, false);
+        SortedSet<String> matches = new TreeSet<>();
+        String[] possPairs = BruteForceUtil.genBlockString(SpeffzUtil.FULL_SPEFFZ, 2, false);
 
         for (String pair : possPairs) {
-            matches.addAll(algSource.getAlg(CubicPieceType.EDGE, pair).stream().filter(filter).map(alg -> pair).collect(Collectors.toList()));
+            try {
+                matches.addAll(algSource.getAlg(CubicPieceType.EDGE, pair).stream().filter(filter).map(alg -> pair).collect(Collectors.toList()));
+            } catch (InvalidNotationException e) {
+                continue;
+            }
         }
 
         if (matches.size() > 0)
-            this.setCornerMemoRegex("(" + String.join("|", matches) + ")*");
+            this.edgePredicateRegex = "(" + String.join("|", matches) + ")*";
     }
 
     public void setSolvedFlippedEdges(IntCondition solvedEdges, IntCondition flippedEdges) {
@@ -241,7 +246,9 @@ public class ThreeBldScramble extends TwoBldScramble {
                     && this.twistedCorners.evaluate(randCube.getNumPreTwistedCorners())
                     && this.flippedEdges.evaluate(randCube.getNumPreFlippedEdges())
                     && randCube.getCornerPairs(false).replaceAll("\\s*", "").matches(this.cornerMemoRegex)
-                    && randCube.getEdgePairs(false).replaceAll("\\s*", "").matches(this.edgeMemoRegex);
+                    && randCube.getCornerPairs(false).replaceAll("\\s*", "").matches(this.cornerPredicateRegex)
+                    && randCube.getEdgePairs(false).replaceAll("\\s*", "").matches(this.edgeMemoRegex)
+                    && randCube.getEdgePairs(false).replaceAll("\\s*", "").matches(this.edgePredicateRegex);
         } else return false;
     }
 

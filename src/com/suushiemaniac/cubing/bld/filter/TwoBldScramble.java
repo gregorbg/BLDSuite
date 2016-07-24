@@ -10,10 +10,7 @@ import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.TwoByTwoCubePuzzle;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -23,7 +20,7 @@ import static com.suushiemaniac.cubing.bld.filter.IntCondition.*;
 public class TwoBldScramble extends BldScramble {
     protected BooleanCondition hasCornerParity, cornerSingleCycle;
     protected IntCondition cornerTargets, cornerBreakIns, solvedCorners, twistedCorners;
-    protected String cornerMemoRegex;
+    protected String cornerMemoRegex, cornerPredicateRegex;
 
     public TwoBldScramble(IntCondition cornerTargets,
                           IntCondition cornerBreakIns,
@@ -37,6 +34,7 @@ public class TwoBldScramble extends BldScramble {
         this.setSolvedTwistedCorners(solvedCorners, twistedCorners);
 
         this.cornerMemoRegex = BldScramble.REGEX_UNIV;
+        this.cornerPredicateRegex = BldScramble.REGEX_UNIV;
     }
 
     public void setCornerTargets(IntCondition cornerTargets) {
@@ -65,7 +63,7 @@ public class TwoBldScramble extends BldScramble {
     }
 
     public void filterCornerExecution(AlgSource algSource, Predicate<Algorithm> filter) {
-        Set<String> matches = new HashSet<>();
+        SortedSet<String> matches = new TreeSet<>();
         String[] possPairs = BruteForceUtil.genBlockString(SpeffzUtil.FULL_SPEFFZ, 2, false);
 
         for (String pair : possPairs) {
@@ -73,8 +71,7 @@ public class TwoBldScramble extends BldScramble {
         }
 
         if (matches.size() > 0)
-            this.setCornerMemoRegex("(" + String.join("|", matches) + ")*");
-        //TODO allow dangling extra letter at the end if parity possible
+            this.cornerPredicateRegex = "(" + String.join("|", matches) + ")*" + (this.hasCornerParity.getPositive() ? "[A-Z]?" : "");
     }
     
     public void setSolvedTwistedCorners(IntCondition solvedCorners, IntCondition twistedCorners) {
@@ -124,7 +121,8 @@ public class TwoBldScramble extends BldScramble {
                     && this.cornerTargets.evaluate(randCube.getCornerLength())
                     && this.solvedCorners.evaluate(randCube.getNumPreSolvedCorners())
                     && this.twistedCorners.evaluate(randCube.getNumPreTwistedCorners())
-                    && randCube.getCornerPairs(false).replaceAll("\\s*", "").matches(this.cornerMemoRegex);
+                    && randCube.getCornerPairs(false).replaceAll("\\s*", "").matches(this.cornerMemoRegex)
+                    && randCube.getCornerPairs(false).replaceAll("\\s*", "").matches(this.cornerPredicateRegex);
         } else return false;
     }
 
