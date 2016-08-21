@@ -1,5 +1,8 @@
 package com.suushiemaniac.cubing.bld.model.enumeration;
 
+import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
+import com.suushiemaniac.cubing.alglib.lang.NotationReader;
+
 public enum CubicPieceType implements PieceType {
     CENTER(0, 6, 0),
     CORNER(3, 8, 378),
@@ -12,6 +15,8 @@ public enum CubicPieceType implements PieceType {
     LEFTOBLIQUE(1, 24, 460),
     RIGHTOBLIQUE(1, 24, 460),
     INNERTCENTER(1, 24, 460);
+
+    public static final NotationReader READER = new CubicAlgorithmReader();
 
     public static String[] nameArray() {
         String[] names = new String[values().length];
@@ -41,5 +46,9 @@ public enum CubicPieceType implements PieceType {
 
     public int getNumAlgs() {
         return this.numAlgs;
+    }
+
+    public NotationReader getReader() {
+        return CubicPieceType.READER;
     }
 }

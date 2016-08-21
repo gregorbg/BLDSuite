@@ -1,5 +1,7 @@
 package com.suushiemaniac.cubing.bld.model.enumeration;
 
+import com.suushiemaniac.cubing.alglib.lang.NotationReader;
+
 public interface PieceType {
     int getTargetsPerPiece();
 
@@ -10,4 +12,6 @@ public interface PieceType {
     int getNumAlgs();
 
     String name();
+
+    NotationReader getReader();
 }

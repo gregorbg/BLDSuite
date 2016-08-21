@@ -65,15 +65,15 @@ public class CubeDb implements AlgSource {
     }
 
     public List<String> readLpi(String letterPair) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme("lpi"));
+        //String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme("lpi"));
 
-        PreparedStatement stat = conn.prepareStatement("SELECT DISTINCT image FROM Algorithms WHERE `case` = ?");
-        stat.setString(1, speffz);
+        PreparedStatement stat = conn.prepareStatement("SELECT DISTINCT image FROM Images WHERE `case` = ?");
+        stat.setString(1, letterPair);
 
         ResultSet search = stat.executeQuery();
 
         ArrayList<String> temp = new ArrayList<>();
-        while (search.next()) temp.add(search.getString("alg"));
+        while (search.next()) temp.add(search.getString("image"));
         return temp;
     }
 
@@ -116,14 +116,14 @@ public class CubeDb implements AlgSource {
         return words;
     }
 
-    private void resetScore(String lpi) throws SQLException {
+    public void resetScore(String lpi) throws SQLException {
         PreparedStatement stat = this.conn.prepareStatement("UPDATE Images SET score = 0 WHERE image = ?");
         stat.setString(1, lpi);
 
         stat.execute();
     }
 
-    private void increaseScore(String lpi) throws SQLException {
+    public void increaseScore(String lpi) throws SQLException {
         PreparedStatement stat = this.conn.prepareStatement("UPDATE Images SET score = score + 1 WHERE image = ?");
         stat.setString(1, lpi);
 

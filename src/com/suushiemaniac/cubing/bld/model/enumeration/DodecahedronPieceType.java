@@ -1,7 +1,12 @@
 package com.suushiemaniac.cubing.bld.model.enumeration;
 
+import com.suushiemaniac.cubing.alglib.lang.MegaminxAlgorithmReader;
+import com.suushiemaniac.cubing.alglib.lang.NotationReader;
+
 public enum DodecahedronPieceType implements PieceType {
     CORNER, EDGE, CENTER;
+
+    public static final NotationReader READER = new MegaminxAlgorithmReader();
 
     @Override
     public int getTargetsPerPiece() {
@@ -21,5 +26,10 @@ public enum DodecahedronPieceType implements PieceType {
     @Override
     public int getNumAlgs() {
         return 0;
+    }
+
+    @Override
+    public NotationReader getReader() {
+        return DodecahedronPieceType.READER;
     }
 }

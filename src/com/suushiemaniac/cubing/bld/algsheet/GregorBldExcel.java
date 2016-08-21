@@ -1,184 +1,96 @@
 package com.suushiemaniac.cubing.bld.algsheet;
 
-import com.suushiemaniac.cubing.alglib.alg.Algorithm;
-import com.suushiemaniac.cubing.alglib.exception.InvalidNotationException;
-import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
-import com.suushiemaniac.cubing.bld.exception.InvalidExcelMapSizeError;
-import com.suushiemaniac.cubing.bld.exception.InvalidPieceTypeException;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
-import com.suushiemaniac.cubing.bld.util.ExcelUtil;
-import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
+import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
 
 public class GregorBldExcel extends BldAlgSheet {
+    protected static final int HEADER_SPACING = 2;
+    protected static final int BETWEEN_COL_SPACING = 3;
+    protected static final int TOTAL_COL_COEFF = 4;
+
     public GregorBldExcel(File excelFile) {
         super(excelFile);
     }
 
-    private int getPageNum(PieceType type) {
-        if (!(type instanceof CubicPieceType)) return -1;
-        switch ((CubicPieceType) type) {
-            case CORNER:
-                return 0;
-            case EDGE:
-                return 2;
-            case XCENTER:
-                return 6;
-            case WING:
-                return 4;
-            case TCENTER:
-                return 8;
-            default:
-                return -1;
+    private int getSheetNum(PieceType pieceType) {
+        if (!(pieceType instanceof CubicPieceType)) return -1;
+
+        CubicPieceType[] sheetOrderTypes = new CubicPieceType[]{CORNER, EDGE, WING, XCENTER, TCENTER};
+        int index = ArrayUtil.binarySearch(pieceType, sheetOrderTypes);
+
+        return index == -1 ? index : 2 * index;
+    }
+
+    @Override
+    protected Cell getPrimaryCell(PieceType pieceType, String letterPair) {
+        int sheetNum = this.getSheetNum(pieceType);
+        if (sheetNum < 0) return null;
+
+        Sheet sheet = this.workbook.getSheetAt(sheetNum);
+
+        int targetsPerPiece = pieceType.getTargetsPerPiece(), numNonBufferPieces = pieceType.getNumPiecesNoBuffer();
+        if (pieceType == XCENTER || pieceType == TCENTER) { //big cube center special rules
+            targetsPerPiece = 4;
+            numNonBufferPieces = 6;
         }
-    }
 
-    private int getPrintPageNum(PieceType type) {
-        return this.getPageNum(type) + 1;
-    }
-
-    private Map<String, String> getAlgStringsFromExcel(Workbook wb, int sheetNum, int numNonBufferPieces, int targetsPerPiece, boolean includeInverse) {
-        Map<String, String> excelStringMap = new LinkedHashMap<>();
-        Sheet sheet = wb.getSheetAt(sheetNum);
-        String letterPair, lp1, lp2;
-        int headerSpacing = 2, betweenColSpacing = 3;
-        int totalColCoeff = 4, totalRowCoeff = headerSpacing + ((targetsPerPiece + 1) * numNonBufferPieces) + betweenColSpacing - 1;
+        int totalRowCoeff = HEADER_SPACING + ((targetsPerPiece + 1) * numNonBufferPieces) + BETWEEN_COL_SPACING - 1;
 
         for (int colNum = 0; colNum < numNonBufferPieces; colNum++)
-            for (int rowNum = 0; rowNum < targetsPerPiece; rowNum++) {
-                lp1 = sheet.getRow(rowNum * totalRowCoeff).getCell((colNum * totalColCoeff) + headerSpacing).getStringCellValue();
-                lp1 = String.valueOf(lp1.charAt(lp1.length() - 1));
+            for (int rowNum = 0; rowNum < targetsPerPiece; rowNum++)
                 for (int block = 0; block < numNonBufferPieces; block++)
                     for (int line = 0; line < targetsPerPiece; line++) {
-                        Row row = sheet.getRow((rowNum * totalRowCoeff) + headerSpacing + ((targetsPerPiece + 1) * block) + line);
-                        lp2 = row.getCell((colNum * totalColCoeff) + 1).getStringCellValue();
-                        letterPair = lp1 + lp2;
-                        String algString = row.getCell((colNum * totalColCoeff) + 2).getStringCellValue();
-                        if (!algString.trim().equals("/"))
-                            if (includeInverse || !algString.trim().startsWith("#"))
-                                excelStringMap.put(letterPair, algString.replace("#ENNVAU", "#NV"));
+                        Row row = sheet.getRow((rowNum * totalRowCoeff) + HEADER_SPACING + ((targetsPerPiece + 1) * block) + line);
+
+                        String lp1 = sheet.getRow(rowNum * totalRowCoeff).getCell(colNum * TOTAL_COL_COEFF + HEADER_SPACING).getStringCellValue();
+                        lp1 = "" + lp1.charAt(lp1.length() - 1);
+
+                        String lp2 = row.getCell((colNum * TOTAL_COL_COEFF) + 1).getStringCellValue();
+
+                        if (letterPair.equals(lp1 + lp2)) {
+                            Cell cell = row.getCell((colNum * TOTAL_COL_COEFF) + 2);
+                            if (!cell.getStringCellValue().equals("/"))
+                                return cell;
+                        }
                     }
-            }
 
-        return excelStringMap;
-    }
-
-    public Map<String, Algorithm> getAlgsFromExcel(Workbook wb, PieceType type) {
-        Map<String, String> excelStringMap = getAlgStringsFromExcel(wb, this.getPageNum(type), type.getNumPiecesNoBuffer(), type.getTargetsPerPiece(), true);
-
-        Map<String, Algorithm> algMap = new HashMap<>();
-        if (excelStringMap.size() == type.getNumAlgs()) {
-            CubicAlgorithmReader cubicReader = new CubicAlgorithmReader();
-            excelStringMap.keySet().forEach(key -> {
-                String algString = excelStringMap.get(key);
-                Algorithm parseAlg;
-                if (algString.startsWith("#")) parseAlg = cubicReader.parse(excelStringMap.get(algString.substring(1))).inverse();
-                else parseAlg = cubicReader.parse(algString);
-                algMap.put(key, parseAlg);
-            });
-            return algMap;
-        } else throw new InvalidExcelMapSizeError(excelStringMap.size(), type.getNumAlgs());
+        return null;
     }
 
     @Override
-    protected Map<String, List<String>> algStringsFromExcel(Workbook wb, PieceType type) throws InvalidPieceTypeException {
-        return this.wrapToListMap(this.getAlgStringsFromExcel(wb, this.getPageNum(type), type.getNumPiecesNoBuffer(), type.getTargetsPerPiece(), false));
+    protected List<Cell> getSecondaryCells(PieceType pieceType, String letterPair) {
+        return Collections.emptyList();
     }
 
     @Override
-    protected Map<String, List<Algorithm>> algsFromExcel(Workbook wb, PieceType type) throws InvalidPieceTypeException {
-        return this.wrapToListMap(this.getAlgsFromExcel(wb, type));
+    protected PieceType[] getSupportedPieceTypes() {
+        return new CubicPieceType[]{CORNER, EDGE, WING, XCENTER, TCENTER};
     }
 
-    private <T> Map<String, List<T>> wrapToListMap(Map<String, T> singleEntryMap) {
-        Map<String, List<T>> toReturn = new HashMap<>();
-        for (String key : singleEntryMap.keySet())
-            toReturn.put(key, Collections.singletonList(singleEntryMap.get(key)));
-        return toReturn;
-    }
+    @Override
+    public List<String> getRawAlg(PieceType type, String letterPair) {
+        List<String> baseAlgs = super.getRawAlg(type, letterPair);
+        List<String> algs = new ArrayList<>();
 
-    public void writeAlgSetToSpreadsheet(Workbook wb, Map<String, Algorithm> algMap, PieceType type) {
-        if (wb == null) return;
-        int targetsPerPiece = type.getTargetsPerPiece();
-        int numTargets = type.getNumPiecesNoBuffer();
-        List<String> letterList = Arrays.asList(SpeffzUtil.fullSpeffz());
-        Sheet sheet = wb.createSheet("Sheet" + System.currentTimeMillis());
-        int headerSpacing = 2, betweenColSpacing = 3;
-        int totalColCoeff = 4, totalRowCoeff = headerSpacing + ((targetsPerPiece + 1) * numTargets) + betweenColSpacing + 1;
-        for (int colNum = 0; colNum < numTargets; colNum++)
-            for (int rowNum = 0; rowNum < targetsPerPiece; rowNum++) {
-                int i = colNum * targetsPerPiece + rowNum;
-                Row headerRow = sheet.getRow(rowNum * totalRowCoeff);
-                if (headerRow == null) headerRow = sheet.createRow(rowNum * totalRowCoeff);
-                headerRow.createCell(colNum * totalColCoeff).setCellValue(SpeffzUtil.speffzToSticker(letterList.get(0), type) + " - buffer");
-                headerRow.createCell(colNum * totalColCoeff + 1).setCellValue("letter");
-                headerRow.createCell(colNum * totalColCoeff + 2).setCellValue(SpeffzUtil.speffzToSticker(letterList.get(i), type) + " - " + letterList.get(i));
-                for (int block = 0; block < numTargets; block++)
-                    for (int line = 0; line < targetsPerPiece; line++) {
-                        int j = block * targetsPerPiece + line;
-                        Row blockRow = sheet.getRow((rowNum * totalRowCoeff) + headerSpacing + ((targetsPerPiece + 1) * block) + line);
-                        if (blockRow == null) blockRow = sheet.createRow((rowNum * totalRowCoeff) + headerSpacing + ((targetsPerPiece + 1) * block) + line);
-                        Algorithm alg = algMap.getOrDefault(letterList.get(i) + letterList.get(j), null);
-                        String algString = alg == null ? "/" : alg.toFormatString();
-                        if (colNum > block) algString = "#" + letterList.get(j) + letterList.get(i);
-                        blockRow.createCell(colNum * totalColCoeff).setCellValue(SpeffzUtil.speffzToSticker(letterList.get(j), type));
-                        blockRow.createCell(colNum * totalColCoeff + 1).setCellValue(letterList.get(j));
-                        blockRow.createCell(colNum * totalColCoeff + 2).setCellValue(algString);
-                    }
-            }
-        writeWorkbook(wb);
-    }
+        for (String alg : baseAlgs) {
+            if (alg.replace("#ENNVAU", "#NV").startsWith("#"))
+                algs.addAll(this.getAlg(type, alg.substring(1)).stream().map(invAlg -> invAlg.inverse().toFormatString()).collect(Collectors.toList()));
+            else
+                algs.add(alg);
+        }
 
-    public void referencePrint(Workbook wb, PieceType type) {
-        if (wb == null) return;
-        Sheet sheet = wb.getSheetAt(this.getPrintPageNum(type));
-        String sheetName = sheet.getSheetName();
-        String origSheetName = sheetName.replace("Print", "");
-        if (sheetName.contains("Print"))
-            for (Row row : sheet)
-                for (Cell cell : row)
-                    if (cell.getStringCellValue().length() > 1 && !cell.getStringCellValue().equals("letter"))
-                        cell.setCellFormula(origSheetName + "!" + ExcelUtil.excelCellBinarySearch(cell.getStringCellValue(), sheet));
-        writeWorkbook(wb);
-    }
-
-    public void fixMissingPrintReferences(Workbook wb, PieceType type) {
-        if (wb == null) return;
-        int targetsPerPiece = type.getTargetsPerPiece();
-        int numTargets = type.getNumPiecesNoBuffer();
-        Sheet sheet = wb.getSheetAt(this.getPrintPageNum(type));
-        String sheetName = sheet.getSheetName();
-        String origSheetName = sheetName.replace("Print", "");
-        if (sheetName.contains("Print")) for (Row row : sheet) for (Cell cell : row)
-            if (cell.getCellType() == Cell.CELL_TYPE_FORMULA) {
-                String cellFormula = cell.getCellFormula();
-                if (cellFormula.contains("A0")) {
-                    String primaryLetter = sheet.getRow(2).getCell(cell.getColumnIndex()).getStringCellValue();
-                    String secondaryLetter = row.getCell(0).getStringCellValue();
-                    int totalRowCoeff = (targetsPerPiece + 1) * numTargets + 3 + 1, totalColCoeff = 4;
-                    Sheet origSheet = wb.getSheet(origSheetName);
-                    for (int colNum = 0; colNum < numTargets; colNum++) for (int rowNum = 0; rowNum < targetsPerPiece; rowNum++) {
-                        Row workingRow = origSheet.getRow(rowNum * totalRowCoeff);
-                        String tempCellString = workingRow.getCell((colNum * totalColCoeff) + 2).getStringCellValue();
-                        String testPrimary = tempCellString.substring(tempCellString.length() - 1);
-                        if (testPrimary.equals(primaryLetter))
-                            for (int line = 0; line < numTargets * targetsPerPiece; line++) {
-                                int tempRowNum = rowNum * totalRowCoeff + 2 + (line + (line / targetsPerPiece));
-                                tempCellString = origSheet.getRow(tempRowNum).getCell((colNum * totalColCoeff) + 1).getStringCellValue();
-                                String testSecondary = tempCellString.substring(tempCellString.length() - 1);
-                                if (testSecondary.equals(secondaryLetter))
-                                    cell.setCellFormula(origSheetName + "!" + ExcelUtil.excelColumnNames[(colNum * totalColCoeff) + 2] + (tempRowNum + 1));
-                            }
-                    }
-                }
-            }
-        writeWorkbook(wb);
+        return algs;
     }
 }
