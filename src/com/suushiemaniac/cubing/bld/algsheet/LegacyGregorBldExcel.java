@@ -17,7 +17,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import java.io.File;
 import java.util.*;
 
-public class OldGregorBldExcel {
+public class LegacyGregorBldExcel {
     private int getPageNum(PieceType type) {
         if (!(type instanceof CubicPieceType)) return -1;
         switch ((CubicPieceType) type) {
