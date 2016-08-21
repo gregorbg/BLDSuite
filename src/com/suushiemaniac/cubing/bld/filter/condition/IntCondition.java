@@ -1,4 +1,4 @@
-package com.suushiemaniac.cubing.bld.filter;
+package com.suushiemaniac.cubing.bld.filter.condition;
 
 public class IntCondition {
     public static IntCondition EXACT(int point) {

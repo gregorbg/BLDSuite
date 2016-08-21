@@ -3,6 +3,8 @@ package com.suushiemaniac.cubing.bld.filter;
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
 import com.suushiemaniac.cubing.bld.analyze.cube.TwoBldCube;
+import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition;
+import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
 import com.suushiemaniac.cubing.bld.model.AlgSource;
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
@@ -14,8 +16,8 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static com.suushiemaniac.cubing.bld.filter.BooleanCondition.*;
-import static com.suushiemaniac.cubing.bld.filter.IntCondition.*;
+import static com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.*;
+import static com.suushiemaniac.cubing.bld.filter.condition.IntCondition.*;
 
 public class TwoBldScramble extends BldScramble {
     protected BooleanCondition hasCornerParity, cornerSingleCycle;

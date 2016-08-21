@@ -2,10 +2,12 @@ package com.suushiemaniac.cubing.bld.filter;
 
 import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
 import com.suushiemaniac.cubing.bld.analyze.cube.FiveBldCube;
+import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition;
+import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.NoInspectionFiveByFiveCubePuzzle;
 
-import static com.suushiemaniac.cubing.bld.filter.BooleanCondition.*;
+import static com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.*;
 
 public class FiveBldScramble extends FourBldScramble {
     protected BooleanCondition hasTCenterParity, tCenterSingleCycle;

@@ -2,11 +2,13 @@ package com.suushiemaniac.cubing.bld.filter;
 
 import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
 import com.suushiemaniac.cubing.bld.analyze.cube.FourBldCube;
+import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition;
+import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.NoInspectionFourByFourCubePuzzle;
 
-import static com.suushiemaniac.cubing.bld.filter.BooleanCondition.*;
-import static com.suushiemaniac.cubing.bld.filter.IntCondition.*;
+import static com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.*;
+import static com.suushiemaniac.cubing.bld.filter.condition.IntCondition.*;
 
 public class FourBldScramble extends ThreeBldScramble {
     protected BooleanCondition hasWingParity, hasXCenterParity, wingSingleCycle, xCenterSingleCycle;

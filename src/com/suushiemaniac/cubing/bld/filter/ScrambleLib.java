@@ -1,7 +1,7 @@
 package com.suushiemaniac.cubing.bld.filter;
 
-import static com.suushiemaniac.cubing.bld.filter.BooleanCondition.*;
-import static com.suushiemaniac.cubing.bld.filter.IntCondition.*;
+import static com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.*;
+import static com.suushiemaniac.cubing.bld.filter.condition.IntCondition.*;
 
 public final class ScrambleLib {
     public static final BldScramble lolScrambleCorner = new ThreeBldScramble(MAXIMUM(4), NONE(), UNIMPORTANT(), ANY(), NONE(), ANY(), ANY(), ANY(), NONE());
