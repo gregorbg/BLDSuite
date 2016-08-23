@@ -2,6 +2,7 @@ package com.suushiemaniac.cubing.bld.analyze.cube;
 
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,7 +22,7 @@ public class FiveBldCube extends FourBldCube {
     }
 
     public static boolean solves(PieceType cubicPieceType, String alg, String lpCase) {
-        FiveBldCube referenceCube = new FiveBldCube(invAlg(alg));
+        FiveBldCube referenceCube = new FiveBldCube(cubicPieceType.getReader().parse(alg).inverse().plain().toFormatString());
         String solutionPairs;
         if (!(cubicPieceType instanceof CubicPieceType)) return false;
         switch ((CubicPieceType) cubicPieceType) {
@@ -608,11 +609,11 @@ public class FiveBldCube extends FourBldCube {
     }
 
     public void setTCenterBuffer(String bufferAsLetter) {
-        if (arrayContains(this.tCenterLettering, bufferAsLetter)) {
-            int speffz = arrayIndex(this.tCenterLettering, bufferAsLetter);
-            int outer = deepArrayOuterIndex(this.tCenterCubies, speffz), inner = deepArrayInnerIndex(this.tCenterCubies, speffz);
-            for (int i = 0; i < outer; i++) cycleArrayLeft(this.tCenterCubies);
-            for (int i = 0; i < inner; i++) cycleArrayLeft(this.tCenterCubies[0]);
+        if (ArrayUtil.contains(this.tCenterLettering, bufferAsLetter)) {
+            int speffz = ArrayUtil.index(this.tCenterLettering, bufferAsLetter);
+            int outer = ArrayUtil.deepOuterIndex(this.tCenterCubies, speffz), inner = ArrayUtil.deepInnerIndex(this.tCenterCubies, speffz);
+            for (int i = 0; i < outer; i++) ArrayUtil.cycleLeft(this.tCenterCubies);
+            for (int i = 0; i < inner; i++) ArrayUtil.cycleLeft(this.tCenterCubies[0]);
             this.parseScramble(this.getScramble());
         }
     }

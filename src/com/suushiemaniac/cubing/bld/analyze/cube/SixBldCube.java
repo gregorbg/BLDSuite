@@ -1,6 +1,7 @@
 package com.suushiemaniac.cubing.bld.analyze.cube;
 
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -1727,11 +1728,11 @@ public class SixBldCube extends FiveBldCube {
     }
 
     public void setInnerXCenterBuffer(String bufferAsLetter) {
-        if (arrayContains(this.innerXCenterLettering, bufferAsLetter)) {
-            int speffz = arrayIndex(this.innerXCenterLettering, bufferAsLetter);
-            int outer = deepArrayOuterIndex(this.innerXCenterCubies, speffz), inner = deepArrayInnerIndex(this.innerXCenterCubies, speffz);
-            for (int i = 0; i < outer; i++) cycleArrayLeft(this.innerXCenterCubies);
-            for (int i = 0; i < inner; i++) cycleArrayLeft(this.innerXCenterCubies[0]);
+        if (ArrayUtil.contains(this.innerXCenterLettering, bufferAsLetter)) {
+            int speffz = ArrayUtil.index(this.innerXCenterLettering, bufferAsLetter);
+            int outer = ArrayUtil.deepOuterIndex(this.innerXCenterCubies, speffz), inner = ArrayUtil.deepInnerIndex(this.innerXCenterCubies, speffz);
+            for (int i = 0; i < outer; i++) ArrayUtil.cycleLeft(this.innerXCenterCubies);
+            for (int i = 0; i < inner; i++) ArrayUtil.cycleLeft(this.innerXCenterCubies[0]);
             this.parseScramble(this.getScramble());
         }
     }
@@ -1745,10 +1746,10 @@ public class SixBldCube extends FiveBldCube {
     }
 
     public void setInnerWingBuffer(String bufferAsLetter) {
-        if (arrayContains(this.innerWingLettering, bufferAsLetter)) {
-            int speffz = arrayIndex(this.innerWingLettering, bufferAsLetter);
-            int index = arrayIndex(this.innerWingCubies, speffz);
-            for (int i = 0; i < index; i++) cycleArrayLeft(this.innerWingCubies);
+        if (ArrayUtil.contains(this.innerWingLettering, bufferAsLetter)) {
+            int speffz = ArrayUtil.index(this.innerWingLettering, bufferAsLetter);
+            int index = ArrayUtil.index(this.innerWingCubies, speffz);
+            for (int i = 0; i < index; i++) ArrayUtil.cycleLeft(this.innerWingCubies);
             this.parseScramble(this.getScramble());
         }
     }
@@ -1762,11 +1763,11 @@ public class SixBldCube extends FiveBldCube {
     }
 
     public void setRightObliquesBuffer(String bufferAsLetter) {
-        if (arrayContains(this.rightObliqueLettering, bufferAsLetter)) {
-            int speffz = arrayIndex(this.rightObliqueLettering, bufferAsLetter);
-            int outer = deepArrayOuterIndex(this.rightObliqueCubies, speffz), inner = deepArrayInnerIndex(this.rightObliqueCubies, speffz);
-            for (int i = 0; i < outer; i++) cycleArrayLeft(this.rightObliqueCubies);
-            for (int i = 0; i < inner; i++) cycleArrayLeft(this.rightObliqueCubies[0]);
+        if (ArrayUtil.contains(this.rightObliqueLettering, bufferAsLetter)) {
+            int speffz = ArrayUtil.index(this.rightObliqueLettering, bufferAsLetter);
+            int outer = ArrayUtil.deepOuterIndex(this.rightObliqueCubies, speffz), inner = ArrayUtil.deepInnerIndex(this.rightObliqueCubies, speffz);
+            for (int i = 0; i < outer; i++) ArrayUtil.cycleLeft(this.rightObliqueCubies);
+            for (int i = 0; i < inner; i++) ArrayUtil.cycleLeft(this.rightObliqueCubies[0]);
             this.parseScramble(this.getScramble());
         }
     }
@@ -1780,11 +1781,11 @@ public class SixBldCube extends FiveBldCube {
     }
 
     public void setLeftObliquesBuffer(String bufferAsLetter) {
-        if (arrayContains(this.leftObliqueLettering, bufferAsLetter)) {
-            int speffz = arrayIndex(this.leftObliqueLettering, bufferAsLetter);
-            int outer = deepArrayOuterIndex(this.leftObliqueCubies, speffz), inner = deepArrayInnerIndex(this.leftObliqueCubies, speffz);
-            for (int i = 0; i < outer; i++) cycleArrayLeft(this.leftObliqueCubies);
-            for (int i = 0; i < inner; i++) cycleArrayLeft(this.leftObliqueCubies[0]);
+        if (ArrayUtil.contains(this.leftObliqueLettering, bufferAsLetter)) {
+            int speffz = ArrayUtil.index(this.leftObliqueLettering, bufferAsLetter);
+            int outer = ArrayUtil.deepOuterIndex(this.leftObliqueCubies, speffz), inner = ArrayUtil.deepInnerIndex(this.leftObliqueCubies, speffz);
+            for (int i = 0; i < outer; i++) ArrayUtil.cycleLeft(this.leftObliqueCubies);
+            for (int i = 0; i < inner; i++) ArrayUtil.cycleLeft(this.leftObliqueCubies[0]);
             this.parseScramble(this.getScramble());
         }
     }

@@ -1,6 +1,9 @@
 package com.suushiemaniac.cubing.bld.analyze.cube;
 
+import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.util.ArrayUtil;
+import com.suushiemaniac.lang.json.JSON;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -165,7 +168,7 @@ public class TwoBldCube extends BldCube {
     public void setSolvingOrientation(int top, int front) {
         String neededRotation = this.getRotationsFromOrientation(top, front, this.centerCubies);
         if (neededRotation.length() > 0) {
-            this.solvingOrPremoves = this.invertMoves(neededRotation);
+            this.solvingOrPremoves = new CubicAlgorithmReader().parse(neededRotation).inverse().plain().toFormatString();
             this.parseScramble(this.getScramble());
         }
     }
@@ -336,10 +339,10 @@ public class TwoBldCube extends BldCube {
 
         for (String twistedCorner : twistedCorners.split("\\s+?")) {
             opSolution += twistedCorner + " ";
-            Character[] flippedEdgeChars = autoboxArray(twistedCorner.toCharArray());
-            if (isCw) this.cycleArrayRight(flippedEdgeChars);
-            else this.cycleArrayLeft(flippedEdgeChars);
-            opSolution += new String(autoboxArray(flippedEdgeChars)) + " ";
+            Character[] flippedEdgeChars = ArrayUtil.autobox(twistedCorner.toCharArray());
+            if (isCw) ArrayUtil.cycleRight(flippedEdgeChars);
+            else ArrayUtil.cycleLeft(flippedEdgeChars);
+            opSolution += new String(ArrayUtil.autobox(flippedEdgeChars)) + " ";
         }
 
         return opSolution.trim();
@@ -353,7 +356,7 @@ public class TwoBldCube extends BldCube {
         String[] split = flippedEdgeOpSpeffz.split("\\s+?");
         for (int i = 0; i < split.length; i++) {
             String target = split[i];
-            opStickerSolution += this.cornerLettering[this.arrayIndex(this.cornerStickers, target)];
+            opStickerSolution += this.cornerLettering[ArrayUtil.index(this.cornerStickers, target)];
             if (i % 2 == 1) opStickerSolution += " ";
         }
 
@@ -586,11 +589,11 @@ public class TwoBldCube extends BldCube {
     }
 
     public void setCornerBuffer(String bufferAsLetter) {
-        if (arrayContains(this.cornerLettering, bufferAsLetter)) {
-            int speffz = arrayIndex(this.cornerLettering, bufferAsLetter);
-            int outer = deepArrayOuterIndex(this.cornerCubies, speffz), inner = deepArrayInnerIndex(this.cornerCubies, speffz);
-            for (int i = 0; i < outer; i++) cycleArrayLeft(this.cornerCubies);
-            for (int i = 0; i < inner; i++) cycleArrayLeft(this.cornerCubies[0]);
+        if (ArrayUtil.contains(this.cornerLettering, bufferAsLetter)) {
+            int speffz = ArrayUtil.index(this.cornerLettering, bufferAsLetter);
+            int outer = ArrayUtil.deepOuterIndex(this.cornerCubies, speffz), inner = ArrayUtil.deepInnerIndex(this.cornerCubies, speffz);
+            for (int i = 0; i < outer; i++) ArrayUtil.cycleLeft(this.cornerCubies);
+            for (int i = 0; i < inner; i++) ArrayUtil.cycleLeft(this.cornerCubies[0]);
             this.parseScramble(this.getScramble());
         }
     }

@@ -1,6 +1,8 @@
 package com.suushiemaniac.cubing.bld.analyze.cube;
 
+import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -260,7 +262,7 @@ public class MegaminxBldCube extends BldCube {
     public void setSolvingOrientation(int top, int front) {
         String neededRotation = this.getRotationsFromOrientation(top, front, this.centerCubies);
         if (neededRotation.length() > 0) {
-            this.solvingOrPremoves = this.invertMoves(neededRotation);
+            this.solvingOrPremoves = new CubicAlgorithmReader().parse(neededRotation).inverse().plain().toFormatString();
             this.parseScramble(this.getScramble());
         }
     }
@@ -715,11 +717,11 @@ public class MegaminxBldCube extends BldCube {
     }
 
     public void setCornerBuffer(String bufferAsLetter) {
-        if (arrayContains(this.cornerLettering, bufferAsLetter)) {
-            int speffz = arrayIndex(this.cornerLettering, bufferAsLetter);
-            int outer = deepArrayOuterIndex(this.cornerCubies, speffz), inner = deepArrayInnerIndex(this.cornerCubies, speffz);
-            for (int i = 0; i < outer; i++) cycleArrayLeft(this.cornerCubies);
-            for (int i = 0; i < inner; i++) cycleArrayLeft(this.cornerCubies[0]);
+        if (ArrayUtil.contains(this.cornerLettering, bufferAsLetter)) {
+            int speffz = ArrayUtil.index(this.cornerLettering, bufferAsLetter);
+            int outer = ArrayUtil.deepOuterIndex(this.cornerCubies, speffz), inner = ArrayUtil.deepInnerIndex(this.cornerCubies, speffz);
+            for (int i = 0; i < outer; i++) ArrayUtil.cycleLeft(this.cornerCubies);
+            for (int i = 0; i < inner; i++) ArrayUtil.cycleLeft(this.cornerCubies[0]);
             this.parseScramble(this.getScramble());
         }
     }
@@ -733,11 +735,11 @@ public class MegaminxBldCube extends BldCube {
     }
 
     public void setEdgeBuffer(String bufferAsLetter) {
-        if (arrayContains(this.edgeLettering, bufferAsLetter)) {
-            int speffz = arrayIndex(this.edgeLettering, bufferAsLetter);
-            int outer = deepArrayOuterIndex(this.edgeCubies, speffz), inner = deepArrayInnerIndex(this.edgeCubies, speffz);
-            for (int i = 0; i < outer; i++) cycleArrayLeft(this.edgeCubies);
-            for (int i = 0; i < inner; i++) cycleArrayLeft(this.edgeCubies[0]);
+        if (ArrayUtil.contains(this.edgeLettering, bufferAsLetter)) {
+            int speffz = ArrayUtil.index(this.edgeLettering, bufferAsLetter);
+            int outer = ArrayUtil.deepOuterIndex(this.edgeCubies, speffz), inner = ArrayUtil.deepInnerIndex(this.edgeCubies, speffz);
+            for (int i = 0; i < outer; i++) ArrayUtil.cycleLeft(this.edgeCubies);
+            for (int i = 0; i < inner; i++) ArrayUtil.cycleLeft(this.edgeCubies[0]);
             this.parseScramble(this.getScramble());
         }
     }

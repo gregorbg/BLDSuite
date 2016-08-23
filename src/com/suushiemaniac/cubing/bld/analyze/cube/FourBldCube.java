@@ -2,6 +2,7 @@ package com.suushiemaniac.cubing.bld.analyze.cube;
 
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,7 +19,7 @@ public class FourBldCube extends ThreeBldCube {
     }
 
     public static boolean solves(PieceType cubicPieceType, String alg, String lpCase) {
-        FourBldCube referenceCube = new FourBldCube(invAlg(alg));
+        FourBldCube referenceCube = new FourBldCube(cubicPieceType.getReader().parse(alg).inverse().plain().toFormatString());
         String solutionPairs;
         if (!(cubicPieceType instanceof CubicPieceType)) return false;
         switch ((CubicPieceType) cubicPieceType) {
@@ -863,20 +864,20 @@ public class FourBldCube extends ThreeBldCube {
     }
 
     public void setWingBuffer(String bufferAsLetter) {
-        if (arrayContains(this.wingLettering, bufferAsLetter)) {
-            int speffz = arrayIndex(this.wingLettering, bufferAsLetter);
-            int index = arrayIndex(this.wingCubies, speffz);
-            for (int i = 0; i < index; i++) cycleArrayLeft(this.wingCubies);
+        if (ArrayUtil.contains(this.wingLettering, bufferAsLetter)) {
+            int speffz = ArrayUtil.index(this.wingLettering, bufferAsLetter);
+            int index = ArrayUtil.index(this.wingCubies, speffz);
+            for (int i = 0; i < index; i++) ArrayUtil.cycleLeft(this.wingCubies);
             this.parseScramble(this.getScramble());
         }
     }
 
     public void setXCenterBuffer(String bufferAsLetter) {
-        if (arrayContains(this.xCenterLettering, bufferAsLetter)) {
-            int speffz = arrayIndex(this.xCenterLettering, bufferAsLetter);
-            int outer = deepArrayOuterIndex(this.xCenterCubies, speffz), inner = deepArrayInnerIndex(this.xCenterCubies, speffz);
-            for (int i = 0; i < outer; i++) cycleArrayLeft(this.xCenterCubies);
-            for (int i = 0; i < inner; i++) cycleArrayLeft(this.xCenterCubies[0]);
+        if (ArrayUtil.contains(this.xCenterLettering, bufferAsLetter)) {
+            int speffz = ArrayUtil.index(this.xCenterLettering, bufferAsLetter);
+            int outer = ArrayUtil.deepOuterIndex(this.xCenterCubies, speffz), inner = ArrayUtil.deepInnerIndex(this.xCenterCubies, speffz);
+            for (int i = 0; i < outer; i++) ArrayUtil.cycleLeft(this.xCenterCubies);
+            for (int i = 0; i < inner; i++) ArrayUtil.cycleLeft(this.xCenterCubies[0]);
             this.parseScramble(this.getScramble());
         }
     }

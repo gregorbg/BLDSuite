@@ -2,6 +2,8 @@ package com.suushiemaniac.cubing.bld.analyze.cube;
 
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.util.ArrayUtil;
+import com.suushiemaniac.lang.json.JSON;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,7 +24,7 @@ public class ThreeBldCube extends TwoBldCube {
     }
 
     public static boolean solves(PieceType cubicPieceType, String alg, String lpCase) {
-        ThreeBldCube referenceCube = new ThreeBldCube(invAlg(alg));
+        ThreeBldCube referenceCube = new ThreeBldCube(cubicPieceType.getReader().parse(alg).inverse().plain().toFormatString());
         String solutionPairs;
         if (!(cubicPieceType instanceof CubicPieceType)) return false;
         switch ((CubicPieceType) cubicPieceType) {
@@ -531,9 +533,9 @@ public class ThreeBldCube extends TwoBldCube {
 
         for (String flippedEdge : flippedEdges.split("\\s+?")) {
             opSolution += flippedEdge + " ";
-            Character[] flippedEdgeChars = autoboxArray(flippedEdge.toCharArray());
-            this.cycleArrayLeft(flippedEdgeChars);
-            opSolution += new String(autoboxArray(flippedEdgeChars)) + " ";
+            Character[] flippedEdgeChars = ArrayUtil.autobox(flippedEdge.toCharArray());
+            ArrayUtil.cycleLeft(flippedEdgeChars);
+            opSolution += new String(ArrayUtil.autobox(flippedEdgeChars)) + " ";
         }
 
         return opSolution.trim();
@@ -552,7 +554,7 @@ public class ThreeBldCube extends TwoBldCube {
         String[] split = flippedEdgeOpSpeffz.split("\\s+?");
         for (int i = 0; i < split.length; i++) {
             String target = split[i];
-            opStickerSolution += this.edgeLettering[this.arrayIndex(this.edgeStickers, target)];
+            opStickerSolution += this.edgeLettering[ArrayUtil.index(this.edgeStickers, target)];
             if (i % 2 == 1) opStickerSolution += " ";
         }
 
@@ -703,11 +705,11 @@ public class ThreeBldCube extends TwoBldCube {
     }
 
     public void setEdgeBuffer(String bufferAsLetter) {
-        if (arrayContains(this.edgeLettering, bufferAsLetter)) {
-            int speffz = arrayIndex(this.edgeLettering, bufferAsLetter);
-            int outer = deepArrayOuterIndex(this.edgeCubies, speffz), inner = deepArrayInnerIndex(this.edgeCubies, speffz);
-            for (int i = 0; i < outer; i++) cycleArrayLeft(this.edgeCubies);
-            for (int i = 0; i < inner; i++) cycleArrayLeft(this.edgeCubies[0]);
+        if (ArrayUtil.contains(this.edgeLettering, bufferAsLetter)) {
+            int speffz = ArrayUtil.index(this.edgeLettering, bufferAsLetter);
+            int outer = ArrayUtil.deepOuterIndex(this.edgeCubies, speffz), inner = ArrayUtil.deepInnerIndex(this.edgeCubies, speffz);
+            for (int i = 0; i < outer; i++) ArrayUtil.cycleLeft(this.edgeCubies);
+            for (int i = 0; i < inner; i++) ArrayUtil.cycleLeft(this.edgeCubies[0]);
             this.parseScramble(this.getScramble());
         }
     }

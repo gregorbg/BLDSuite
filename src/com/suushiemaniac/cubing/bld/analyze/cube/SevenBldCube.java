@@ -1,6 +1,7 @@
 package com.suushiemaniac.cubing.bld.analyze.cube;
 
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -732,11 +733,11 @@ public class SevenBldCube extends SixBldCube {
     }
 
     public void setInnerTCenterBuffer(String bufferAsLetter) {
-        if (arrayContains(this.innerTCenterLettering, bufferAsLetter)) {
-            int speffz = arrayIndex(this.innerTCenterLettering, bufferAsLetter);
-            int outer = deepArrayOuterIndex(this.innerTCenterCubies, speffz), inner = deepArrayInnerIndex(this.innerTCenterCubies, speffz);
-            for (int i = 0; i < outer; i++) cycleArrayLeft(this.innerTCenterCubies);
-            for (int i = 0; i < inner; i++) cycleArrayLeft(this.innerTCenterCubies[0]);
+        if (ArrayUtil.contains(this.innerTCenterLettering, bufferAsLetter)) {
+            int speffz = ArrayUtil.index(this.innerTCenterLettering, bufferAsLetter);
+            int outer = ArrayUtil.deepOuterIndex(this.innerTCenterCubies, speffz), inner = ArrayUtil.deepInnerIndex(this.innerTCenterCubies, speffz);
+            for (int i = 0; i < outer; i++) ArrayUtil.cycleLeft(this.innerTCenterCubies);
+            for (int i = 0; i < inner; i++) ArrayUtil.cycleLeft(this.innerTCenterCubies[0]);
             this.parseScramble(this.getScramble());
         }
     }

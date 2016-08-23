@@ -1,6 +1,8 @@
 package com.suushiemaniac.cubing.bld.analyze.cube;
 
+import com.suushiemaniac.cubing.alglib.lang.PyraminxAlgorithmReader;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -235,10 +237,10 @@ public class PyraminxBldCube extends BldCube {
         };
         int lPosition = -1, aPosition = -1;
         for (int i = 0; i < 12; i++) {
-            if (arrayContains(this.centerCubies[2], this.centers[i]) && lPosition == -1)
-                lPosition = deepArrayOuterIndex(this.centerCubies, i);
-            if (arrayContains(this.centerCubies[0], this.centers[i]) && aPosition == -1)
-                aPosition = deepArrayOuterIndex(this.centerCubies, i);
+            if (ArrayUtil.contains(this.centerCubies[2], this.centers[i]) && lPosition == -1)
+                lPosition = ArrayUtil.deepOuterIndex(this.centerCubies, i);
+            if (ArrayUtil.contains(this.centerCubies[0], this.centers[i]) && aPosition == -1)
+                aPosition = ArrayUtil.deepOuterIndex(this.centerCubies, i);
         }
         if (lPosition > -1 && aPosition > -1 && lPosition != aPosition) {
             String neededRotation = reorientation[lPosition][aPosition];
@@ -250,7 +252,7 @@ public class PyraminxBldCube extends BldCube {
     public void setSolvingOrientation(int bottom, int front) {
         String neededRotation = this.getRotationsFromOrientation(bottom, front, this.fixedCenterCubies);
         if (neededRotation.length() > 0) {
-            this.solvingOrPremoves = this.invertMoves(neededRotation);
+            this.solvingOrPremoves = new PyraminxAlgorithmReader().parse(neededRotation).inverse().plain().toFormatString();
             this.parseScramble(this.getScramble());
         }
     }
@@ -603,11 +605,11 @@ public class PyraminxBldCube extends BldCube {
     }
 
     public void setEdgeBuffer(String bufferAsLetter) {
-        if (arrayContains(this.edgeLettering, bufferAsLetter)) {
-            int speffz = arrayIndex(this.edgeLettering, bufferAsLetter);
-            int outer = deepArrayOuterIndex(this.edgeCubies, speffz), inner = deepArrayInnerIndex(this.edgeCubies, speffz);
-            for (int i = 0; i < outer; i++) cycleArrayLeft(this.edgeCubies);
-            for (int i = 0; i < inner; i++) cycleArrayLeft(this.edgeCubies[0]);
+        if (ArrayUtil.contains(this.edgeLettering, bufferAsLetter)) {
+            int speffz = ArrayUtil.index(this.edgeLettering, bufferAsLetter);
+            int outer = ArrayUtil.deepOuterIndex(this.edgeCubies, speffz), inner = ArrayUtil.deepInnerIndex(this.edgeCubies, speffz);
+            for (int i = 0; i < outer; i++) ArrayUtil.cycleLeft(this.edgeCubies);
+            for (int i = 0; i < inner; i++) ArrayUtil.cycleLeft(this.edgeCubies[0]);
             this.parseScramble(this.getScramble());
         }
     }
