@@ -11,6 +11,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
@@ -80,7 +81,7 @@ public class GregorBldExcel extends BldAlgSheet {
     }
 
     @Override
-    public List<String> getRawAlg(PieceType type, String letterPair) {
+    public Set<String> getRawAlg(PieceType type, String letterPair) {
         List<String> baseAlgs = super.getRawAlg(type, letterPair);
         List<String> algs = new ArrayList<>();
 

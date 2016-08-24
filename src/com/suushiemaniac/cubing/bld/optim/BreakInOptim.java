@@ -19,7 +19,7 @@ public class BreakInOptim {
 		Map<Algorithm, String> targetMap = new HashMap<>();
 
         for (char c = 'A'; c < 'Y'; c++) {
-            List<Algorithm> sourceList = this.source.getAlg(type, ("" + target) + c);
+            Set<Algorithm> sourceList = this.source.getAlg(type, ("" + target) + c);
             if (sourceList == null) continue;
             algList.addAll(sourceList);
 

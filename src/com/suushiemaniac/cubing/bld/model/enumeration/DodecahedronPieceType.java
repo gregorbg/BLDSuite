@@ -32,4 +32,32 @@ public enum DodecahedronPieceType implements PieceType {
     public NotationReader getReader() {
         return DodecahedronPieceType.READER;
     }
+
+	@Override
+	public String humanName() {
+		switch (this) {
+			case CORNER:
+				return "Corner";
+			case EDGE:
+				return "Edge";
+			case CENTER:
+				return "Center";
+			default:
+				return "";
+		}
+	}
+
+	@Override
+	public String mnemonic() {
+		switch (this) {
+			case CORNER:
+				return "C";
+			case EDGE:
+				return "E";
+			case CENTER:
+				return "Ce";
+			default:
+				return "";
+		}
+	}
 }

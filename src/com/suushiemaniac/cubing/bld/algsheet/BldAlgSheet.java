@@ -1,9 +1,7 @@
 package com.suushiemaniac.cubing.bld.algsheet;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
-import com.suushiemaniac.cubing.alglib.util.ParseUtils;
 import com.suushiemaniac.cubing.bld.model.AlgSource;
-import com.suushiemaniac.cubing.bld.exception.InvalidPieceTypeException;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
 import org.apache.poi.ss.usermodel.Cell;
@@ -20,7 +18,7 @@ import java.util.stream.Collectors;
 public abstract class BldAlgSheet implements AlgSource {
     protected Workbook workbook;
     private File excelFile;
-    private Map<PieceType, Map<String, List<String>>> cache;
+    private Map<PieceType, Map<String, Set<String>>> cache;
 
     public BldAlgSheet(File excelFile) {
         this.excelFile = excelFile;
@@ -51,15 +49,15 @@ public abstract class BldAlgSheet implements AlgSource {
         this.workbook = this.getWorkbook();
     }
 
-    protected Map<PieceType, Map<String, List<String>>> readAll() {
+    protected Map<PieceType, Map<String, Set<String>>> readAll() {
         String[] possPairs = BruteForceUtil.genBlockString(BruteForceUtil.ALPHABET, 2, false);
-        Map<PieceType, Map<String, List<String>>> cache = new HashMap<>();
+        Map<PieceType, Map<String, Set<String>>> cache = new HashMap<>();
 
         for (PieceType type : this.getSupportedPieceTypes()) {
-            Map<String, List<String>> subCache = new HashMap<>();
+            Map<String, Set<String>> subCache = new HashMap<>();
 
             for (String pair : possPairs) {
-                List<String> current = new ArrayList<>();
+                Set<String> current = new HashSet<>();
 
                 Cell primaryCell = this.getPrimaryCell(type, pair);
                 if (primaryCell != null)
@@ -97,12 +95,12 @@ public abstract class BldAlgSheet implements AlgSource {
     protected abstract PieceType[] getSupportedPieceTypes();
 
     @Override
-    public final List<Algorithm> getAlg(PieceType type, String letterPair) {
-        return this.getRawAlg(type, letterPair).stream().map(s -> type.getReader().parse(s)).collect(Collectors.toList());
+    public final Set<Algorithm> getAlg(PieceType type, String letterPair) {
+        return this.getRawAlg(type, letterPair).stream().map(s -> type.getReader().parse(s)).collect(Collectors.toSet());
     }
 
     @Override
-    public List<String> getRawAlg(PieceType type, String letterPair) {
-        return this.cache.get(type).getOrDefault(letterPair, Collections.emptyList());
+    public Set<String> getRawAlg(PieceType type, String letterPair) {
+        return this.cache.get(type).getOrDefault(letterPair, Collections.emptySet());
     }
 }

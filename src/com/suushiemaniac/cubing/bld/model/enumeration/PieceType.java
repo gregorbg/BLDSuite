@@ -13,5 +13,9 @@ public interface PieceType {
 
     String name();
 
+    String humanName();
+
+	String mnemonic();
+
     NotationReader getReader();
 }

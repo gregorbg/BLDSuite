@@ -8,10 +8,7 @@ import com.suushiemaniac.cubing.bld.model.AlgSource;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Verificator {
     protected static String[] fullLetterPairs = BruteForceUtil.genBlockString(BruteForceUtil.ALPHABET, 2, false);
@@ -32,7 +29,7 @@ public class Verificator {
 
     public Map<String, Boolean> verifySingleCase(PieceType type, String letterPair) {
         Map<String, Boolean> solutionMap = new HashMap<>();
-        List<String> algStringList = this.source.getRawAlg(type, letterPair);
+        Set<String> algStringList = this.source.getRawAlg(type, letterPair);
         if (algStringList != null)
             for (String alg : algStringList)
                 solutionMap.put(alg, ParseUtils.isParseable(alg, this.reader) && FiveBldCube.solves(type, this.reader.parse(alg).plain().toFormatString(), letterPair));
@@ -43,7 +40,7 @@ public class Verificator {
         Map<String, List<String>> sameGroupMap = new HashMap<>();
         for (String possPair : fullLetterPairs) {
             sameGroupMap.put(possPair, new ArrayList<>());
-            List<String> algStringList = this.source.getRawAlg(type, possPair);
+            Set<String> algStringList = this.source.getRawAlg(type, possPair);
             if (algStringList != null)
                 for (String alg : algStringList)
                     if (ParseUtils.isParseable(alg, this.reader) && this.reader.parse(alg).getSubGroup().sameOrLargerSubGroup(group))
@@ -56,7 +53,7 @@ public class Verificator {
         Map<String, List<String>> unparseableMap = new HashMap<>();
         for (String possPair : fullLetterPairs) {
             unparseableMap.put(possPair, new ArrayList<>());
-            List<String> algStringList = this.source.getRawAlg(type, possPair);
+            Set<String> algStringList = this.source.getRawAlg(type, possPair);
             if (algStringList != null)
                 for (String alg : algStringList)
                     if (!ParseUtils.isParseable(alg, this.reader))

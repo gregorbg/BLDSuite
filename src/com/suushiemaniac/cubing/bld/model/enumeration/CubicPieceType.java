@@ -51,4 +51,64 @@ public enum CubicPieceType implements PieceType {
     public NotationReader getReader() {
         return CubicPieceType.READER;
     }
+
+    @Override
+    public String humanName() {
+		switch (this) {
+			case CENTER:
+				return "Center";
+			case CORNER:
+				return "Corner";
+			case EDGE:
+				return "Edge";
+			case XCENTER:
+				return "X-Center";
+			case WING:
+				return "Wing";
+			case TCENTER:
+				return "T-Center";
+			case INNERXCENTER:
+				return "Inner X-Center";
+			case INNERWING:
+				return "Inner Wing";
+			case LEFTOBLIQUE:
+				return "Left Oblique";
+			case RIGHTOBLIQUE:
+				return "Right Oblique";
+			case INNERTCENTER:
+				return "Inner T-Center";
+			default:
+				return "";
+		}
+    }
+
+    @Override
+    public String mnemonic() {
+        switch (this) {
+            case CENTER:
+                return "Ce";
+            case CORNER:
+                return "C";
+            case EDGE:
+                return "E";
+            case XCENTER:
+                return "X";
+            case WING:
+                return "W";
+            case TCENTER:
+                return "T";
+            case INNERXCENTER:
+                return "iX";
+            case INNERWING:
+                return "iW";
+            case LEFTOBLIQUE:
+                return "LO";
+            case RIGHTOBLIQUE:
+                return "RO";
+            case INNERTCENTER:
+                return "iT";
+            default:
+                return "";
+        }
+    }
 }

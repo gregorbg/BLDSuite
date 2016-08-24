@@ -3,7 +3,6 @@ package com.suushiemaniac.cubing.bld.analyze.cube;
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 import com.suushiemaniac.cubing.bld.util.ArrayUtil;
-import com.suushiemaniac.lang.json.JSON;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,10 +16,10 @@ public class ThreeBldCube extends TwoBldCube {
     }
 
     //[U' Rw U' Rw' U ; M2]
-    public static String cornerParityAlg = "U' Rw U' Rw' U M2 U' Rw U Rw' U";
+    public static String CORNER_PARITY_ALG = "U' Rw U' Rw' U M2 U' Rw U Rw' U";
 
     public static void setCornerParityAlg(String alg) {
-        cornerParityAlg = alg;
+        CORNER_PARITY_ALG = alg;
     }
 
     public static boolean solves(PieceType cubicPieceType, String alg, String lpCase) {
@@ -512,7 +511,7 @@ public class ThreeBldCube extends TwoBldCube {
                 if (forceGap || i % 2 == 1) edgePairs += " ";
             }
             if (edgeCycles.size() % 2 == 1 && this.cornerParityMethod == CornerParityMethod.USE_ALG)
-                edgePairs += "\tParity: " + cornerParityAlg;
+                edgePairs += "\tParity: " + CORNER_PARITY_ALG;
             if (withFlipped && flippedEdges.size() != 0) {
                 edgePairs += "\tFlip: ";
                 for (Integer flippedEdge : flippedEdges) edgePairs += names[flippedEdge] + " ";

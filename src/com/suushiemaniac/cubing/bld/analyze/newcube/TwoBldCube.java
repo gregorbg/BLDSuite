@@ -9,17 +9,19 @@ import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.CORN
 public class TwoBldCube extends BldCube {
 	@Override
 	protected List<PieceType> getPieceTypes() {
+		List<PieceType> superTypes = super.getPieceTypes();
 		//noinspection ArraysAsListWithZeroOrOneArgument
-		return new ArrayList<>(Arrays.asList(CORNER));
+		superTypes.addAll(Arrays.asList(CORNER));
+
+		return superTypes;
 	}
 
 	@Override
 	protected Map<PieceType, Integer[][]> getDefaultCubies() {
-		Map<PieceType, Integer[][]> cubies = new HashMap<>();
+		Map<PieceType, Integer[][]> superCubies = super.getDefaultCubies();
+		superCubies.put(CORNER, SPEFFZ_CORNERS);
 
-		cubies.put(CORNER, SPEFFZ_CORNERS);
-
-		return cubies;
+		return superCubies;
 	}
 
 	@Override

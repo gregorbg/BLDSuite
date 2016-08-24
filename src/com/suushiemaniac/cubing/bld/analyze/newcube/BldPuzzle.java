@@ -19,6 +19,12 @@ public abstract class BldPuzzle {
 	protected Map<PieceType, Integer[]> lastScrambledState;
 	protected Map<PieceType, Integer[][]> cubies;
 
+	protected Map<PieceType, List<Integer>> cycles;
+	protected Map<PieceType, Integer> cycleCount;
+	protected Map<PieceType, Boolean[]> solvedPieces;
+
+	protected Map<PieceType, String[]> letterSchemes;
+
 	public BldPuzzle() {
 		this.permutations = this.loadPermutations();
 
@@ -26,6 +32,12 @@ public abstract class BldPuzzle {
 		this.lastScrambledState = this.initState();
 
 		this.cubies = this.initCubies();
+
+		this.cycles = this.emptyCycles();
+		this.cycleCount = this.emptyCycleCount();
+		this.solvedPieces = this.emptySolvedPieces();
+
+		this.letterSchemes = this.initSchemes();
 	}
 
 	private Map<Move, Map<PieceType, Integer[]>> loadPermutations() {
@@ -56,18 +68,51 @@ public abstract class BldPuzzle {
 	}
 
 	public void parseScramble(Algorithm scramble) {
-    	this.resetPuzzle();
+		this.resetPuzzle();
 
-    	this.scramblePuzzle(scramble);
+		this.scramblePuzzle(scramble);
 		this.solvePuzzle();
-    }
+	}
+
+	protected Map<PieceType, List<Integer>> emptyCycles() {
+		Map<PieceType, List<Integer>> cycles = new HashMap<>();
+
+		for (PieceType type : this.getPieceTypes())
+			cycles.put(type, new ArrayList<>());
+
+		return cycles;
+	}
+
+	protected Map<PieceType, Integer> emptyCycleCount() {
+		Map<PieceType, Integer> cycleCount = new HashMap<>();
+
+		for (PieceType type : this.getPieceTypes())
+			cycleCount.put(type, 0);
+
+		return cycleCount;
+	}
+
+	private Map<PieceType, Boolean[]> emptySolvedPieces() {
+		Map<PieceType, Boolean[]> solvedPieces = new HashMap<>();
+
+		for (PieceType type : this.getPieceTypes()) {
+			int numPieces = type.getNumPieces();
+			Boolean[] nonSolved = new Boolean[numPieces];
+
+			for (int i = 0; i < numPieces; i++)
+				nonSolved[i] = false;
+
+			solvedPieces.put(type, nonSolved);
+		}
+
+		return solvedPieces;
+	}
 
 	protected void scramblePuzzle(Algorithm scramble) {
 		scramble = this.solvingOrientationPremoves.merge(scramble);
 
-		for (Move move : scramble) {
+		for (Move move : scramble)
 			this.permute(move);
-		}
 	}
 
 	protected void permute(Move permutation) {
@@ -83,12 +128,22 @@ public abstract class BldPuzzle {
 	}
 
     protected void solvePuzzle() {
-    	//TODO this.reorientCube();
+    	this.reorientPuzzle();
 
     	for (PieceType type : this.state.keySet()) {
     		this.saveState(type);
     		this.solvePieces(type);
 		}
+	}
+
+	protected void reorientPuzzle() {
+		Integer top = this.getOrientationModelTop();
+		Integer front = this.getOrientationModelFront();
+
+		Algorithm neededRotations = this.getRotationsFromOrientation(top, front);
+
+		for (Move move : neededRotations)
+			this.permute(move);
 	}
 
 	protected void saveState(PieceType type) {
@@ -143,7 +198,118 @@ public abstract class BldPuzzle {
 		return cubies;
 	}
 
+	protected String getSolutionPairs(PieceType type) {
+		String pairs = "";
+
+		List<Integer> currentCycles = this.cycles.get(type);
+
+		if (currentCycles.size() > 0) {
+			for (int i = 0; i < currentCycles.size(); i++) {
+				pairs += this.letterSchemes.get(type)[currentCycles.get(i)];
+				if (i % 2 == 1) pairs += " ";
+			}
+		} else {
+			return "Solved";
+		}
+
+		return pairs.trim();
+	}
+
+	protected String getSolutionPairs(boolean withRotation) {
+		List<String> solutionParts = new ArrayList<>();
+
+		if (withRotation)
+			solutionParts.add("Rotations: " + this.getRotations());
+
+		for (PieceType type : this.getPieceTypes())
+			solutionParts.add(this.getSolutionPairs(type));
+
+		return String.join("\n", solutionParts);
+	}
+
+	protected String getSolutionPairs() {
+		return this.getSolutionPairs(false);
+	}
+
+	protected String getStatistics(PieceType type) {
+		return type.humanName() + ": " + this.getStatLength(type) + "@" + this.getBreakInNum(type) + " w/ " + this.getPreSolvedCount(type);
+	}
+
+	protected String getStatistics() {
+		List<String> statisticsParts = new ArrayList<>();
+
+		for (PieceType type : this.getPieceTypes())
+			statisticsParts.add(this.getStatistics(type));
+
+		return String.join("\n", statisticsParts);
+	}
+
+	protected int getStatLength(PieceType type) {
+		return this.cycles.get(type).size();
+	}
+
+	protected int getBreakInNum(PieceType type) {
+		return this.cycleCount.get(type);
+	}
+
+	protected int getPreSolvedCount(PieceType type) {
+		int count = 0;
+		Boolean[] solvedFlags = this.solvedPieces.get(type);
+
+		for (boolean b : solvedFlags)
+			if (b) count++;
+
+		return count;
+	}
+
+	protected String getNoahtation() {
+		List<String> noahtationParts = new ArrayList<>();
+
+		for (PieceType type : this.getPieceTypes())
+			noahtationParts.add(this.getNoahtation(type));
+
+		return String.join(" / ", noahtationParts);
+	}
+
+	protected String getNoahtation(PieceType type) {
+		return type.mnemonic() + ": " + this.getStatLength(type);
+	}
+
+	protected boolean isBufferSolved(PieceType type) {
+		return this.solvedPieces.get(type)[0];
+	}
+
+	protected String getStatString(PieceType type) {
+		String cornerStat = type.mnemonic() + ": ";
+		cornerStat += this.getStatLength(type);
+		cornerStat += this.isBufferSolved(type) ? "*" : " ";
+		cornerStat += " ";
+
+		for (int i = 0; i < this.getBreakInNum(type); i++) cornerStat += "#";
+		if (cornerStat.endsWith("#")) cornerStat += " ";
+
+		for (int i = 0; i < this.getPreSolvedCount(type); i++) cornerStat += "+";
+		return cornerStat;
+	}
+
+	protected String getStatString() {
+		List<String> statStringParts = new ArrayList<>();
+
+		for (PieceType type : this.getPieceTypes())
+			statStringParts.add(this.getStatString(type));
+
+		return String.join(" | ", statStringParts);
+	}
+
 	protected abstract List<PieceType> getPieceTypes();
 	protected abstract Map<PieceType, Integer[][]> getDefaultCubies();
+
 	protected abstract void solvePieces(PieceType type);
+
+	protected abstract Integer getOrientationModelTop();
+	protected abstract Integer getOrientationModelFront();
+	protected abstract Algorithm getRotationsFromOrientation(int orientationModelTop, int orientationModelFront);
+	protected abstract String getRotations();
+
+	protected abstract Map<PieceType, String[]> initSchemes();
 }

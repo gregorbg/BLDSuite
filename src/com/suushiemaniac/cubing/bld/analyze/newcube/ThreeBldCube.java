@@ -12,7 +12,8 @@ public class ThreeBldCube extends TwoBldCube {
 	@Override
 	protected List<PieceType> getPieceTypes() {
 		List<PieceType> superTypes = super.getPieceTypes();
-		superTypes.addAll(Arrays.asList(EDGE, CENTER));
+		//noinspection ArraysAsListWithZeroOrOneArgument
+		superTypes.addAll(Arrays.asList(EDGE));
 
 		return superTypes;
 	}
@@ -20,8 +21,6 @@ public class ThreeBldCube extends TwoBldCube {
 	@Override
 	protected Map<PieceType, Integer[][]> getDefaultCubies() {
 		Map<PieceType, Integer[][]> superCubies = super.getDefaultCubies();
-
-		superCubies.put(CENTER, SPEFFZ_CENTERS);
 		superCubies.put(EDGE, SPEFFZ_EDGES);
 
 		return superCubies;

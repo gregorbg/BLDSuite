@@ -241,12 +241,12 @@ public class LegacyCubeDb implements AlgSource {
     }
 
     @Override
-    public List<Algorithm> getAlg(PieceType type, String letterPair) {
+    public Set<Algorithm> getAlg(PieceType type, String letterPair) {
         return this.getRawAlg(type, letterPair).stream().map(rawAlg -> ParseUtils.guessReaderForAlgString(rawAlg).parse(rawAlg)).collect(Collectors.toList());
     }
 
     @Override
-    public List<String> getRawAlg(PieceType type, String letterPair) {
+    public Set<String> getRawAlg(PieceType type, String letterPair) {
         try {
             return this.readAlgorithm(letterPair, type);
         } catch (SQLException e) {

@@ -2,7 +2,6 @@ package com.suushiemaniac.cubing.bld.database;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
-import com.suushiemaniac.cubing.alglib.util.ParseUtils;
 import com.suushiemaniac.cubing.bld.analyze.cube.FiveBldCube;
 import com.suushiemaniac.cubing.bld.model.AlgSource;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
@@ -50,7 +49,7 @@ public class CubeDb implements AlgSource {
         }
     }
 
-    public List<String> readAlgorithm(PieceType type, String letterPair) throws SQLException {
+    public Set<String> readAlgorithm(PieceType type, String letterPair) throws SQLException {
         String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(type.name()));
 
         PreparedStatement stat = conn.prepareStatement("SELECT DISTINCT alg FROM Algorithms WHERE `type` = ? AND `case` = ?");
@@ -59,12 +58,12 @@ public class CubeDb implements AlgSource {
 
         ResultSet search = stat.executeQuery();
 
-        ArrayList<String> temp = new ArrayList<>();
+        Set<String> temp = new HashSet<>();
         while (search.next()) temp.add(search.getString("alg"));
         return temp;
     }
 
-    public List<String> readLpi(String letterPair) throws SQLException {
+    public Set<String> readLpi(String letterPair) throws SQLException {
         //String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme("lpi"));
 
         PreparedStatement stat = conn.prepareStatement("SELECT DISTINCT image FROM Images WHERE `case` = ?");
@@ -72,20 +71,20 @@ public class CubeDb implements AlgSource {
 
         ResultSet search = stat.executeQuery();
 
-        ArrayList<String> temp = new ArrayList<>();
+        Set<String> temp = new HashSet<>();
         while (search.next()) temp.add(search.getString("image"));
         return temp;
     }
 
-    public Map<String, List<String>> getAllLpiWords() throws SQLException {
+    public Map<String, Set<String>> getAllLpiWords() throws SQLException {
         ResultSet res = this.conn.createStatement().executeQuery("SELECT * FROM Images");
-        Map<String, List<String>> words = new HashMap<>();
+        Map<String, Set<String>> words = new HashMap<>();
 
         while (res.next()) {
             String lpKey = res.getString("case");
 
-            List<String> otherLps = words.get(lpKey);
-            if (otherLps == null) otherLps = new ArrayList<>();
+            Set<String> otherLps = words.get(lpKey);
+            if (otherLps == null) otherLps = new HashSet<>();
 
             otherLps.add(res.getString("image"));
 
@@ -95,18 +94,18 @@ public class CubeDb implements AlgSource {
         return words;
     }
 
-    public Map<String, List<String>> getAllAlgorithms(PieceType type) throws SQLException {
+    public Map<String, Set<String>> getAllAlgorithms(PieceType type) throws SQLException {
         PreparedStatement stat = this.conn.prepareStatement("SELECT * FROM Algorithms WHERE `type` = ?");
         stat.setString(1, type.name().toLowerCase());
 
         ResultSet res = stat.executeQuery();
-        Map<String, List<String>> words = new HashMap<>();
+        Map<String, Set<String>> words = new HashMap<>();
 
         while (res.next()) {
             String lpKey = res.getString("case");
 
-            List<String> otherLps = words.get(lpKey);
-            if (otherLps == null) otherLps = new ArrayList<>();
+            Set<String> otherLps = words.get(lpKey);
+            if (otherLps == null) otherLps = new HashSet<>();
 
             otherLps.add(res.getString("alg"));
 
@@ -170,12 +169,12 @@ public class CubeDb implements AlgSource {
     }
 
     @Override
-    public List<Algorithm> getAlg(PieceType type, String letterPair) {
-        return this.getRawAlg(type, letterPair).stream().map(rawAlg -> new CubicAlgorithmReader().parse(rawAlg)).collect(Collectors.toList());
+    public Set<Algorithm> getAlg(PieceType type, String letterPair) {
+        return this.getRawAlg(type, letterPair).stream().map(rawAlg -> type.getReader().parse(rawAlg)).collect(Collectors.toSet());
     }
 
     @Override
-    public List<String> getRawAlg(PieceType type, String letterPair) {
+    public Set<String> getRawAlg(PieceType type, String letterPair) {
         try {
             return this.readAlgorithm(type, letterPair);
         } catch (SQLException e) {

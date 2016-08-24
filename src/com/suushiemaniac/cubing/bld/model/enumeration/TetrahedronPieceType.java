@@ -32,4 +32,32 @@ public enum TetrahedronPieceType implements PieceType {
     public NotationReader getReader() {
         return TetrahedronPieceType.READER;
     }
+
+    @Override
+    public String humanName() {
+        switch (this) {
+            case TIP:
+                return "Tip";
+            case CENTER:
+                return "Center";
+            case EDGE:
+                return "Edge";
+            default:
+                return "";
+        }
+    }
+
+    @Override
+    public String mnemonic() {
+        switch (this) {
+            case TIP:
+                return "T";
+            case CENTER:
+                return "C";
+            case EDGE:
+                return "E";
+            default:
+                return "";
+        }
+    }
 }
