@@ -15,13 +15,17 @@ public abstract class BldPuzzle {
     protected Algorithm solvingOrientationPremoves;
 
     protected Map<Move, Map<PieceType, Integer[]>> permutations;
+
 	protected Map<PieceType, Integer[]> state;
 	protected Map<PieceType, Integer[]> lastScrambledState;
+
 	protected Map<PieceType, Integer[][]> cubies;
 
 	protected Map<PieceType, List<Integer>> cycles;
 	protected Map<PieceType, Integer> cycleCount;
 	protected Map<PieceType, Boolean[]> solvedPieces;
+	protected Map<PieceType, Boolean[][]> misOrientedPieces;
+	protected Map<PieceType, Boolean> parities;
 
 	protected Map<PieceType, String[]> letterSchemes;
 
@@ -36,8 +40,15 @@ public abstract class BldPuzzle {
 		this.cycles = this.emptyCycles();
 		this.cycleCount = this.emptyCycleCount();
 		this.solvedPieces = this.emptySolvedPieces();
+		this.misOrientedPieces = this.orientedPieces();
+		this.parities = this.noParities();
 
 		this.letterSchemes = this.initSchemes();
+	}
+
+	public BldPuzzle(Algorithm scramble) {
+		this();
+		this.parseScramble(scramble);
 	}
 
 	private Map<Move, Map<PieceType, Integer[]>> loadPermutations() {
@@ -92,7 +103,7 @@ public abstract class BldPuzzle {
 		return cycleCount;
 	}
 
-	private Map<PieceType, Boolean[]> emptySolvedPieces() {
+	protected Map<PieceType, Boolean[]> emptySolvedPieces() {
 		Map<PieceType, Boolean[]> solvedPieces = new HashMap<>();
 
 		for (PieceType type : this.getPieceTypes()) {
@@ -106,6 +117,34 @@ public abstract class BldPuzzle {
 		}
 
 		return solvedPieces;
+	}
+
+	protected Map<PieceType, Boolean[][]> orientedPieces() {
+		Map<PieceType, Boolean[][]> orientedPieces = new HashMap<>();
+
+		for (PieceType type : this.getPieceTypes()) {
+			int numPieces = type.getNumPieces();
+			int targetsPerPiece = type.getTargetsPerPiece();
+
+			Boolean[][] oriented = new Boolean[targetsPerPiece][numPieces];
+
+			for (int i = 0; i < targetsPerPiece; i++)
+				for (int j = 0; j < numPieces; j++)
+					oriented[i][j] = false;
+
+			orientedPieces.put(type, oriented);
+		}
+
+		return orientedPieces;
+	}
+
+	protected Map<PieceType, Boolean> noParities() {
+		Map<PieceType, Boolean> parities = new HashMap<>();
+
+		for (PieceType type : this.getPieceTypes())
+			parities.put(type, false);
+
+		return parities;
 	}
 
 	protected void scramblePuzzle(Algorithm scramble) {
@@ -232,7 +271,7 @@ public abstract class BldPuzzle {
 	}
 
 	protected String getStatistics(PieceType type) {
-		return type.humanName() + ": " + this.getStatLength(type) + "@" + this.getBreakInNum(type) + " w/ " + this.getPreSolvedCount(type);
+		return type.humanName() + ": " + this.getStatLength(type) + "@" + this.getBreakInCount(type) + " w/ " + this.getPreSolvedCount(type) + "-" + this.getMisOrientedCount(type) + " > " + this.hasParity(type);
 	}
 
 	protected String getStatistics() {
@@ -248,7 +287,7 @@ public abstract class BldPuzzle {
 		return this.cycles.get(type).size();
 	}
 
-	protected int getBreakInNum(PieceType type) {
+	protected int getBreakInCount(PieceType type) {
 		return this.cycleCount.get(type);
 	}
 
@@ -262,6 +301,37 @@ public abstract class BldPuzzle {
 		return count;
 	}
 
+	protected int getMisOrientedCount(PieceType type) {
+		int count = 0;
+
+		for (int i = 0; i < type.getTargetsPerPiece(); i++)
+			count += this.getMisOrientedCount(type, i);
+
+		return count;
+	}
+
+	protected int getMisOrientedCount(PieceType type, int orientation) {
+		Boolean[] orientations = this.misOrientedPieces.get(type)[orientation];
+		int count = 0;
+
+		for (Boolean misOriented : orientations)
+			if (misOriented)
+				count++;
+
+		return count;
+	}
+
+	protected boolean hasParity(PieceType type) {
+		return this.parities.get(type);
+	}
+
+	protected String getNoahtation(PieceType type) {
+		String misOriented = "";
+		for (int i = 0; i < this.getMisOrientedCount(type); i++) misOriented += "'";
+
+		return type.mnemonic() + ": " + this.getStatLength(type) + misOriented;
+	}
+
 	protected String getNoahtation() {
 		List<String> noahtationParts = new ArrayList<>();
 
@@ -271,22 +341,18 @@ public abstract class BldPuzzle {
 		return String.join(" / ", noahtationParts);
 	}
 
-	protected String getNoahtation(PieceType type) {
-		return type.mnemonic() + ": " + this.getStatLength(type);
-	}
-
-	protected boolean isBufferSolved(PieceType type) {
-		return this.solvedPieces.get(type)[0];
-	}
-
 	protected String getStatString(PieceType type) {
-		String cornerStat = type.mnemonic() + ": ";
+		String cornerStat = type.mnemonic() + ":";
+		cornerStat += this.hasParity(type) ? "_" : " ";
 		cornerStat += this.getStatLength(type);
 		cornerStat += this.isBufferSolved(type) ? "*" : " ";
 		cornerStat += " ";
 
-		for (int i = 0; i < this.getBreakInNum(type); i++) cornerStat += "#";
+		for (int i = 0; i < this.getBreakInCount(type); i++) cornerStat += "#";
 		if (cornerStat.endsWith("#")) cornerStat += " ";
+
+		for (int i = 0; i < this.getMisOrientedCount(type); i++) cornerStat += "~";
+		if (cornerStat.endsWith("~")) cornerStat += " ";
 
 		for (int i = 0; i < this.getPreSolvedCount(type); i++) cornerStat += "+";
 		return cornerStat;
@@ -299,6 +365,10 @@ public abstract class BldPuzzle {
 			statStringParts.add(this.getStatString(type));
 
 		return String.join(" | ", statStringParts);
+	}
+
+	protected boolean isBufferSolved(PieceType type) {
+		return this.solvedPieces.get(type)[0];
 	}
 
 	protected abstract List<PieceType> getPieceTypes();
