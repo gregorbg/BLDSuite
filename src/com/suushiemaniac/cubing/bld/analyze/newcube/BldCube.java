@@ -2,6 +2,7 @@ package com.suushiemaniac.cubing.bld.analyze.newcube;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 
 import java.util.*;
 
@@ -36,6 +37,16 @@ public abstract class BldCube extends BldPuzzle {
 		cubies.put(CORNER, SPEFFZ_CENTERS);
 
 		return cubies;
+	}
+
+	@Override
+	protected Map<PieceType, String[]> initSchemes() {
+		Map<PieceType, String[]> schemes = new HashMap<>();
+
+		for (PieceType type : this.getPieceTypes())
+			schemes.put(type, SpeffzUtil.FULL_SPEFFZ);
+
+		return schemes;
 	}
 
 	@Override
