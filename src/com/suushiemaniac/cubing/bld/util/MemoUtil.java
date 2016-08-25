@@ -14,7 +14,7 @@ public abstract class MemoUtil {
         for (String pair : pairs.split("\\s+?")) {
             if (pair.length() != 2) continue;
 
-            List<String> words = db.readLpi(pair);
+            List<String> words = new ArrayList<>(db.readLpi(pair));
             words = words.subList(0, Math.min(lpiListSizeLimit, words.size()));
             List<String> oldMemoStrings = new ArrayList<>(treeList);
 

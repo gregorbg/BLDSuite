@@ -8,10 +8,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
@@ -82,8 +79,8 @@ public class GregorBldExcel extends BldAlgSheet {
 
     @Override
     public Set<String> getRawAlg(PieceType type, String letterPair) {
-        List<String> baseAlgs = super.getRawAlg(type, letterPair);
-        List<String> algs = new ArrayList<>();
+        Set<String> baseAlgs = super.getRawAlg(type, letterPair);
+        Set<String> algs = new HashSet<>();
 
         for (String alg : baseAlgs) {
             if (alg.replace("#ENNVAU", "#NV").startsWith("#"))

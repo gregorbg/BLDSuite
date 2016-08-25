@@ -82,4 +82,9 @@ public class ArrayUtil {
 
 		return fill;
     }
+
+    public static <T> void fillWith(T[] array, T element) {
+        for (int i = 0; i < array.length; i++)
+        	array[i] = element;
+    }
 }

@@ -1,5 +1,7 @@
 package com.suushiemaniac.cubing.bld.analyze.newcube;
 
+import com.suushiemaniac.cubing.alglib.alg.Algorithm;
+import com.suushiemaniac.cubing.alglib.alg.SimpleAlg;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 
 import java.util.*;
@@ -7,13 +9,28 @@ import java.util.*;
 import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.CORNER;
 
 public class TwoBldCube extends BldCube {
-	@Override
-	protected List<PieceType> getPieceTypes() {
-		List<PieceType> superTypes = super.getPieceTypes();
-		//noinspection ArraysAsListWithZeroOrOneArgument
-		superTypes.addAll(Arrays.asList(CORNER));
+	public TwoBldCube() {
+		super();
+	}
 
-		return superTypes;
+	public TwoBldCube(Algorithm scramble) {
+		super(scramble);
+	}
+
+	@Override
+	protected List<PieceType> getPermutationPieceTypes() {
+		//noinspection ArraysAsListWithZeroOrOneArgument
+		return new ArrayList<>(Arrays.asList(CORNER));
+	}
+
+	@Override
+	protected List<PieceType> getOrientationPieceTypes() {
+		return new ArrayList<>();
+	}
+
+	@Override
+	protected Algorithm getReorientationMoves() {
+		return new SimpleAlg(); //TODO
 	}
 
 	@Override
@@ -22,10 +39,5 @@ public class TwoBldCube extends BldCube {
 		superCubies.put(CORNER, SPEFFZ_CORNERS);
 
 		return superCubies;
-	}
-
-	@Override
-	protected void solvePieces(PieceType type) {
-
 	}
 }

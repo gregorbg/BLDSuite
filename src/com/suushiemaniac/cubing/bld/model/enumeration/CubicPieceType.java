@@ -4,17 +4,17 @@ import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 
 public enum CubicPieceType implements PieceType {
-    CENTER(0, 6, 0),
-    CORNER(3, 8, 378),
-    EDGE(2, 12, 440),
-    XCENTER(1, 24, 460),
-    WING(1, 24, 506),
-    TCENTER(1, 24, 460),
-    INNERXCENTER(1, 24, 460),
-    INNERWING(1, 24, 506),
-    LEFTOBLIQUE(1, 24, 460),
-    RIGHTOBLIQUE(1, 24, 460),
-    INNERTCENTER(1, 24, 460);
+    CENTER(1, 6, 0, "Center", "Ce"),
+    CORNER(3, 8, 378, "Corner", "C"),
+    EDGE(2, 12, 440, "Edge", "E"),
+    XCENTER(1, 24, 460, "X-Center", "X"),
+    WING(1, 24, 506, "Wing", "W"),
+    TCENTER(1, 24, 460, "T-Center", "T"),
+    INNERXCENTER(1, 24, 460, "Inner X-Center", "iX"),
+    INNERWING(1, 24, 506, "Inner Wing", "iW"),
+    LEFTOBLIQUE(1, 24, 460, "Left Oblique", "LO"),
+    RIGHTOBLIQUE(1, 24, 460, "Right Oblique", "RO"),
+    INNERTCENTER(1, 24, 460, "Inner T-Center", "iT");
 
     public static final NotationReader READER = new CubicAlgorithmReader();
 
@@ -25,11 +25,15 @@ public enum CubicPieceType implements PieceType {
     }
 
     private int targetsPerPiece, numPieces, numAlgs;
+	private String human, mnemonic;
 
-    CubicPieceType(int targetsPerPiece, int numPieces, int numAlgs) {
+    CubicPieceType(int targetsPerPiece, int numPieces, int numAlgs, String human, String mnemonic) {
         this.targetsPerPiece = targetsPerPiece;
         this.numPieces = numPieces;
         this.numAlgs = numAlgs;
+
+        this.human = human;
+        this.mnemonic = mnemonic;
     }
 
     public int getTargetsPerPiece() {
@@ -54,61 +58,11 @@ public enum CubicPieceType implements PieceType {
 
     @Override
     public String humanName() {
-		switch (this) {
-			case CENTER:
-				return "Center";
-			case CORNER:
-				return "Corner";
-			case EDGE:
-				return "Edge";
-			case XCENTER:
-				return "X-Center";
-			case WING:
-				return "Wing";
-			case TCENTER:
-				return "T-Center";
-			case INNERXCENTER:
-				return "Inner X-Center";
-			case INNERWING:
-				return "Inner Wing";
-			case LEFTOBLIQUE:
-				return "Left Oblique";
-			case RIGHTOBLIQUE:
-				return "Right Oblique";
-			case INNERTCENTER:
-				return "Inner T-Center";
-			default:
-				return "";
-		}
+		return this.human;
     }
 
     @Override
     public String mnemonic() {
-        switch (this) {
-            case CENTER:
-                return "Ce";
-            case CORNER:
-                return "C";
-            case EDGE:
-                return "E";
-            case XCENTER:
-                return "X";
-            case WING:
-                return "W";
-            case TCENTER:
-                return "T";
-            case INNERXCENTER:
-                return "iX";
-            case INNERWING:
-                return "iW";
-            case LEFTOBLIQUE:
-                return "LO";
-            case RIGHTOBLIQUE:
-                return "RO";
-            case INNERTCENTER:
-                return "iT";
-            default:
-                return "";
-        }
+        return this.mnemonic;
     }
 }

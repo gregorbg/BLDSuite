@@ -1,6 +1,7 @@
 package com.suushiemaniac.cubing.bld.analyze.newcube;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
+import com.suushiemaniac.cubing.alglib.alg.SimpleAlg;
 import com.suushiemaniac.cubing.alglib.move.Move;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 import com.suushiemaniac.cubing.bld.util.ArrayUtil;
@@ -12,7 +13,7 @@ import java.util.*;
 
 public abstract class BldPuzzle {
     protected Algorithm scramble;
-    protected Algorithm solvingOrientationPremoves;
+	protected Algorithm scrambleOrientationPremoves;
 
     protected Map<Move, Map<PieceType, Integer[]>> permutations;
 
@@ -30,20 +31,14 @@ public abstract class BldPuzzle {
 	protected Map<PieceType, String[]> letterSchemes;
 
 	public BldPuzzle() {
+		this.scrambleOrientationPremoves = new SimpleAlg();
+
 		this.permutations = this.loadPermutations();
-
-		this.state = this.initState();
-		this.lastScrambledState = this.initState();
-
 		this.cubies = this.initCubies();
 
-		this.cycles = this.emptyCycles();
-		this.cycleCount = this.emptyCycleCount();
-		this.solvedPieces = this.emptySolvedPieces();
-		this.misOrientedPieces = this.orientedPieces();
-		this.parities = this.noParities();
-
 		this.letterSchemes = this.initSchemes();
+
+		this.resetPuzzle();
 	}
 
 	public BldPuzzle(Algorithm scramble) {
@@ -51,7 +46,7 @@ public abstract class BldPuzzle {
 		this.parseScramble(scramble);
 	}
 
-	private Map<Move, Map<PieceType, Integer[]>> loadPermutations() {
+	private Map<Move, Map<PieceType, Integer[]>> loadPermutations() { //TODO permutations are always the same so maybe move to static singleton?!
 		String filename = "permutations/" + getClass().getSimpleName() + ".json";
 		URL fileURL = getClass().getResource(filename);
 		File jsonFile = new File(fileURL.getFile());
@@ -148,18 +143,19 @@ public abstract class BldPuzzle {
 	}
 
 	protected void scramblePuzzle(Algorithm scramble) {
-		scramble = this.solvingOrientationPremoves.merge(scramble);
+		scramble = this.getSolvingOrientationPremoves().merge(scramble);
 
 		for (Move move : scramble)
 			this.permute(move);
 	}
 
 	protected void permute(Move permutation) {
-		for (PieceType type : this.state.keySet()) {
+		for (PieceType type : this.getPieceTypes(true)) {
 			Integer[] current = this.state.get(type);
 
 			Integer[] perm = this.permutations.get(permutation).get(type);
 			Integer[] exchanges = new Integer[perm.length];
+			ArrayUtil.fillWith(exchanges, -1);
 
 			for (int i = 0; i < exchanges.length; i++) if (perm[i] != -1) exchanges[perm[i]] = current[i];
 			for (int i = 0; i < exchanges.length; i++) if (exchanges[i] != -1) current[i] = exchanges[i];
@@ -167,21 +163,21 @@ public abstract class BldPuzzle {
 	}
 
     protected void solvePuzzle() {
-    	this.reorientPuzzle();
+		for (PieceType type : this.getPieceTypes(true)) {
+			this.saveState(type);
+		}
 
-    	for (PieceType type : this.state.keySet()) {
-    		this.saveState(type);
+		this.reorientPuzzle();
+
+		for (PieceType type : this.getPieceTypes()) {
     		this.solvePieces(type);
 		}
 	}
 
 	protected void reorientPuzzle() {
-		Integer top = this.getOrientationModelTop();
-		Integer front = this.getOrientationModelFront();
+		this.scrambleOrientationPremoves = this.getReorientationMoves();
 
-		Algorithm neededRotations = this.getRotationsFromOrientation(top, front);
-
-		for (Move move : neededRotations)
+		for (Move move : this.scrambleOrientationPremoves)
 			this.permute(move);
 	}
 
@@ -194,23 +190,15 @@ public abstract class BldPuzzle {
 		this.lastScrambledState.put(type, saved);
 	}
 
-	protected void resetPuzzle(boolean orientationOnly) {
-		for (PieceType type : this.state.keySet()) {
-			Integer[] pieces = this.state.get(type);
-			Integer[] savedPieces = this.lastScrambledState.get(type);
-
-			int numTargets = type.getNumPieces() * type.getTargetsPerPiece();
-			for (int i = 0; i < numTargets; i++) {
-				pieces[i] = i;
-
-				if (!orientationOnly)
-					savedPieces[i] = i;
-			}
-		}
-	}
-
 	protected void resetPuzzle() {
-		this.resetPuzzle(false);
+		this.state = this.initState();
+		this.lastScrambledState = this.initState();
+
+		this.cycles = this.emptyCycles();
+		this.cycleCount = this.emptyCycleCount();
+		this.solvedPieces = this.emptySolvedPieces();
+		this.misOrientedPieces = this.orientedPieces();
+		this.parities = this.noParities();
 	}
 
 	protected Map<PieceType, Integer[]> initState() {
@@ -237,8 +225,12 @@ public abstract class BldPuzzle {
 		return cubies;
 	}
 
-	protected String getSolutionPairs(PieceType type) {
-		String pairs = "";
+	protected void increaseCycleCount(PieceType type) {
+		this.cycleCount.put(type, this.cycleCount.get(type) + 1);
+	}
+
+	public String getSolutionPairs(PieceType type) {
+		String pairs = type.humanName() + ": ";
 
 		List<Integer> currentCycles = this.cycles.get(type);
 
@@ -246,7 +238,7 @@ public abstract class BldPuzzle {
 			for (int i = 0; i < currentCycles.size(); i++) {
 				pairs += this.letterSchemes.get(type)[currentCycles.get(i)];
 				if (i % 2 == 1) pairs += " ";
-			}
+			} //TODO mis-oriented pieces
 		} else {
 			return "Solved";
 		}
@@ -254,11 +246,11 @@ public abstract class BldPuzzle {
 		return pairs.trim();
 	}
 
-	protected String getSolutionPairs(boolean withRotation) {
+	public String getSolutionPairs(boolean withRotation) {
 		List<String> solutionParts = new ArrayList<>();
 
 		if (withRotation)
-			solutionParts.add("Rotations: " + this.getRotations());
+			solutionParts.add("Rotations: " + this.scrambleOrientationPremoves.toFormatString());
 
 		for (PieceType type : this.getPieceTypes())
 			solutionParts.add(this.getSolutionPairs(type));
@@ -266,15 +258,15 @@ public abstract class BldPuzzle {
 		return String.join("\n", solutionParts);
 	}
 
-	protected String getSolutionPairs() {
+	public String getSolutionPairs() {
 		return this.getSolutionPairs(false);
 	}
 
-	protected String getStatistics(PieceType type) {
+	public String getStatistics(PieceType type) {
 		return type.humanName() + ": " + this.getStatLength(type) + "@" + this.getBreakInCount(type) + " w/ " + this.getPreSolvedCount(type) + "-" + this.getMisOrientedCount(type) + " > " + this.hasParity(type);
 	}
 
-	protected String getStatistics() {
+	public String getStatistics() {
 		List<String> statisticsParts = new ArrayList<>();
 
 		for (PieceType type : this.getPieceTypes())
@@ -325,14 +317,14 @@ public abstract class BldPuzzle {
 		return this.parities.get(type);
 	}
 
-	protected String getNoahtation(PieceType type) {
+	public String getNoahtation(PieceType type) {
 		String misOriented = "";
 		for (int i = 0; i < this.getMisOrientedCount(type); i++) misOriented += "'";
 
 		return type.mnemonic() + ": " + this.getStatLength(type) + misOriented;
 	}
 
-	protected String getNoahtation() {
+	public String getNoahtation() {
 		List<String> noahtationParts = new ArrayList<>();
 
 		for (PieceType type : this.getPieceTypes())
@@ -341,7 +333,7 @@ public abstract class BldPuzzle {
 		return String.join(" / ", noahtationParts);
 	}
 
-	protected String getStatString(PieceType type) {
+	public String getStatString(PieceType type) {
 		String cornerStat = type.mnemonic() + ":";
 		cornerStat += this.hasParity(type) ? "_" : " ";
 		cornerStat += this.getStatLength(type);
@@ -358,7 +350,7 @@ public abstract class BldPuzzle {
 		return cornerStat;
 	}
 
-	protected String getStatString() {
+	public String getStatString() {
 		List<String> statStringParts = new ArrayList<>();
 
 		for (PieceType type : this.getPieceTypes())
@@ -371,15 +363,27 @@ public abstract class BldPuzzle {
 		return this.solvedPieces.get(type)[0];
 	}
 
-	protected abstract List<PieceType> getPieceTypes();
+	protected List<PieceType> getPieceTypes(boolean withOrientationModel) {
+		List<PieceType> pieceTypes = this.getPermutationPieceTypes();
+
+		if (withOrientationModel)
+			pieceTypes.addAll(this.getOrientationPieceTypes());
+
+		return pieceTypes;
+	}
+
+	protected List<PieceType> getPieceTypes() {
+		return this.getPieceTypes(false);
+	}
+
+	protected abstract List<PieceType> getPermutationPieceTypes();
+	protected abstract List<PieceType> getOrientationPieceTypes();
 	protected abstract Map<PieceType, Integer[][]> getDefaultCubies();
 
 	protected abstract void solvePieces(PieceType type);
 
-	protected abstract Integer getOrientationModelTop();
-	protected abstract Integer getOrientationModelFront();
-	protected abstract Algorithm getRotationsFromOrientation(int orientationModelTop, int orientationModelFront);
-	protected abstract String getRotations();
+	protected abstract Algorithm getReorientationMoves();
+	protected abstract Algorithm getSolvingOrientationPremoves();
 
 	protected abstract Map<PieceType, String[]> initSchemes();
 }

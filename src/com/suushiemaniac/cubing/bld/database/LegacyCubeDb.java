@@ -138,21 +138,21 @@ public class LegacyCubeDb implements AlgSource {
         this.addAlgorithm(letterPair, image, "lpi");
     }
 
-    private List<String> readAlgorithm(String speffz, String table) throws SQLException {
+    private Set<String> readAlgorithm(String speffz, String table) throws SQLException {
         PreparedStatement stat = conn.prepareStatement("select distinct alg from " + table.toUpperCase() + "S where letterpair=?");
         stat.setString(1, speffz);
         ResultSet search = stat.executeQuery();
-        ArrayList<String> temp = new ArrayList<>();
+        Set<String> temp = new HashSet<>();
         while (search.next()) temp.add(search.getString("alg"));
         return temp;
     }
 
-    public List<String> readAlgorithm(String letterPair, PieceType type) throws SQLException {
+    public Set<String> readAlgorithm(String letterPair, PieceType type) throws SQLException {
         String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(type.name()));
         return this.readAlgorithm(speffz, type.name());
     }
 
-    public List<String> readLpi(String letterPair) throws SQLException {
+    public Set<String> readLpi(String letterPair) throws SQLException {
         return this.readAlgorithm(letterPair, "lpi");
     }
 
@@ -242,7 +242,7 @@ public class LegacyCubeDb implements AlgSource {
 
     @Override
     public Set<Algorithm> getAlg(PieceType type, String letterPair) {
-        return this.getRawAlg(type, letterPair).stream().map(rawAlg -> ParseUtils.guessReaderForAlgString(rawAlg).parse(rawAlg)).collect(Collectors.toList());
+        return this.getRawAlg(type, letterPair).stream().map(rawAlg -> ParseUtils.guessReaderForAlgString(rawAlg).parse(rawAlg)).collect(Collectors.toSet());
     }
 
     @Override
