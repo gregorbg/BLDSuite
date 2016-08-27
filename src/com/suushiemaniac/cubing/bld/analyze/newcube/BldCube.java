@@ -18,23 +18,28 @@ public abstract class BldCube extends BldPuzzle {
 	protected static final Integer[][] SPEFFZ_EDGES = {{U, K}, {A, Q}, {B, M}, {C, I}, {D, E}, {R, H}, {T, N}, {L, F}, {J, P}, {V, O}, {W, S}, {X, G}};
 
 	protected static final String[][] REORIENTATIONS = {
-			{"", "y'", "", "y", "y2", ""},
-			{"z y", "", "z", "", "z y2", "z y'"},
-			{"x y2", "x y'", "", "x y", "", "x"},
-			{"z' y'", "", "z'", "", "z' y2", "z' y"},
-			{"x'", "x' y'", "", "x' y", "", "x' y2"},
-			{"", "x2 y'", "z2", "x2 y", "x2", ""}
+			{"", "y", "", "y'", "y2", ""},
+			{"y' z'", "", "z'", "", "y2 z'", "y z'"},
+			{"x y2", "y x'", "", "y' x'", "", "x'"},
+			{"y z", "", "z", "", "y2 z", "y' z"},
+			{"x", "y x", "", "y' x", "", "y2 x"},
+			{"", "y x2", "z2", "y' x2", "x2", ""}
 	};
 
 	protected Algorithm solvingOrientationPremoves;
+	protected int top, front;
 
 	public BldCube() {
 		super();
+		this.top = 0;
+		this.front = 2;
 		this.solvingOrientationPremoves = new SimpleAlg();
 	}
 
 	public BldCube(Algorithm scramble) {
 		super(scramble);
+		this.top = 0;
+		this.front = 2;
 		this.solvingOrientationPremoves = new SimpleAlg();
 	}
 
@@ -76,12 +81,18 @@ public abstract class BldCube extends BldPuzzle {
 
 	@Override
 	protected Algorithm getSolvingOrientationPremoves() {
-		return new SimpleAlg(this.solvingOrientationPremoves.allMoves());
+		return this.getRotationsFromOrientation(this.top, this.front).inverse();
+	}
+
+	//TODO set buffers
+	//TODO set lettering
+	public void setSolvingOrientation(int top, int front) {
+		this.top = top;
+		this.front = front; //TODO check if valid orientation?
 	}
 
 	@Override
 	protected void solvePieces(PieceType type) {
-		//FIXME what's this?? this.resetCube(true);
 		while (!this.isSolved(type))
 			this.cycleByBuffer(type);
 	}

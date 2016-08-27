@@ -58,7 +58,7 @@ public abstract class BldPuzzle {
 			Map<PieceType, Integer[]> typeMap = new HashMap<>();
 			JSON moveJson = json.get(key);
 
-			for (PieceType type : this.getPieceTypes()) {
+			for (PieceType type : this.getPieceTypes(true)) {
 				List<Object> permutationList = moveJson.get(type.name()).nativeList();
 				//noinspection SuspiciousToArrayCall
 				Integer[] permutationArray = permutationList.toArray(new Integer[permutationList.size()]);
@@ -204,7 +204,7 @@ public abstract class BldPuzzle {
 	protected Map<PieceType, Integer[]> initState() {
 		Map<PieceType, Integer[]> state = new HashMap<>();
 
-		for (PieceType type : this.getPieceTypes()) {
+		for (PieceType type : this.getPieceTypes(true)) {
 			int stateLength = type.getNumPieces() * type.getTargetsPerPiece();
 
 			state.put(type, ArrayUtil.autobox(ArrayUtil.fill(stateLength)));
