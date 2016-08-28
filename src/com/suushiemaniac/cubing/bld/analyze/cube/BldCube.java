@@ -3,9 +3,11 @@ package com.suushiemaniac.cubing.bld.analyze.cube;
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
 
@@ -184,8 +186,16 @@ public abstract class BldCube extends BldPuzzle {
 			this.increaseCycleCount(type);
 			// First unsolved piece is selected
 
-			for (int i = 1; i < type.getNumPieces() && !pieceCycled; i++) {
-				if (!solvedPieces[i]) {
+			int lastTarget = this.getLastTarget(type);
+			int targetCount = type.getNumPieces();
+
+			List<Integer> linearBreakIns = Arrays.asList(ArrayUtil.autobox(ArrayUtil.fill(targetCount))).subList(1, targetCount);
+			List<Integer> breakIns = lastTarget < 0 ? linearBreakIns : this.getBreakInsAfter(lastTarget, type);
+
+			for (int i = 0; i < breakIns.size() && !pieceCycled; i++) {
+				Integer b = breakIns.get(i);
+
+				if (!solvedPieces[b]) {
 					// Buffer is placed in a... um... buffer
 					int parts = type.getTargetsPerPiece();
 					int[] tempPiece = new int[parts];
@@ -194,14 +204,14 @@ public abstract class BldCube extends BldPuzzle {
 						tempPiece[j] = state[reference[0][j]];
 
 						// Buffer piece is replaced with corner
-						state[reference[0][j]] = state[reference[i][j]];
+						state[reference[0][j]] = state[reference[b][j]];
 
 						// Piece is replaced with buffer
-						state[reference[i][j]] = tempPiece[j];
+						state[reference[b][j]] = tempPiece[j];
 					}
 
 					// Piece cycle is inserted into solution array
-					cycles.add(reference[i][0]);
+					cycles.add(reference[b][0]);
 					pieceCycled = true;
 				}
 			}

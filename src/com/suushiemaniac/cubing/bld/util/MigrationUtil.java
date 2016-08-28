@@ -1,16 +1,17 @@
 package com.suushiemaniac.cubing.bld.util;
 
-import com.suushiemaniac.cubing.bld.analyze.cube.FiveBldCube;
 import com.suushiemaniac.cubing.bld.database.CubeDb;
 import com.suushiemaniac.cubing.bld.database.LegacyCubeDb;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 
 import java.sql.SQLException;
 
+import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
+
 public abstract class MigrationUtil {
     public static void migrateContents(LegacyCubeDb legacyDb, CubeDb db) throws SQLException {
         String[] allLpis = BruteForceUtil.genBlockString(BruteForceUtil.ALPHABET, 2, false);
-        PieceType[] allPieceTypes = FiveBldCube.getPieceTypeArray();
+        PieceType[] allPieceTypes = new PieceType[]{CORNER, EDGE, WING, XCENTER, TCENTER};
 
         for (String lpi : allLpis) {
             for (PieceType pieceType : allPieceTypes) {

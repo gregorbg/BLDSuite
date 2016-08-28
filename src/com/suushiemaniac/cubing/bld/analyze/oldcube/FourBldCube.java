@@ -617,7 +617,7 @@ public class FourBldCube extends ThreeBldCube {
             for (int i = 0; i < 23 && !centerCycled; i++) {
                 if (!solvedXCenters[i]) {
                     int centerIndex = i;
-                    if (avoidXBreakIns && xCenters[xCenterCubies[i / 4][i % 4]] / 4 == xCenterCubies[0][0] / 4)
+                    if (avoidXBreakIns && xCenters[xCenterCubies[i / 4][i % 4]] / 4 == xCenterCubies[0][0] / 4) //TODO reverse-engineer this once I have an actual 4x4 at hand
                         for (int j = i; j < (i + 4) - (i % 4); j++)
                             if (!solvedXCenters[j] && xCenters[xCenterCubies[j / 4][j % 4]] / 4 != xCenterCubies[0][0] / 4) {
                                 centerIndex = j;

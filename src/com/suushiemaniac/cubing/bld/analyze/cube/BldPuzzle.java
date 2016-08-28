@@ -3,6 +3,7 @@ package com.suushiemaniac.cubing.bld.analyze.cube;
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg;
 import com.suushiemaniac.cubing.alglib.move.Move;
+import com.suushiemaniac.cubing.bld.model.AlgSource;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 import com.suushiemaniac.lang.json.JSON;
@@ -30,6 +31,8 @@ public abstract class BldPuzzle {
 
 	protected Map<PieceType, String[]> letterSchemes;
 
+	protected AlgSource algSource;
+
 	public BldPuzzle() {
 		this.scrambleOrientationPremoves = new SimpleAlg();
 
@@ -37,6 +40,8 @@ public abstract class BldPuzzle {
 		this.cubies = this.initCubies();
 
 		this.letterSchemes = this.initSchemes();
+
+		this.algSource = null;
 
 		this.resetPuzzle();
 	}
@@ -71,6 +76,10 @@ public abstract class BldPuzzle {
 		}
 
 		return permutations;
+	}
+
+	public void setAlgSource(AlgSource source) {
+		this.algSource = source;
 	}
 
 	public void parseScramble(Algorithm scramble) {
@@ -155,8 +164,7 @@ public abstract class BldPuzzle {
 	protected void scramblePuzzle(Algorithm scramble) {
 		scramble = this.getSolvingOrientationPremoves().merge(scramble);
 
-		for (Move move : scramble)
-			this.permute(move);
+		scramble.forEach(this::permute);
 	}
 
 	protected void permute(Move permutation) {
@@ -173,22 +181,17 @@ public abstract class BldPuzzle {
 	}
 
     protected void solvePuzzle() {
-		for (PieceType type : this.getPieceTypes(true)) {
-			this.saveState(type);
-		}
+		this.getPieceTypes(true).forEach(this::saveState);
 
 		this.reorientPuzzle();
 
-		for (PieceType type : this.getPieceTypes()) {
-    		this.solvePieces(type);
-		}
+		this.getPieceTypes().forEach(this::solvePieces);
 	}
 
 	protected void reorientPuzzle() {
 		this.scrambleOrientationPremoves = this.getReorientationMoves();
 
-		for (Move move : this.scrambleOrientationPremoves)
-			this.permute(move);
+		this.scrambleOrientationPremoves.forEach(this::permute);
 	}
 
 	protected void saveState(PieceType type) {
@@ -229,14 +232,24 @@ public abstract class BldPuzzle {
 		Set<PieceType> illegalCubies = new HashSet<>(cubies.keySet());
 		illegalCubies.removeAll(this.getPieceTypes());
 
-		for (PieceType type : illegalCubies)
-			cubies.remove(type);
+		illegalCubies.forEach(cubies::remove);
 
 		return cubies;
 	}
 
 	protected void increaseCycleCount(PieceType type) {
 		this.cycleCount.put(type, this.cycleCount.get(type) + 1);
+	}
+
+	protected int getLastTarget(PieceType type) {
+		List<Integer> cycles = this.cycles.get(type);
+
+		return cycles.size() > 0 ? cycles.get(cycles.size() - 1) : -1;
+	}
+
+	protected List<Integer> getBreakInsAfter(int piece, PieceType type) {
+		int targetCount = type.getNumPieces();
+		return Arrays.asList(ArrayUtil.autobox(ArrayUtil.fill(targetCount))).subList(1, targetCount);
 	}
 
 	public boolean setBuffer(PieceType type, int newBuffer) {
@@ -292,7 +305,7 @@ public abstract class BldPuzzle {
 		return Arrays.copyOf(original, original.length);
 	}
 
-	public String getSolutionPairs(PieceType type) { //TODO with mis-oriented
+	public String getSolutionPairs(PieceType type) {
 		String pairs = type.humanName() + ": ";
 
 		List<Integer> currentCycles = this.cycles.get(type);
@@ -355,7 +368,7 @@ public abstract class BldPuzzle {
 	}
 
 	public boolean isSingleCycle(PieceType type) {
-		return this.getBreakInCount(type) < 2; //TODO equals 0 or equals 1 if no breakIn?!
+		return this.getBreakInCount(type) == 0;
 	}
 
 	public int getPreSolvedCount(PieceType type) {

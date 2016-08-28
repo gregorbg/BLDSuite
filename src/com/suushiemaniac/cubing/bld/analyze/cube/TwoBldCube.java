@@ -3,8 +3,11 @@ package com.suushiemaniac.cubing.bld.analyze.cube;
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.optim.BreakInOptim;
+import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.CORNER;
 
@@ -57,5 +60,15 @@ public class TwoBldCube extends BldCube {
 		cubies.put(CORNER, SPEFFZ_CORNERS);
 
 		return cubies;
+	}
+
+	@Override
+	protected List<Integer> getBreakInsAfter(int piece, PieceType type) {
+		if (this.algSource == null)
+			return super.getBreakInsAfter(piece, type);
+
+		char lastTarget = this.letterSchemes.get(type)[piece].charAt(0);
+		List<String> bestTargets = new BreakInOptim(this.algSource).optimizeBreakInTargetsAfter(lastTarget, type);
+		return bestTargets.stream().map(t -> ArrayUtil.index(this.letterSchemes.get(type), t)).collect(Collectors.toList());
 	}
 }

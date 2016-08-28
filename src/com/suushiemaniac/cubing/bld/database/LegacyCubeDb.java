@@ -2,7 +2,7 @@ package com.suushiemaniac.cubing.bld.database;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.util.ParseUtils;
-import com.suushiemaniac.cubing.bld.analyze.cube.FiveBldCube;
+import com.suushiemaniac.cubing.bld.analyze.oldcube.FiveBldCube;
 import com.suushiemaniac.cubing.bld.model.AlgSource;
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;

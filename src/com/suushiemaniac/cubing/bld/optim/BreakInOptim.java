@@ -14,7 +14,7 @@ public class BreakInOptim {
         this.source = source;
     }
 
-    public List<String> optimizeBreakInsAfter(char target, PieceType type) {
+    public List<String> optimizeBreakInTargetsAfter(char target, PieceType type) {
         List<Algorithm> algList = new ArrayList<>();
 		Map<Algorithm, String> targetMap = new HashMap<>();
 
@@ -32,6 +32,16 @@ public class BreakInOptim {
         Collections.sort(algList, (o1, o2) -> Integer.compare(o1.algLength(), o2.algLength()));
         Collections.sort(algList, (o1, o2) -> Integer.compare(o1.moveLength(), o2.moveLength()));
 
-    	return algList.stream().map(a -> targetMap.get(a) + ": " + a.toFormatString()).collect(Collectors.toList());
+    	return algList.stream().map(targetMap::get).collect(Collectors.toList());
+    }
+
+    public List<Algorithm> optimizeBreakInAlgorithmsAfter(char target, PieceType type) {
+    	List<Algorithm> breakInAlgs = new ArrayList<>();
+
+		for (String breakInTarget : this.optimizeBreakInTargetsAfter(target, type)) {
+			breakInAlgs.addAll(this.source.getAlg(type, ("" + target) + breakInTarget));
+		}
+
+		return breakInAlgs;
     }
 }
