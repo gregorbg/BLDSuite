@@ -46,7 +46,7 @@ public abstract class BldPuzzle {
 		this.parseScramble(scramble);
 	}
 
-	private Map<Move, Map<PieceType, Integer[]>> loadPermutations() { //TODO permutations are always the same so maybe move to static singleton?!
+	private Map<Move, Map<PieceType, Integer[]>> loadPermutations() {
 		String filename = "permutations/" + getClass().getSimpleName() + ".json";
 		URL fileURL = getClass().getResource(filename);
 		File jsonFile = new File(fileURL.getFile());
@@ -76,8 +76,18 @@ public abstract class BldPuzzle {
 	public void parseScramble(Algorithm scramble) {
 		this.resetPuzzle();
 
+		this.scramble = scramble;
+
 		this.scramblePuzzle(scramble);
 		this.solvePuzzle();
+	}
+
+	public Algorithm getScramble() {
+		return this.scramble;
+	}
+
+	public void resolve() {
+		this.parseScramble(this.getScramble());
 	}
 
 	protected Map<PieceType, List<Integer>> emptyCycles() {
@@ -227,6 +237,54 @@ public abstract class BldPuzzle {
 
 	protected void increaseCycleCount(PieceType type) {
 		this.cycleCount.put(type, this.cycleCount.get(type) + 1);
+	}
+
+	public boolean setBuffer(PieceType type, int newBuffer) {
+		Integer[][] cubies = this.cubies.get(type);
+
+		if (cubies != null) {
+			int outer = ArrayUtil.deepOuterIndex(cubies, newBuffer);
+
+			if (outer > -1) {
+				int inner = ArrayUtil.deepInnerIndex(cubies, newBuffer);
+
+				if (inner > -1) {
+					for (int i = 0; i < outer; i++) ArrayUtil.cycleLeft(cubies);
+					for (int i = 0; i < inner; i++) ArrayUtil.cycleLeft(cubies[0]);
+
+					this.resolve();
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	public boolean setBuffer(PieceType type, String newBuffer) {
+		String[] letterScheme = this.letterSchemes.get(type);
+
+		if (letterScheme != null) {
+			int index = ArrayUtil.index(letterScheme, newBuffer);
+
+			if (index > -1) {
+				return this.setBuffer(type, index);
+			}
+		}
+
+		return false;
+	}
+
+	public boolean setLetteringScheme(PieceType type, String[] newScheme) {
+		String[] oldScheme = this.letterSchemes.get(type);
+
+		if (oldScheme != null && oldScheme.length == newScheme.length) {
+			this.letterSchemes.put(type, newScheme);
+			this.resolve();
+			return true;
+		}
+
+		return false;
 	}
 
 	public String getSolutionPairs(PieceType type) {

@@ -84,11 +84,23 @@ public abstract class BldCube extends BldPuzzle {
 		return this.getRotationsFromOrientation(this.top, this.front).inverse();
 	}
 
-	//TODO set buffers
-	//TODO set lettering
 	public void setSolvingOrientation(int top, int front) {
+		if (!this.getAdjacentCenters(top).contains(front))
+			return;
+
 		this.top = top;
-		this.front = front; //TODO check if valid orientation?
+		this.front = front;
+	}
+
+	private Set<Integer> getAdjacentCenters(int center) {
+		//0: 1,2,3,4
+		//5: 1,2,3,4
+		//1: 0,2,4,5
+		//3: 0,2,4,5
+		//2: 0,1,3,5
+		//4: 0,1,3,5
+		//TODO
+		return Collections.emptySet();
 	}
 
 	@Override

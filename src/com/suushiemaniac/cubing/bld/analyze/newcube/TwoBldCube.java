@@ -30,14 +30,32 @@ public class TwoBldCube extends BldCube {
 
 	@Override
 	protected Algorithm getReorientationMoves() {
-		return new SimpleAlg(); //TODO
+		String[] reorientation = {
+				"x2 y", "z2", "x2 y'", "x2",
+				"z'", "z' y", "z' y2", "z' y'",
+				"x' y", "x' y2", "x' y'", "x'",
+				"z y2", "z y'", "z", "z y",
+				"x y'", "x", "x y", "x y2",
+				"y", "y2", "y'", ""
+		};
+
+		int xPosition = -1;
+		Integer[] cornerState = this.state.get(CORNER);
+		for (int i = 0; i < 24; i++) if (cornerState[i] == X && xPosition == -1) xPosition = i;
+
+		if (xPosition > -1) {
+			String neededRotation = reorientation[xPosition];
+			return CORNER.getReader().parse(neededRotation);
+		}
+
+		return new SimpleAlg();
 	}
 
 	@Override
 	protected Map<PieceType, Integer[][]> getDefaultCubies() {
-		Map<PieceType, Integer[][]> superCubies = super.getDefaultCubies();
-		superCubies.put(CORNER, SPEFFZ_CORNERS);
+		Map<PieceType, Integer[][]> cubies = new HashMap<>();
+		cubies.put(CORNER, SPEFFZ_CORNERS);
 
-		return superCubies;
+		return cubies;
 	}
 }
