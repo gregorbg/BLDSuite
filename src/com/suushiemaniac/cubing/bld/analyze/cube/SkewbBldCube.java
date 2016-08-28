@@ -17,7 +17,7 @@ public class SkewbBldCube extends BldCube {
 
     protected int A = 0, B = 1, C = 2, D = 3, E = 4, F = 5, G = 6, H = 7, I = 8, J = 9, K = 10, L = 11, M = 12, N = 13, O = 14, P = 15, Q = 16, R = 17, S = 18, T = 19, U = 20, V = 21, W = 22, X = 23, Z = -1;
     protected int UP = 0, LEFT = 1, FRONT = 2, RIGHT = 3, BACK = 4, DOWN = 5;
-    //TODO Corner position lettering
+
     protected String[] cornerLettering = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X"};
     protected String[] cornerPositions = {"UBL", "URB", "UFR", "ULF", "DFL", "DRF", "DBR", "DLB"};
     protected String[] centerLettering = {"A", "B", "C", "D", "E", "F"};
@@ -53,7 +53,6 @@ public class SkewbBldCube extends BldCube {
                 "B", "B'"
         };
         Integer[][] cornerFacePerms = {
-                //TODO
                 {Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z},
                 {Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z},
                 {Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z, Z},
@@ -338,7 +337,6 @@ public class SkewbBldCube extends BldCube {
     @Override
     public String getStatstics() {
         return null;
-        //TODO
     }
 
     @Override
@@ -349,13 +347,11 @@ public class SkewbBldCube extends BldCube {
     @Override
     public String getNoahtation() {
         return null;
-        //TODO
     }
 
     @Override
     public String getStatString(boolean spaced, boolean newLine) {
         return null;
-        //TODO
     }
 
     @Override

@@ -292,11 +292,19 @@ public abstract class BldPuzzle {
 
 		List<Integer> currentCycles = this.cycles.get(type);
 
-		if (currentCycles.size() > 0) {
+		if (currentCycles.size() > 0 || this.getMisOrientedCount(type) > 0) {
 			for (int i = 0; i < currentCycles.size(); i++) {
 				pairs += this.letterSchemes.get(type)[currentCycles.get(i)];
 				if (i % 2 == 1) pairs += " ";
-			} //TODO mis-oriented pieces
+			}
+
+			for (int i = 1; i < type.getTargetsPerPiece(); i++) {
+				if (this.getMisOrientedCount(type, i) > 0) {
+					pairs += pairs.endsWith(" ") ? "" : " ";
+					pairs += "Orient " + i + ": ";
+					pairs += String.join(" ", this.getMisOrientedPieces(type, i));
+				}
+			}
 		} else {
 			return "Solved";
 		}
@@ -364,11 +372,26 @@ public abstract class BldPuzzle {
 		Boolean[] orientations = this.misOrientedPieces.get(type)[orientation];
 		int count = 0;
 
-		for (Boolean misOriented : orientations)
-			if (misOriented)
+		for (int i = 1; i < orientations.length; i++) {
+			if (orientations[i])
 				count++;
+		}
 
 		return count;
+	}
+
+	protected List<String> getMisOrientedPieces(PieceType type, int orientation) {
+		Boolean[] orientations = this.misOrientedPieces.get(type)[orientation];
+		Integer[][] cubies = this.cubies.get(type);
+		String[] lettering = this.letterSchemes.get(type);
+
+		List<String> misOrientedPieces = new ArrayList<>();
+
+		for (int i = 1; i < orientations.length; i++)
+			if (orientations[i])
+				misOrientedPieces.add(lettering[cubies[i][orientation]]);
+
+		return misOrientedPieces;
 	}
 
 	protected boolean hasParity(PieceType type) {

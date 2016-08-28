@@ -48,7 +48,7 @@ public class ThreeBldCube extends BldCube {
 		super.solvePieces(type);
 	}
 
-	private void swapParityEdges() { //TODO maybe simplify?!
+	private void swapParityEdges() {
 		int UB = -1;
 		int UL = -1;
 

@@ -17,7 +17,7 @@ public class MegaminxBldCube extends BldCube {
 
     protected int BA = 0, BE = 1, BI = 2, BO = 3, BU = 4, CA = 5, CE = 6, CI = 7, CO = 8, CU = 9, DA = 10, DE = 11, DI = 12, DO = 13, DU = 14, FA = 15, FE = 16, FI = 17, FO = 18, FU = 19, GA = 20, GE = 21, GI = 22, GO = 23, GU = 24, HA = 25, HE = 26, HI = 27, HO = 28, HU = 29, JA = 30, JE = 31, JI = 32, JO = 33, JU = 34, KA = 35, KE = 36, KI = 37, KO = 38, KU = 39, LA = 40, LE = 41, LI = 42, LO = 43, LU = 44, MA = 45, ME = 46, MI = 47, MO = 48, MU = 49, NA = 50, NE = 51, NI = 52, NO = 53, NU = 54, PA = 55, PE = 56, PI = 57, PO = 58, PU = 59, ZZ = -1;
     protected int UP = 0, UPLEFT = 1, FRONT = 2, UPRIGHT = 3, UPBACKRIGHT = 4, UPBACKLEFT = 5, DOWNBACKLEFT = 6, DOWNLEFT = 7, DOWNRIGHT = 8, DOWNBACKRIGHT = 9, BACK = 10, DOWN = 11;
-    //TODO Position Lettering
+
     protected String[] cornerLettering = {"BA", "BE", "BI", "BO", "BU", "CA", "CE", "CI", "CO", "CU", "DA", "DE", "DI", "DO", "DU", "FA", "FE", "FI", "FO", "FU", "GA", "GE", "GI", "GO", "GU", "HA", "HE", "HI", "HO", "HU", "JA", "JE", "JI", "JO", "JU", "KA", "KE", "KI", "KO", "KU", "LA", "LE", "LI", "LO", "LU", "MA", "ME", "MI", "MO", "MU", "NA", "NE", "NI", "NO", "NU", "PA", "PE", "PI", "PO", "PU"};
     protected String[] cornerPositions = {"U", "U", "U", "U", "U", "CA", "CE", "CI", "CO", "CU", "DA", "DE", "DI", "DO", "DU", "FA", "FE", "FI", "FO", "FU", "GA", "GE", "GI", "GO", "GU", "HA", "HE", "HI", "HO", "HU", "JA", "JE", "JI", "JO", "JU", "KA", "KE", "KI", "KO", "KU", "LA", "LE", "LI", "LO", "LU", "MA", "ME", "MI", "MO", "MU", "NA", "NE", "NI", "NO", "NU", "PA", "PE", "PI", "PO", "PU"};
     protected String[] edgeLettering = {"BA", "BE", "BI", "BO", "BU", "CA", "CE", "CI", "CO", "CU", "DA", "DE", "DI", "DO", "DU", "FA", "FE", "FI", "FO", "FU", "GA", "GE", "GI", "GO", "GU", "HA", "HE", "HI", "HO", "HU", "JA", "JE", "JI", "JO", "JU", "KA", "KE", "KI", "KO", "KU", "LA", "LE", "LI", "LO", "LU", "MA", "ME", "MI", "MO", "MU", "NA", "NE", "NI", "NO", "NU", "PA", "PE", "PI", "PO", "PU"};
@@ -55,7 +55,6 @@ public class MegaminxBldCube extends BldCube {
     protected MegaminxBldCube() {
     }
 
-    //TODO Permutation definitions
     protected void initPermutations() {
         String[] faceNames = {
                 "R++", "R--",

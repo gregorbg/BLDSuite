@@ -85,22 +85,26 @@ public abstract class BldCube extends BldPuzzle {
 	}
 
 	public void setSolvingOrientation(int top, int front) {
-		if (!this.getAdjacentCenters(top).contains(front))
-			return;
-
-		this.top = top;
-		this.front = front;
+		if (this.getAdjacentCenters(top).contains(front)) {
+			this.top = top;
+			this.front = front;
+		}
 	}
 
 	private Set<Integer> getAdjacentCenters(int center) {
-		//0: 1,2,3,4
-		//5: 1,2,3,4
-		//1: 0,2,4,5
-		//3: 0,2,4,5
-		//2: 0,1,3,5
-		//4: 0,1,3,5
-		//TODO
-		return Collections.emptySet();
+		Integer[][] adjacenceMatrix = {
+				{1,2,3,4},
+				{0,2,4,5},
+				{0,1,3,5}
+		};
+
+		int index = Math.min(center, this.getOppositeCenter(center));
+		return new HashSet<>(Arrays.asList(adjacenceMatrix[index]));
+	}
+
+	private int getOppositeCenter(int center) {
+		Integer[] opposites = {5, 3, 4, 1, 2, 0};
+		return opposites[center];
 	}
 
 	@Override
@@ -198,7 +202,7 @@ public abstract class BldCube extends BldPuzzle {
 		}
 
 		// If the buffer is not solved, swap it to the position where the piece belongs
-		else { //TODO Edge parities
+		else {
 			for (int i = 0; i < type.getNumPieces() && !pieceCycled; i++) {
 
 				int parts = type.getTargetsPerPiece();
