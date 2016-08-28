@@ -1,4 +1,4 @@
-package com.suushiemaniac.cubing.bld.analyze.cube;
+package com.suushiemaniac.cubing.bld.analyze.oldcube;
 
 import com.suushiemaniac.cubing.alglib.lang.PyraminxAlgorithmReader;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;

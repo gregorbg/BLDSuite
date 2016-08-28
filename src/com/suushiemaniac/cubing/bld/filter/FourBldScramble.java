@@ -4,11 +4,15 @@ import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
 import com.suushiemaniac.cubing.bld.analyze.cube.FourBldCube;
 import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition;
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
+import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.NoInspectionFourByFourCubePuzzle;
 
 import static com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.*;
 import static com.suushiemaniac.cubing.bld.filter.condition.IntCondition.*;
+import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.CORNER;
+import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.WING;
+import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.XCENTER;
 
 public class FourBldScramble extends ThreeBldScramble {
     protected BooleanCondition hasWingParity, hasXCenterParity, wingSingleCycle, xCenterSingleCycle;
@@ -98,22 +102,22 @@ public class FourBldScramble extends ThreeBldScramble {
     protected <T extends BldCube> boolean matchingConditions(T inCube) {
         if (inCube instanceof FourBldCube) {
             FourBldCube randCube = (FourBldCube) inCube;
-            return this.hasCornerParity.evaluatePositive(randCube.hasCornerParity())
-                    && this.hasWingParity.evaluatePositive(randCube.hasWingParity())
-                    && this.hasXCenterParity.evaluatePositive(randCube.hasXCenterParity())
-                    && this.cornerSingleCycle.evaluatePositive(randCube.isCornerSingleCycle())
-                    && this.cornerBreakIns.evaluate(randCube.getCornerBreakInNum())
-                    && this.wingSingleCycle.evaluatePositive(randCube.isWingSingleCycle())
-                    && this.wingBreakIns.evaluate(randCube.getWingBreakInNum())
-                    && this.xCenterSingleCycle.evaluatePositive(randCube.isXCenterSingleCycle())
-                    && this.xCenterBreakIns.evaluate(randCube.getXCenterBreakInNum())
-                    && this.cornerTargets.evaluate(randCube.getCornerLength())
-                    && this.wingTargets.evaluate(randCube.getWingLength())
-                    && this.xCenterTargets.evaluate(randCube.getXCenterLength())
-                    && this.solvedCorners.evaluate(randCube.getNumPreSolvedCorners())
-                    && this.solvedWings.evaluate(randCube.getNumPreSolvedWings())
-                    && this.solvedXCenters.evaluate(randCube.getNumPreSolvedXCenters())
-                    && this.twistedCorners.evaluate(randCube.getNumPreTwistedCorners());
+            return this.hasCornerParity.evaluatePositive(randCube.hasParity(CORNER))
+                    && this.hasWingParity.evaluatePositive(randCube.hasParity(WING))
+                    && this.hasXCenterParity.evaluatePositive(randCube.hasParity(XCENTER))
+                    && this.cornerSingleCycle.evaluatePositive(randCube.isSingleCycle(CORNER))
+                    && this.cornerBreakIns.evaluate(randCube.getBreakInCount(CORNER))
+                    && this.wingSingleCycle.evaluatePositive(randCube.isSingleCycle(WING))
+                    && this.wingBreakIns.evaluate(randCube.getBreakInCount(WING))
+                    && this.xCenterSingleCycle.evaluatePositive(randCube.isSingleCycle(XCENTER))
+                    && this.xCenterBreakIns.evaluate(randCube.getBreakInCount(XCENTER))
+                    && this.cornerTargets.evaluate(randCube.getStatLength(CORNER))
+                    && this.wingTargets.evaluate(randCube.getStatLength(WING))
+                    && this.xCenterTargets.evaluate(randCube.getStatLength(XCENTER))
+                    && this.solvedCorners.evaluate(randCube.getPreSolvedCount(CORNER))
+                    && this.solvedWings.evaluate(randCube.getPreSolvedCount(WING))
+                    && this.solvedXCenters.evaluate(randCube.getPreSolvedCount(XCENTER))
+                    && this.twistedCorners.evaluate(randCube.getMisOrientedCount(CORNER));
         } else return false;
     }
 
@@ -124,6 +128,6 @@ public class FourBldScramble extends ThreeBldScramble {
 
     @Override
     protected BldCube getAnalyzingPuzzle() {
-        return new FourBldCube("");
+        return new FourBldCube();
     }
 }

@@ -1,4 +1,4 @@
-package com.suushiemaniac.cubing.bld.analyze.newcube;
+package com.suushiemaniac.cubing.bld.analyze.cube;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg;
@@ -287,7 +287,12 @@ public abstract class BldPuzzle {
 		return false;
 	}
 
-	public String getSolutionPairs(PieceType type) {
+	public String[] getScheme(PieceType type) {
+		String[] original = this.letterSchemes.get(type);
+		return Arrays.copyOf(original, original.length);
+	}
+
+	public String getSolutionPairs(PieceType type) { //TODO with mis-oriented
 		String pairs = type.humanName() + ": ";
 
 		List<Integer> currentCycles = this.cycles.get(type);
@@ -341,15 +346,19 @@ public abstract class BldPuzzle {
 		return String.join("\n", statisticsParts);
 	}
 
-	protected int getStatLength(PieceType type) {
+	public int getStatLength(PieceType type) {
 		return this.cycles.get(type).size();
 	}
 
-	protected int getBreakInCount(PieceType type) {
+	public int getBreakInCount(PieceType type) {
 		return this.cycleCount.get(type);
 	}
 
-	protected int getPreSolvedCount(PieceType type) {
+	public boolean isSingleCycle(PieceType type) {
+		return this.getBreakInCount(type) < 2; //TODO equals 0 or equals 1 if no breakIn?!
+	}
+
+	public int getPreSolvedCount(PieceType type) {
 		int count = 0;
 		Boolean[] solvedFlags = this.solvedPieces.get(type);
 
@@ -359,7 +368,7 @@ public abstract class BldPuzzle {
 		return count;
 	}
 
-	protected int getMisOrientedCount(PieceType type) {
+	public int getMisOrientedCount(PieceType type) {
 		int count = 0;
 
 		for (int i = 0; i < type.getTargetsPerPiece(); i++)
@@ -368,7 +377,9 @@ public abstract class BldPuzzle {
 		return count;
 	}
 
-	protected int getMisOrientedCount(PieceType type, int orientation) {
+	public int getMisOrientedCount(PieceType type, int orientation) {
+		orientation %= type.getTargetsPerPiece();
+
 		Boolean[] orientations = this.misOrientedPieces.get(type)[orientation];
 		int count = 0;
 
@@ -394,7 +405,7 @@ public abstract class BldPuzzle {
 		return misOrientedPieces;
 	}
 
-	protected boolean hasParity(PieceType type) {
+	public boolean hasParity(PieceType type) {
 		return this.parities.get(type);
 	}
 
@@ -440,7 +451,7 @@ public abstract class BldPuzzle {
 		return String.join(" | ", statStringParts);
 	}
 
-	protected boolean isBufferSolved(PieceType type) {
+	public boolean isBufferSolved(PieceType type) {
 		return this.solvedPieces.get(type)[0];
 	}
 

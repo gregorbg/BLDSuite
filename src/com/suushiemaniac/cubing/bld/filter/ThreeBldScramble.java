@@ -1,5 +1,6 @@
 package com.suushiemaniac.cubing.bld.filter;
 
+import com.sun.corba.se.spi.logging.CORBALogDomains;
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.exception.InvalidNotationException;
 import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
@@ -21,6 +22,8 @@ import java.util.stream.Collectors;
 
 import static com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.*;
 import static com.suushiemaniac.cubing.bld.filter.condition.IntCondition.*;
+import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.CORNER;
+import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.EDGE;
 
 public class ThreeBldScramble extends TwoBldScramble {
     public static ThreeBldScramble averageScramble() {
@@ -184,7 +187,7 @@ public class ThreeBldScramble extends TwoBldScramble {
 
         for (String pair : possPairs) {
             try {
-                matches.addAll(algSource.getAlg(CubicPieceType.EDGE, pair).stream().filter(filter).map(alg -> pair).collect(Collectors.toList()));
+                matches.addAll(algSource.getAlg(EDGE, pair).stream().filter(filter).map(alg -> pair).collect(Collectors.toList()));
             } catch (InvalidNotationException e) {
                 continue;
             }
@@ -218,17 +221,17 @@ public class ThreeBldScramble extends TwoBldScramble {
         this.flippedEdges = flippedEdges;
     }
 
-    public static ThreeBldScramble cloneFrom(String scramble, boolean strict) {
+    public static ThreeBldScramble cloneFrom(Algorithm scramble, boolean strict) {
         ThreeBldCube refCube = new ThreeBldCube(scramble);
-        BooleanCondition hasCornerParity = refCube.hasCornerParity() ? strict ? YES() : UNIMPORTANT() : NO();
-        IntCondition cornerBreakIns = strict ? EXACT(refCube.getCornerBreakInNum()) : MAXIMUM(refCube.getCornerBreakInNum());
-        IntCondition cornerTargets = strict ? EXACT(refCube.getCornerLength()) : MAXIMUM(refCube.getCornerLength());
-        IntCondition preCorners = strict ? EXACT(refCube.getNumPreSolvedCorners()) : MINIMUM(refCube.getNumPreSolvedCorners());
-        IntCondition preTwisted = strict ? EXACT(refCube.getNumPreTwistedCorners()) : MAXIMUM(refCube.getNumPreTwistedCorners());
-        IntCondition edgeBreakIns = strict ? EXACT(refCube.getEdgeBreakInNum()) : MAXIMUM(refCube.getEdgeBreakInNum());
-        IntCondition edgeTargets = strict ? EXACT(refCube.getEdgeLength()) : MAXIMUM(refCube.getEdgeLength());
-        IntCondition preEdges = strict ? EXACT(refCube.getNumPreSolvedEdges()) : MINIMUM(refCube.getNumPreSolvedEdges());
-        IntCondition preFlipped = strict ? EXACT(refCube.getNumPreFlippedEdges()) : MAXIMUM(refCube.getNumPreFlippedEdges());
+        BooleanCondition hasCornerParity = refCube.hasParity(CORNER) ? strict ? YES() : UNIMPORTANT() : NO();
+        IntCondition cornerBreakIns = strict ? EXACT(refCube.getBreakInCount(CORNER)) : MAXIMUM(refCube.getBreakInCount(CORNER));
+        IntCondition cornerTargets = strict ? EXACT(refCube.getStatLength(CORNER)) : MAXIMUM(refCube.getStatLength(CORNER));
+        IntCondition preCorners = strict ? EXACT(refCube.getPreSolvedCount(CORNER)) : MINIMUM(refCube.getPreSolvedCount(CORNER));
+        IntCondition preTwisted = strict ? EXACT(refCube.getMisOrientedCount(CORNER)) : MAXIMUM(refCube.getMisOrientedCount(CORNER));
+        IntCondition edgeBreakIns = strict ? EXACT(refCube.getBreakInCount(EDGE)) : MAXIMUM(refCube.getBreakInCount(EDGE));
+        IntCondition edgeTargets = strict ? EXACT(refCube.getStatLength(EDGE)) : MAXIMUM(refCube.getStatLength(EDGE));
+        IntCondition preEdges = strict ? EXACT(refCube.getPreSolvedCount(EDGE)) : MINIMUM(refCube.getPreSolvedCount(EDGE));
+        IntCondition preFlipped = strict ? EXACT(refCube.getMisOrientedCount(EDGE)) : MAXIMUM(refCube.getMisOrientedCount(EDGE));
         return new ThreeBldScramble(cornerTargets, cornerBreakIns, hasCornerParity, preCorners, preTwisted, edgeTargets, edgeBreakIns, preEdges, preFlipped);
     }
 
@@ -236,21 +239,21 @@ public class ThreeBldScramble extends TwoBldScramble {
     protected <T extends BldCube> boolean matchingConditions(T inCube) {
         if (inCube instanceof ThreeBldCube) {
             ThreeBldCube randCube = (ThreeBldCube) inCube;
-            return this.hasCornerParity.evaluatePositive(randCube.hasCornerParity())
-                    && this.cornerSingleCycle.evaluatePositive(randCube.isCornerSingleCycle())
-                    && this.cornerBreakIns.evaluate(randCube.getCornerBreakInNum())
-                    && this.edgeSingleCycle.evaluatePositive(randCube.isEdgeSingleCycle())
-                    && this.edgeBreakIns.evaluate(randCube.getEdgeBreakInNum())
-                    && this.cornerTargets.evaluate(randCube.getCornerLength())
-                    && this.edgeTargets.evaluate(randCube.getEdgeLength())
-                    && this.solvedCorners.evaluate(randCube.getNumPreSolvedCorners())
-                    && this.solvedEdges.evaluate(randCube.getNumPreSolvedEdges())
-                    && this.twistedCorners.evaluate(randCube.getNumPreTwistedCorners())
-                    && this.flippedEdges.evaluate(randCube.getNumPreFlippedEdges())
-                    && randCube.getCornerPairs(false).replaceAll("\\s*", "").matches(this.cornerMemoRegex)
-                    && randCube.getCornerPairs(false).replaceAll("\\s*", "").matches(this.cornerPredicateRegex)
-                    && randCube.getEdgePairs(false).replaceAll("\\s*", "").matches(this.edgeMemoRegex)
-                    && randCube.getEdgePairs(false).replaceAll("\\s*", "").matches(this.edgePredicateRegex);
+            return this.hasCornerParity.evaluatePositive(randCube.hasParity(CORNER))
+                    && this.cornerSingleCycle.evaluatePositive(randCube.isSingleCycle(CORNER))
+                    && this.cornerBreakIns.evaluate(randCube.getBreakInCount(CORNER))
+                    && this.edgeSingleCycle.evaluatePositive(randCube.isSingleCycle(EDGE))
+                    && this.edgeBreakIns.evaluate(randCube.getBreakInCount(EDGE))
+                    && this.cornerTargets.evaluate(randCube.getStatLength(CORNER))
+                    && this.edgeTargets.evaluate(randCube.getStatLength(EDGE))
+                    && this.solvedCorners.evaluate(randCube.getPreSolvedCount(CORNER))
+                    && this.solvedEdges.evaluate(randCube.getPreSolvedCount(EDGE))
+                    && this.twistedCorners.evaluate(randCube.getMisOrientedCount(CORNER))
+                    && this.flippedEdges.evaluate(randCube.getMisOrientedCount(EDGE))
+                    && randCube.getSolutionPairs(CORNER).replaceAll("\\s*", "").matches(this.cornerMemoRegex)
+                    && randCube.getSolutionPairs(CORNER).replaceAll("\\s*", "").matches(this.cornerPredicateRegex)
+                    && randCube.getSolutionPairs(EDGE).replaceAll("\\s*", "").matches(this.edgeMemoRegex)
+                    && randCube.getSolutionPairs(EDGE).replaceAll("\\s*", "").matches(this.edgePredicateRegex);
         } else return false;
     }
 
@@ -261,6 +264,6 @@ public class ThreeBldScramble extends TwoBldScramble {
 
     @Override
     protected BldCube getAnalyzingPuzzle() {
-        return new ThreeBldCube("");
+        return new ThreeBldCube();
     }
 }

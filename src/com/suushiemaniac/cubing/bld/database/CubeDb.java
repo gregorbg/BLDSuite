@@ -18,11 +18,11 @@ public class CubeDb implements AlgSource {
 
     public CubeDb(String connString) throws SQLException {
         this.conn = DriverManager.getConnection(connString);
-        this.refCube = new FiveBldCube("");
+        this.refCube = new FiveBldCube();
     }
 
     public void addAlgorithm(PieceType type, String letterPair, String alg) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(type.name()));
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(type));
 
         boolean duplicate = readAlgorithm(type, speffz).contains(alg);
 
@@ -36,7 +36,7 @@ public class CubeDb implements AlgSource {
     }
 
     public void addLpi(String letterPair, String image) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme("lpi"));
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(null)); //TODO
 
         boolean duplicate = readLpi(speffz).contains(image);
 
@@ -50,7 +50,7 @@ public class CubeDb implements AlgSource {
     }
 
     public Set<String> readAlgorithm(PieceType type, String letterPair) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(type.name()));
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(type));
 
         PreparedStatement stat = conn.prepareStatement("SELECT DISTINCT alg FROM Algorithms WHERE `type` = ? AND `case` = ?");
         stat.setString(1, type.name().toLowerCase());
@@ -130,7 +130,7 @@ public class CubeDb implements AlgSource {
     }
 
     public void removeAlgorithm(PieceType type, String letterPair, String alg) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(type.name()));
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(type));
 
         PreparedStatement stat = conn.prepareStatement("DELETE FROM Algorithms WHERE `type` = ? AND `case` = ? AND alg = ?");
         stat.setString(1, type.name().toLowerCase());
@@ -141,7 +141,7 @@ public class CubeDb implements AlgSource {
     }
 
     public void removeLpi(String letterPair, String image) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme("lpi"));
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(null)); //TODO
 
         PreparedStatement stat = conn.prepareStatement("DELETE FROM Images WHERE `case` = ? AND image = ?");
         stat.setString(1, speffz);

@@ -6,7 +6,7 @@ import java.util.Collections;
 public class BruteForceUtil {
     public static String[] ALPHABET = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
 
-    public static String[] genBlockString(String[] alphabet, int length, boolean inclusive, boolean mayRepeat) {
+    public static String[] genBlockString(String[] alphabet, int length, boolean inclusive, boolean mayRepeat) { //TODO translate advanced code from adeptoPHP
         ArrayList<String> moveList = new ArrayList<>();
         if (length < 1) return new String[0];
         else if (length == 1) return alphabet;

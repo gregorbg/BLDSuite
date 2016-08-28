@@ -1,13 +1,16 @@
 package com.suushiemaniac.cubing.bld.filter;
 
+import com.sun.corba.se.spi.logging.CORBALogDomains;
 import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
 import com.suushiemaniac.cubing.bld.analyze.cube.FiveBldCube;
 import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition;
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
+import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.NoInspectionFiveByFiveCubePuzzle;
 
 import static com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.*;
+import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
 
 public class FiveBldScramble extends FourBldScramble {
     protected BooleanCondition hasTCenterParity, tCenterSingleCycle;
@@ -77,32 +80,32 @@ public class FiveBldScramble extends FourBldScramble {
     protected <T extends BldCube> boolean matchingConditions(T inCube) {
         if (inCube instanceof FiveBldCube) {
             FiveBldCube randCube = (FiveBldCube) inCube;
-            return this.hasCornerParity.evaluatePositive(randCube.hasCornerParity())
-                    && this.hasWingParity.evaluatePositive(randCube.hasWingParity())
-                    && this.hasXCenterParity.evaluatePositive(randCube.hasXCenterParity())
-                    && this.hasTCenterParity.evaluatePositive(randCube.hasTCenterParity())
-                    && this.cornerSingleCycle.evaluatePositive(randCube.isCornerSingleCycle())
-                    && this.cornerBreakIns.evaluate(randCube.getCornerBreakInNum())
-                    && this.edgeSingleCycle.evaluatePositive(randCube.isEdgeSingleCycle())
-                    && this.edgeBreakIns.evaluate(randCube.getEdgeBreakInNum())
-                    && this.wingSingleCycle.evaluatePositive(randCube.isWingSingleCycle())
-                    && this.wingBreakIns.evaluate(randCube.getWingBreakInNum())
-                    && this.xCenterSingleCycle.evaluatePositive(randCube.isXCenterSingleCycle())
-                    && this.xCenterBreakIns.evaluate(randCube.getXCenterBreakInNum())
-                    && this.tCenterSingleCycle.evaluatePositive(randCube.isTCenterSingleCycle())
-                    && this.tCenterBreakIns.evaluate(randCube.getTCenterBreakInNum())
-                    && this.cornerTargets.evaluate(randCube.getCornerLength())
-                    && this.edgeTargets.evaluate(randCube.getEdgeLength())
-                    && this.wingTargets.evaluate(randCube.getWingLength())
-                    && this.xCenterTargets.evaluate(randCube.getXCenterLength())
-                    && this.tCenterTargets.evaluate(randCube.getTCenterLength())
-                    && this.solvedCorners.evaluate(randCube.getNumPreSolvedCorners())
-                    && this.solvedEdges.evaluate(randCube.getNumPreSolvedEdges())
-                    && this.solvedWings.evaluate(randCube.getNumPreSolvedWings())
-                    && this.solvedXCenters.evaluate(randCube.getNumPreSolvedXCenters())
-                    && this.solvedTCenters.evaluate(randCube.getNumPreSolvedTCenters())
-                    && this.twistedCorners.evaluate(randCube.getNumPreTwistedCorners())
-                    && this.flippedEdges.evaluate(randCube.getNumPreFlippedEdges());
+            return this.hasCornerParity.evaluatePositive(randCube.hasParity(CORNER))
+                    && this.hasWingParity.evaluatePositive(randCube.hasParity(WING))
+                    && this.hasXCenterParity.evaluatePositive(randCube.hasParity(XCENTER))
+                    && this.hasTCenterParity.evaluatePositive(randCube.hasParity(TCENTER))
+                    && this.cornerSingleCycle.evaluatePositive(randCube.isSingleCycle(CORNER))
+                    && this.cornerBreakIns.evaluate(randCube.getBreakInCount(CORNER))
+                    && this.edgeSingleCycle.evaluatePositive(randCube.isSingleCycle(EDGE))
+                    && this.edgeBreakIns.evaluate(randCube.getBreakInCount(EDGE))
+                    && this.wingSingleCycle.evaluatePositive(randCube.isSingleCycle(WING))
+                    && this.wingBreakIns.evaluate(randCube.getBreakInCount(WING))
+                    && this.xCenterSingleCycle.evaluatePositive(randCube.isSingleCycle(XCENTER))
+                    && this.xCenterBreakIns.evaluate(randCube.getBreakInCount(XCENTER))
+                    && this.tCenterSingleCycle.evaluatePositive(randCube.isSingleCycle(TCENTER))
+                    && this.tCenterBreakIns.evaluate(randCube.getBreakInCount(TCENTER))
+                    && this.cornerTargets.evaluate(randCube.getStatLength(CORNER))
+                    && this.edgeTargets.evaluate(randCube.getStatLength(EDGE))
+                    && this.wingTargets.evaluate(randCube.getStatLength(WING))
+                    && this.xCenterTargets.evaluate(randCube.getStatLength(XCENTER))
+                    && this.tCenterTargets.evaluate(randCube.getStatLength(TCENTER))
+                    && this.solvedCorners.evaluate(randCube.getPreSolvedCount(CORNER))
+                    && this.solvedEdges.evaluate(randCube.getPreSolvedCount(EDGE))
+                    && this.solvedWings.evaluate(randCube.getPreSolvedCount(WING))
+                    && this.solvedXCenters.evaluate(randCube.getPreSolvedCount(XCENTER))
+                    && this.solvedTCenters.evaluate(randCube.getPreSolvedCount(TCENTER))
+                    && this.twistedCorners.evaluate(randCube.getMisOrientedCount(CORNER))
+                    && this.flippedEdges.evaluate(randCube.getMisOrientedCount(EDGE));
         } else return false;
     }
 
@@ -113,6 +116,6 @@ public class FiveBldScramble extends FourBldScramble {
 
     @Override
     protected BldCube getAnalyzingPuzzle() {
-        return new FiveBldCube("");
+        return new FiveBldCube();
     }
 }

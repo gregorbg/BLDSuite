@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 import static com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.*;
 import static com.suushiemaniac.cubing.bld.filter.condition.IntCondition.*;
+import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.CORNER;
 
 public class TwoBldScramble extends BldScramble {
     protected BooleanCondition hasCornerParity, cornerSingleCycle;
@@ -69,7 +70,7 @@ public class TwoBldScramble extends BldScramble {
         String[] possPairs = BruteForceUtil.genBlockString(SpeffzUtil.FULL_SPEFFZ, 2, false);
 
         for (String pair : possPairs) {
-            matches.addAll(algSource.getAlg(CubicPieceType.CORNER, pair).stream().filter(filter).map(alg -> pair).collect(Collectors.toList()));
+            matches.addAll(algSource.getAlg(CORNER, pair).stream().filter(filter).map(alg -> pair).collect(Collectors.toList()));
         }
 
         if (matches.size() > 0)
@@ -104,27 +105,27 @@ public class TwoBldScramble extends BldScramble {
         this.twistedCorners = twistedCorners;
     }
 
-    public static BldScramble cloneFrom(String scramble, boolean strict) {
+    public static BldScramble cloneFrom(Algorithm scramble, boolean strict) {
         TwoBldCube refCube = new TwoBldCube(scramble);
-        BooleanCondition hasCornerParity = refCube.hasCornerParity() ? strict ? YES() : UNIMPORTANT() : NO();
-        IntCondition cornerBreakIns = strict ? EXACT(refCube.getCornerBreakInNum()) : MAXIMUM(refCube.getCornerBreakInNum());
-        IntCondition cornerTargets = strict ? EXACT(refCube.getCornerLength()) : MAXIMUM(refCube.getCornerLength());
-        IntCondition preCorners = strict ? EXACT(refCube.getNumPreSolvedCorners()) : MINIMUM(refCube.getNumPreSolvedCorners());
-        IntCondition preTwisted = strict ? EXACT(refCube.getNumPreTwistedCorners()) : MAXIMUM(refCube.getNumPreTwistedCorners());
+        BooleanCondition hasCornerParity = refCube.hasParity(CORNER) ? strict ? YES() : UNIMPORTANT() : NO();
+        IntCondition cornerBreakIns = strict ? EXACT(refCube.getBreakInCount(CORNER)) : MAXIMUM(refCube.getBreakInCount(CORNER));
+        IntCondition cornerTargets = strict ? EXACT(refCube.getStatLength(CORNER)) : MAXIMUM(refCube.getStatLength(CORNER));
+        IntCondition preCorners = strict ? EXACT(refCube.getPreSolvedCount(CORNER)) : MINIMUM(refCube.getPreSolvedCount(CORNER));
+        IntCondition preTwisted = strict ? EXACT(refCube.getMisOrientedCount(CORNER)) : MAXIMUM(refCube.getMisOrientedCount(CORNER));
         return new TwoBldScramble(cornerTargets, cornerBreakIns, hasCornerParity, preCorners, preTwisted);
     }
 
     protected <T extends BldCube> boolean matchingConditions(T inCube) {
         if (inCube instanceof TwoBldCube) {
             TwoBldCube randCube = (TwoBldCube) inCube;
-            return this.hasCornerParity.evaluatePositive(randCube.hasCornerParity())
-                    && this.cornerSingleCycle.evaluatePositive(randCube.isCornerSingleCycle())
-                    && this.cornerBreakIns.evaluate(randCube.getCornerBreakInNum())
-                    && this.cornerTargets.evaluate(randCube.getCornerLength())
-                    && this.solvedCorners.evaluate(randCube.getNumPreSolvedCorners())
-                    && this.twistedCorners.evaluate(randCube.getNumPreTwistedCorners())
-                    && randCube.getCornerPairs(false).replaceAll("\\s*", "").matches(this.cornerMemoRegex)
-                    && randCube.getCornerPairs(false).replaceAll("\\s*", "").matches(this.cornerPredicateRegex);
+            return this.hasCornerParity.evaluatePositive(randCube.hasParity(CORNER))
+                    && this.cornerSingleCycle.evaluatePositive(randCube.isSingleCycle(CORNER))
+                    && this.cornerBreakIns.evaluate(randCube.getBreakInCount(CORNER))
+                    && this.cornerTargets.evaluate(randCube.getStatLength(CORNER))
+                    && this.solvedCorners.evaluate(randCube.getPreSolvedCount(CORNER))
+                    && this.twistedCorners.evaluate(randCube.getMisOrientedCount(CORNER))
+                    && randCube.getSolutionPairs(CORNER).replaceAll("\\s*", "").matches(this.cornerMemoRegex)
+                    && randCube.getSolutionPairs(CORNER).replaceAll("\\s*", "").matches(this.cornerPredicateRegex);
         } else return false;
     }
 
@@ -135,6 +136,6 @@ public class TwoBldScramble extends BldScramble {
 
     @Override
     protected BldCube getAnalyzingPuzzle() {
-        return new TwoBldCube("");
+        return new TwoBldCube();
     }
 }

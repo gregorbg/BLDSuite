@@ -1,5 +1,8 @@
 package com.suushiemaniac.cubing.bld.filter;
 
+import com.suushiemaniac.cubing.alglib.alg.Algorithm;
+import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
+import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 
@@ -12,18 +15,19 @@ public abstract class BldScramble {
     public String findScrambleOnThread() {
         BldCube testCube = this.getAnalyzingPuzzle();
         Puzzle tNoodle = this.getScramblingPuzzle();
+        NotationReader reader = new CubicAlgorithmReader();
 
         String scramble;
         do {
             scramble = tNoodle.generateScramble();
-            testCube.parseScramble(scramble);
+            testCube.parseScramble(reader.parse(scramble));
         } while (!this.matchingConditions(testCube));
 
         return scramble;
     }
 
     public void findScrambleThreadModel(int numScrambles, int numThreads) {
-        BlockingQueue<String> scrambleQueue = new ArrayBlockingQueue<>(50);
+        BlockingQueue<Algorithm> scrambleQueue = new ArrayBlockingQueue<>(50);
         ScrambleProducer producer = new ScrambleProducer(scrambleQueue);
         ScrambleConsumer consumer = new ScrambleConsumer(numScrambles, scrambleQueue);
         for (int i = 0; i < numThreads; i++) {
@@ -36,10 +40,12 @@ public abstract class BldScramble {
 
     protected final class ScrambleProducer implements Runnable {
         private final Puzzle puzzle;
-        private final BlockingQueue<String> scrambleQueue;
+		private final NotationReader reader;
+        private final BlockingQueue<Algorithm> scrambleQueue;
 
-        public ScrambleProducer(BlockingQueue<String> queue) {
+        public ScrambleProducer(BlockingQueue<Algorithm> queue) {
             this.puzzle = BldScramble.this.getScramblingPuzzle();
+			this.reader = new CubicAlgorithmReader();
             this.scrambleQueue = queue;
         }
 
@@ -47,7 +53,7 @@ public abstract class BldScramble {
         public void run() {
             while (true) {
                 try {
-                    this.scrambleQueue.put(this.puzzle.generateScramble());
+                    this.scrambleQueue.put(this.reader.parse(this.puzzle.generateScramble()));
                 } catch (InterruptedException e) {
                     break;
                 }
@@ -58,9 +64,9 @@ public abstract class BldScramble {
     protected final class ScrambleConsumer implements Runnable {
         private final int numScrambles;
         private final BldCube testCube;
-        private final BlockingQueue<String> scrambleQueue;
+        private final BlockingQueue<Algorithm> scrambleQueue;
 
-        public ScrambleConsumer(int numScrambles, BlockingQueue<String> queue) {
+        public ScrambleConsumer(int numScrambles, BlockingQueue<Algorithm> queue) {
             this.numScrambles = numScrambles;
             this.testCube = BldScramble.this.getAnalyzingPuzzle();
             this.scrambleQueue = queue;
