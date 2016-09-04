@@ -58,7 +58,7 @@ public class Main {
 		Puzzle tNoodle = new NoInspectionThreeByThreeCubePuzzle();
 		NotationReader reader = new CubicAlgorithmReader();
 
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 100; i++) {
 			//String scrString = tNoodle.generateScramble();
 			String scrString = tNoodle.generateScramble();
 

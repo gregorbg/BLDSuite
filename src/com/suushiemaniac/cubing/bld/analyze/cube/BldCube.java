@@ -210,19 +210,22 @@ public abstract class BldCube extends BldPuzzle {
 				int baseIndex = b / divBase;
 
 				if (!solvedPieces[b]) {
-					int bestOrient = modBase - b; //Can optimize here
+					int parts = type.getTargetsPerPiece();
+
+					int bestOrient = 0; //Can optimize here
+					bestOrient += modBase - b;
+					bestOrient %= parts;
 
 					// Buffer is placed in a... um... buffer
-					int parts = type.getTargetsPerPiece();
 					int[] tempPiece = new int[parts];
 
 					for (int j = 0; j < parts; j++) {
 						int extIndex = (b + bestOrient + j) % modBase;
 
-						tempPiece[j] = state[reference[0][extIndex]];
+						tempPiece[j] = state[reference[0][j % modBase]];
 
 						// Buffer piece is replaced with corner
-						state[reference[0][extIndex]] = state[reference[baseIndex][extIndex]];
+						state[reference[0][j % modBase]] = state[reference[baseIndex][extIndex]];
 
 						// Piece is replaced with buffer
 						state[reference[baseIndex][extIndex]] = tempPiece[j];
@@ -242,27 +245,24 @@ public abstract class BldCube extends BldPuzzle {
 
 				for (int j = 0; j < parts && !pieceCycled; j++) {
 
-					for (int k = 0; k < divBase; k++) {
-						boolean assumeMatch = true;
+					boolean assumeMatch = true;
+					for (int k = 0; k < type.getTargetsPerPiece(); k++)
+						assumeMatch &= state[reference[0][k]].equals(reference[i][(j + k) % modBase]);
 
-						for (int l = 0; l < type.getTargetsPerPiece(); l++)
-							assumeMatch &= state[reference[0][l]].equals(reference[i][(j + k + l) % modBase]);
+					if (assumeMatch) {
+						for (int l = 0; l < type.getTargetsPerPiece(); l++) {
+							int currentRot = (j + l) % modBase;
 
-						if (assumeMatch) {
-							for (int m = 0; m < parts; m++) {
-								int currentRot = (j + m) % parts;
+							// Buffer piece is replaced with piece
+							state[reference[0][l]] = state[reference[i][currentRot]];
 
-								// Buffer piece is replaced with piece
-								state[reference[0][m]] = state[reference[i][currentRot]];
-
-								// Piece is solved
-								state[reference[i][currentRot]] = reference[i][currentRot];
-							}
-
-							// Piece cycle is inserted into solution array
-							cycles.add(reference[i][j % parts]);
-							pieceCycled = true;
+							// Piece is solved
+							state[reference[i][currentRot]] = reference[i][currentRot];
 						}
+
+						// Piece cycle is inserted into solution array
+						cycles.add(reference[i][j % modBase]);
+						pieceCycled = true;
 					}
 				}
 			}
