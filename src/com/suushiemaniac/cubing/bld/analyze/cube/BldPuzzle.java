@@ -11,6 +11,7 @@ import com.suushiemaniac.lang.json.JSON;
 import java.io.File;
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class BldPuzzle {
     protected Algorithm scramble;
@@ -334,10 +335,9 @@ public abstract class BldPuzzle {
 		List<String> solutionParts = new ArrayList<>();
 
 		if (withRotation)
-			solutionParts.add("Rotations: " + this.scrambleOrientationPremoves.toFormatString());
+			solutionParts.add("Rotations: " + (this.scrambleOrientationPremoves.algLength() > 0 ? this.scrambleOrientationPremoves.toFormatString() : "/"));
 
-		for (PieceType type : this.getPieceTypes())
-			solutionParts.add(this.getSolutionPairs(type));
+		solutionParts.addAll(this.getPieceTypes().stream().map(this::getSolutionPairs).collect(Collectors.toList()));
 
 		return String.join("\n", solutionParts);
 	}
@@ -346,15 +346,16 @@ public abstract class BldPuzzle {
 		return this.getSolutionPairs(false);
 	}
 
+	public Algorithm getRotations() {
+		return new SimpleAlg(this.scrambleOrientationPremoves);
+	}
+
 	public String getStatistics(PieceType type) {
 		return type.humanName() + ": " + this.getStatLength(type) + "@" + this.getBreakInCount(type) + " w/ " + this.getPreSolvedCount(type) + "-" + this.getMisOrientedCount(type) + " > " + this.hasParity(type);
 	}
 
 	public String getStatistics() {
-		List<String> statisticsParts = new ArrayList<>();
-
-		for (PieceType type : this.getPieceTypes())
-			statisticsParts.add(this.getStatistics(type));
+		List<String> statisticsParts = this.getPieceTypes().stream().map(this::getStatistics).collect(Collectors.toList());
 
 		return String.join("\n", statisticsParts);
 	}
@@ -430,10 +431,7 @@ public abstract class BldPuzzle {
 	}
 
 	public String getNoahtation() {
-		List<String> noahtationParts = new ArrayList<>();
-
-		for (PieceType type : this.getPieceTypes())
-			noahtationParts.add(this.getNoahtation(type));
+		List<String> noahtationParts = this.getPieceTypes().stream().map(this::getNoahtation).collect(Collectors.toList());
 
 		return String.join(" / ", noahtationParts);
 	}
@@ -456,10 +454,7 @@ public abstract class BldPuzzle {
 	}
 
 	public String getStatString() {
-		List<String> statStringParts = new ArrayList<>();
-
-		for (PieceType type : this.getPieceTypes())
-			statStringParts.add(this.getStatString(type));
+		List<String> statStringParts = this.getPieceTypes().stream().map(this::getStatString).collect(Collectors.toList());
 
 		return String.join(" | ", statStringParts);
 	}
@@ -479,6 +474,14 @@ public abstract class BldPuzzle {
 
 	protected List<PieceType> getPieceTypes() {
 		return this.getPieceTypes(false);
+	}
+
+	protected int getPiecePermutations(PieceType type) {
+		return type.getNumPieces();
+	}
+
+	protected int getPieceOrientations(PieceType type) {
+		return type.getTargetsPerPiece();
 	}
 
 	protected abstract List<PieceType> getPermutationPieceTypes();

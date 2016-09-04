@@ -32,16 +32,14 @@ public class BreakInOptim {
         Collections.sort(algList, (o1, o2) -> Integer.compare(o1.algLength(), o2.algLength()));
         Collections.sort(algList, (o1, o2) -> Integer.compare(o1.moveLength(), o2.moveLength()));
 
-    	return algList.stream().map(targetMap::get).collect(Collectors.toList());
+    	return algList.stream()
+				.map(targetMap::get)
+				.collect(Collectors.toList());
     }
 
     public List<Algorithm> optimizeBreakInAlgorithmsAfter(char target, PieceType type) {
-    	List<Algorithm> breakInAlgs = new ArrayList<>();
-
-		for (String breakInTarget : this.optimizeBreakInTargetsAfter(target, type)) {
-			breakInAlgs.addAll(this.source.getAlg(type, ("" + target) + breakInTarget));
-		}
-
-		return breakInAlgs;
+		return this.optimizeBreakInTargetsAfter(target, type).stream()
+				.flatMap(t -> this.source.getAlg(type, ("" + target) + t).stream())
+				.collect(Collectors.toList());
     }
 }

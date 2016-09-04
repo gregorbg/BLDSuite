@@ -47,7 +47,7 @@ public class FourBldCube extends BldCube {
 				"z y2", "z y'", "x y2", "x y'", "x y", "x",
 				"z' y'", "z'", "z' y2", "z' y", "x'", "x' y'",
 				"x' y", "x' y2", "x2 y'", "z2", "x2 y", "x2"};
-		int[] copyXCenters = new int[24];
+		Integer[] copyXCenters = new Integer[24];
 		double max = Double.MIN_VALUE;
 		int maxIndex = 0;
 		for (int i = 0; i < possRotations.length; i++) {
@@ -86,5 +86,17 @@ public class FourBldCube extends BldCube {
 		}
 
 		return new SimpleAlg();
+	}
+
+	//TODO refactor the following two methods to be handled internally (if PieceType != referenceArray.length)
+
+	@Override
+	protected int getPieceOrientations(PieceType type) {
+		return type == XCENTER ? 4 : super.getPieceOrientations(type);
+	}
+
+	@Override
+	protected int getPiecePermutations(PieceType type) {
+		return type == XCENTER ? 6 : super.getPiecePermutations(type);
 	}
 }

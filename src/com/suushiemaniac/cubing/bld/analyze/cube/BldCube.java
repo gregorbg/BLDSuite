@@ -114,6 +114,9 @@ public abstract class BldCube extends BldPuzzle {
 
 	@Override
 	protected void solvePieces(PieceType type) {
+		if (type == XCENTER)
+			System.out.println("XCenter");
+
 		while (!this.isSolved(type))
 			this.cycleByBuffer(type);
 
@@ -130,13 +133,23 @@ public abstract class BldCube extends BldPuzzle {
 		Boolean[] solvedPieces = this.solvedPieces.get(type);
 		Boolean[][] misOrientations = this.misOrientedPieces.get(type);
 
+		int divBase = type.getNumPieces() / this.getPiecePermutations(type);
+		int modBase = this.getPieceOrientations(type);
+
 		// Check if pieces marked as unsolved haven't been solved yet
 		for (int i = 0; i < type.getNumPieces(); i++) {
 			if (i == 0 || !solvedPieces[i]) {
+				int baseIndex = i / divBase;
 
-				boolean assumeSolved = true;
-				for (int j = 0; j < type.getTargetsPerPiece(); j++)
-					assumeSolved &= state[reference[i][j]].equals(reference[i][j]);
+				boolean assumeSolved = false;
+				for (int j = 0; j < divBase; j++) {
+					boolean currentSolved = true;
+
+					for (int k = 0; k < type.getTargetsPerPiece(); k++)
+						currentSolved &= state[reference[baseIndex][(i + k) % modBase]].equals(reference[baseIndex][(i + k + j) % modBase]);
+
+					assumeSolved |= currentSolved;
+				}
 
 				// Piece is solved and oriented
 				if (assumeSolved)
@@ -181,37 +194,42 @@ public abstract class BldCube extends BldPuzzle {
 
 		List<Integer> cycles = this.cycles.get(type);
 
+		int divBase = type.getNumPieces() / this.getPiecePermutations(type);
+		int modBase = this.getPieceOrientations(type);
+
 		// If the buffer is solved, replace it with an unsolved corner
 		if (solvedPieces[0]) {
 			this.increaseCycleCount(type);
 			// First unsolved piece is selected
 
-			int lastTarget = this.getLastTarget(type);
 			int targetCount = type.getNumPieces();
+			List<Integer> breakInPerms = Arrays.asList(ArrayUtil.autobox(ArrayUtil.fill(targetCount))).subList(1, targetCount); //Can optimize here
 
-			List<Integer> linearBreakIns = Arrays.asList(ArrayUtil.autobox(ArrayUtil.fill(targetCount))).subList(1, targetCount);
-			List<Integer> breakIns = lastTarget < 0 ? linearBreakIns : this.getBreakInsAfter(lastTarget, type);
-
-			for (int i = 0; i < breakIns.size() && !pieceCycled; i++) {
-				Integer b = breakIns.get(i);
+			for (int i = 0; i < breakInPerms.size() && !pieceCycled; i++) {
+				int b = breakInPerms.get(i);
+				int baseIndex = b / divBase;
 
 				if (!solvedPieces[b]) {
+					int bestOrient = modBase - b; //Can optimize here
+
 					// Buffer is placed in a... um... buffer
 					int parts = type.getTargetsPerPiece();
 					int[] tempPiece = new int[parts];
 
 					for (int j = 0; j < parts; j++) {
-						tempPiece[j] = state[reference[0][j]];
+						int extIndex = (b + bestOrient + j) % modBase;
+
+						tempPiece[j] = state[reference[0][extIndex]];
 
 						// Buffer piece is replaced with corner
-						state[reference[0][j]] = state[reference[b][j]];
+						state[reference[0][extIndex]] = state[reference[baseIndex][extIndex]];
 
 						// Piece is replaced with buffer
-						state[reference[b][j]] = tempPiece[j];
+						state[reference[baseIndex][extIndex]] = tempPiece[j];
 					}
 
 					// Piece cycle is inserted into solution array
-					cycles.add(reference[b][0]);
+					cycles.add(reference[baseIndex][(b + bestOrient) % modBase]);
 					pieceCycled = true;
 				}
 			}
@@ -219,30 +237,32 @@ public abstract class BldCube extends BldPuzzle {
 
 		// If the buffer is not solved, swap it to the position where the piece belongs
 		else {
-			for (int i = 0; i < type.getNumPieces() && !pieceCycled; i++) {
+			for (int i = 0; i < this.getPiecePermutations(type) && !pieceCycled; i++) {
+				int parts = this.getPieceOrientations(type);
 
-				int parts = type.getTargetsPerPiece();
 				for (int j = 0; j < parts && !pieceCycled; j++) {
 
-					boolean assumeMatch = true;
-					for (int k = 0; k < parts; k++)
-						assumeMatch &= state[reference[0][k]].equals(reference[i][(j + k) % parts]);
+					for (int k = 0; k < divBase; k++) {
+						boolean assumeMatch = true;
 
-					if (assumeMatch) {
+						for (int l = 0; l < type.getTargetsPerPiece(); l++)
+							assumeMatch &= state[reference[0][l]].equals(reference[i][(j + k + l) % modBase]);
 
-						for (int k = 0; k < parts; k++) {
-							int currentRot = (j + k) % parts;
+						if (assumeMatch) {
+							for (int m = 0; m < parts; m++) {
+								int currentRot = (j + m) % parts;
 
-							// Buffer piece is replaced with piece
-							state[reference[0][k]] = state[reference[i][currentRot]];
+								// Buffer piece is replaced with piece
+								state[reference[0][m]] = state[reference[i][currentRot]];
 
-							// Piece is solved
-							state[reference[i][currentRot]] = reference[i][currentRot];
+								// Piece is solved
+								state[reference[i][currentRot]] = reference[i][currentRot];
+							}
+
+							// Piece cycle is inserted into solution array
+							cycles.add(reference[i][j % parts]);
+							pieceCycled = true;
 						}
-
-						// Piece cycle is inserted into solution array
-						cycles.add(reference[i][j % parts]);
-						pieceCycled = true;
 					}
 				}
 			}
