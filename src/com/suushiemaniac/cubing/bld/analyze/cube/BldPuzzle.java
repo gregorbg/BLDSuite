@@ -5,6 +5,7 @@ import com.suushiemaniac.cubing.alglib.alg.SimpleAlg;
 import com.suushiemaniac.cubing.alglib.move.Move;
 import com.suushiemaniac.cubing.bld.model.AlgSource;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.optim.BreakInOptim;
 import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 import com.suushiemaniac.lang.json.JSON;
 
@@ -31,8 +32,10 @@ public abstract class BldPuzzle {
 	protected Map<PieceType, Boolean> parities;
 
 	protected Map<PieceType, String[]> letterSchemes;
+	protected Map<PieceType, Boolean> optimizeBreakIns;
 
 	protected AlgSource algSource;
+	protected BreakInOptim optim;
 
 	public BldPuzzle() {
 		this.scrambleOrientationPremoves = new SimpleAlg();
@@ -41,6 +44,7 @@ public abstract class BldPuzzle {
 		this.cubies = this.initCubies();
 
 		this.letterSchemes = this.initSchemes();
+		this.optimizeBreakIns = this.allOptimize();
 
 		this.algSource = null;
 
@@ -162,6 +166,15 @@ public abstract class BldPuzzle {
 		return parities;
 	}
 
+	protected Map<PieceType, Boolean> allOptimize() {
+		Map<PieceType, Boolean> optimize = new HashMap<>();
+
+		for (PieceType type : this.getPieceTypes())
+			optimize.put(type, true);
+
+		return optimize;
+	}
+
 	protected void scramblePuzzle(Algorithm scramble) {
 		scramble = this.getSolvingOrientationPremoves().merge(scramble);
 
@@ -248,9 +261,17 @@ public abstract class BldPuzzle {
 		return cycles.size() > 0 ? cycles.get(cycles.size() - 1) : -1;
 	}
 
-	protected List<Integer> getBreakInsAfter(int piece, PieceType type) {
+	protected List<Integer> getBreakInPermutationsAfter(int piece, PieceType type) {
 		int targetCount = type.getNumPieces();
 		return Arrays.asList(ArrayUtil.autobox(ArrayUtil.fill(targetCount))).subList(1, targetCount);
+	}
+
+	protected int getBreakInOrientationsAfter(int piece, PieceType type) {
+		return 0;
+	}
+
+	public void setOptimizeBreakIns(PieceType type, boolean optimize) {
+		this.optimizeBreakIns.put(type, optimize);
 	}
 
 	public boolean setBuffer(PieceType type, int newBuffer) {
@@ -301,7 +322,7 @@ public abstract class BldPuzzle {
 		return false;
 	}
 
-	public String[] getScheme(PieceType type) {
+	public String[] getLetteringScheme(PieceType type) {
 		String[] original = this.letterSchemes.get(type);
 		return Arrays.copyOf(original, original.length);
 	}
@@ -347,7 +368,7 @@ public abstract class BldPuzzle {
 	}
 
 	public Algorithm getRotations() {
-		return new SimpleAlg(this.scrambleOrientationPremoves);
+		return new SimpleAlg(this.scrambleOrientationPremoves.allMoves());
 	}
 
 	public String getStatistics(PieceType type) {
@@ -463,7 +484,7 @@ public abstract class BldPuzzle {
 		return this.solvedPieces.get(type)[0];
 	}
 
-	protected List<PieceType> getPieceTypes(boolean withOrientationModel) {
+	public List<PieceType> getPieceTypes(boolean withOrientationModel) {
 		List<PieceType> pieceTypes = this.getPermutationPieceTypes();
 
 		if (withOrientationModel)
@@ -472,7 +493,7 @@ public abstract class BldPuzzle {
 		return pieceTypes;
 	}
 
-	protected List<PieceType> getPieceTypes() {
+	public List<PieceType> getPieceTypes() {
 		return this.getPieceTypes(false);
 	}
 

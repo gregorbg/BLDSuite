@@ -2,11 +2,14 @@ package com.suushiemaniac.cubing.bld.analyze.cube;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.optim.BreakInOptim;
+import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
 
@@ -76,5 +79,43 @@ public class ThreeBldCube extends BldCube {
 		// buffer is placed in UL
 		edges[edgeCubies[UL][0]] = tempEdge[index];
 		edges[edgeCubies[UL][1]] = tempEdge[(index + 1) % 2];
+	}
+
+	@Override
+	protected List<Integer> getBreakInPermutationsAfter(int piece, PieceType type) {
+		if (this.algSource == null)
+			return super.getBreakInPermutationsAfter(piece, type);
+
+		if (this.optim == null)
+			this.optim = new BreakInOptim(this.algSource, this, false);
+
+		String lastTarget = this.letterSchemes.get(type)[piece];
+		List<String> bestTargets = this.optim.optimizeBreakInTargetsAfter(lastTarget, type);
+		List<Integer> breakInPerms = bestTargets.stream()
+				.map(t -> ArrayUtil.index(this.letterSchemes.get(type), t))
+				.filter(i -> i > -1)
+				.map(i -> ArrayUtil.deepOuterIndex(this.cubies.get(type), i))
+				.distinct()
+				.collect(Collectors.toList());
+
+		return breakInPerms;
+	}
+
+	@Override
+	protected int getBreakInOrientationsAfter(int piece, PieceType type) {
+		if (this.algSource == null)
+			return super.getBreakInOrientationsAfter(piece, type);
+
+		if (this.optim == null)
+			this.optim = new BreakInOptim(this.algSource, this, false);
+
+		String lastTarget = this.letterSchemes.get(type)[piece];
+		List<String> bestTargets = this.optim.optimizeBreakInTargetsAfter(lastTarget, type);
+		List<Integer> breakInOrients = bestTargets.stream()
+				.map(t -> ArrayUtil.index(this.letterSchemes.get(type), t))
+				.map(i -> ArrayUtil.deepInnerIndex(this.cubies.get(type), i))
+				.collect(Collectors.toList());
+
+		return breakInOrients.get(0); //TODO why discard everything else here and simply take [0] ??
 	}
 }

@@ -1,7 +1,6 @@
 package com.suushiemaniac.cubing.bld.database;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
-import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.bld.analyze.cube.FiveBldCube;
 import com.suushiemaniac.cubing.bld.model.AlgSource;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
@@ -22,7 +21,7 @@ public class CubeDb implements AlgSource {
     }
 
     public void addAlgorithm(PieceType type, String letterPair, String alg) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(type));
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme(type));
 
         boolean duplicate = readAlgorithm(type, speffz).contains(alg);
 
@@ -36,7 +35,7 @@ public class CubeDb implements AlgSource {
     }
 
     public void addLpi(String letterPair, String image) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(null)); //TODO
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme(null)); //TODO
 
         boolean duplicate = readLpi(speffz).contains(image);
 
@@ -50,7 +49,7 @@ public class CubeDb implements AlgSource {
     }
 
     public Set<String> readAlgorithm(PieceType type, String letterPair) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(type));
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme(type));
 
         PreparedStatement stat = conn.prepareStatement("SELECT DISTINCT alg FROM Algorithms WHERE `type` = ? AND `case` = ?");
         stat.setString(1, type.name().toLowerCase());
@@ -64,7 +63,7 @@ public class CubeDb implements AlgSource {
     }
 
     public Set<String> readLpi(String letterPair) throws SQLException {
-        //String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme("lpi"));
+        //String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme("lpi"));
 
         PreparedStatement stat = conn.prepareStatement("SELECT DISTINCT image FROM Images WHERE `case` = ?");
         stat.setString(1, letterPair);
@@ -130,7 +129,7 @@ public class CubeDb implements AlgSource {
     }
 
     public void removeAlgorithm(PieceType type, String letterPair, String alg) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(type));
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme(type));
 
         PreparedStatement stat = conn.prepareStatement("DELETE FROM Algorithms WHERE `type` = ? AND `case` = ? AND alg = ?");
         stat.setString(1, type.name().toLowerCase());
@@ -141,7 +140,7 @@ public class CubeDb implements AlgSource {
     }
 
     public void removeLpi(String letterPair, String image) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(null)); //TODO
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme(null)); //TODO
 
         PreparedStatement stat = conn.prepareStatement("DELETE FROM Images WHERE `case` = ? AND image = ?");
         stat.setString(1, speffz);

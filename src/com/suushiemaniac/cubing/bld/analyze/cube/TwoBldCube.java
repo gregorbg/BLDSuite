@@ -63,12 +63,39 @@ public class TwoBldCube extends BldCube {
 	}
 
 	@Override
-	protected List<Integer> getBreakInsAfter(int piece, PieceType type) {
+	protected List<Integer> getBreakInPermutationsAfter(int piece, PieceType type) {
 		if (this.algSource == null)
-			return super.getBreakInsAfter(piece, type);
+			return super.getBreakInPermutationsAfter(piece, type);
 
-		char lastTarget = this.letterSchemes.get(type)[piece].charAt(0);
-		List<String> bestTargets = new BreakInOptim(this.algSource).optimizeBreakInTargetsAfter(lastTarget, type);
-		return bestTargets.stream().map(t -> ArrayUtil.index(this.letterSchemes.get(type), t)).collect(Collectors.toList());
+		if (this.optim == null)
+			this.optim = new BreakInOptim(this.algSource, this, false);
+
+		String lastTarget = this.letterSchemes.get(type)[piece];
+		List<String> bestTargets = this.optim.optimizeBreakInTargetsAfter(lastTarget, type);
+		List<Integer> breakInPerms = bestTargets.stream()
+				.map(t -> ArrayUtil.index(this.letterSchemes.get(type), t))
+				.map(i -> ArrayUtil.deepOuterIndex(this.cubies.get(type), i))
+				.distinct()
+				.collect(Collectors.toList());
+
+		return breakInPerms;
+	}
+
+	@Override
+	protected int getBreakInOrientationsAfter(int piece, PieceType type) {
+		if (this.algSource == null)
+			return super.getBreakInOrientationsAfter(piece, type);
+
+		if (this.optim == null)
+			this.optim = new BreakInOptim(this.algSource, this, false);
+
+		String lastTarget = this.letterSchemes.get(type)[piece];
+		List<Integer> breakInOrientations = this.optim.optimizeBreakInTargetsAfter(lastTarget, type).stream()
+				.map(t -> ArrayUtil.index(this.letterSchemes.get(type), t))
+				.map(i -> ArrayUtil.deepInnerIndex(this.cubies.get(type), i))
+				.distinct()
+				.collect(Collectors.toList());
+
+		return breakInOrientations.get(0);
 	}
 }

@@ -1,6 +1,8 @@
 package com.suushiemaniac.cubing.bld.optim;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
+import com.suushiemaniac.cubing.bld.analyze.cube.BldPuzzle;
+import com.suushiemaniac.cubing.bld.analyze.cube.FiveBldCube;
 import com.suushiemaniac.cubing.bld.model.AlgSource;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 
@@ -9,22 +11,58 @@ import java.util.stream.Collectors;
 
 public class BreakInOptim {
     private AlgSource source;
+	private BldPuzzle refCube;
 
-    public BreakInOptim(AlgSource source) {
+	private Map<PieceType, Map<String, List<String>>> cache;
+
+    public BreakInOptim(AlgSource source, BldPuzzle refCube, boolean fullCache) {
         this.source = source;
+		this.refCube = refCube;
+
+		this.cache = new HashMap<>();
+
+		for (PieceType type : refCube.getPieceTypes()) {
+			HashMap<String, List<String>> typeMap = new HashMap<>();
+
+			if (fullCache) {
+				for (String letter : refCube.getLetteringScheme(type)) {
+					typeMap.put(letter, this.optimizeBreakInTargetsAfter(letter, type));
+				}
+			}
+
+			this.cache.put(type, typeMap);
+		}
     }
 
-    public List<String> optimizeBreakInTargetsAfter(char target, PieceType type) {
+    public BreakInOptim(AlgSource source, BldPuzzle refCube) {
+    	this(source, refCube, true);
+	}
+
+    public BreakInOptim(AlgSource source, boolean fullCache) {
+    	this(source, new FiveBldCube(), fullCache);
+	}
+
+    public BreakInOptim(AlgSource source) {
+    	this(source, new FiveBldCube(), true);
+	}
+
+    public List<String> optimizeBreakInTargetsAfter(String target, PieceType type) {
+    	List<String> cache = this.cache.getOrDefault(type, new HashMap<>()).get(target);
+
+    	if (cache != null) {
+    		return cache;
+		}
+
         List<Algorithm> algList = new ArrayList<>();
 		Map<Algorithm, String> targetMap = new HashMap<>();
 
-        for (char c = 'A'; c < 'Y'; c++) {
-            Set<Algorithm> sourceList = this.source.getAlg(type, ("" + target) + c);
+        for (String t : this.refCube.getLetteringScheme(type)) {
+            Set<Algorithm> sourceList = this.source.getAlg(type, target + t);
             if (sourceList == null) continue;
             algList.addAll(sourceList);
 
 			for (Algorithm alg : sourceList)
-				targetMap.put(alg, "" + c);
+				targetMap.put(alg, t);
         }
 
         Collections.sort(algList, (o1, o2) -> o1.getSubGroup().toFormatString().compareTo(o2.getSubGroup().toFormatString()));
@@ -32,14 +70,17 @@ public class BreakInOptim {
         Collections.sort(algList, (o1, o2) -> Integer.compare(o1.algLength(), o2.algLength()));
         Collections.sort(algList, (o1, o2) -> Integer.compare(o1.moveLength(), o2.moveLength()));
 
-    	return algList.stream()
+    	List<String> optimizedList = algList.stream()
 				.map(targetMap::get)
 				.collect(Collectors.toList());
+
+		this.cache.getOrDefault(type, new HashMap<>()).put(target, optimizedList);
+		return optimizedList;
     }
 
-    public List<Algorithm> optimizeBreakInAlgorithmsAfter(char target, PieceType type) {
+    public List<Algorithm> optimizeBreakInAlgorithmsAfter(String target, PieceType type) {
 		return this.optimizeBreakInTargetsAfter(target, type).stream()
-				.flatMap(t -> this.source.getAlg(type, ("" + target) + t).stream())
+				.flatMap(t -> this.source.getAlg(type, target + t).stream())
 				.collect(Collectors.toList());
     }
 }

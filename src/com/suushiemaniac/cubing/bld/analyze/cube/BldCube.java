@@ -7,7 +7,6 @@ import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
 
@@ -19,8 +18,8 @@ public abstract class BldCube extends BldPuzzle {
 	protected static final Integer[][] SPEFFZ_CENTERS = {{UP}, {LEFT}, {FRONT}, {RIGHT}, {BACK}, {DOWN}};
 	protected static final Integer[][] SPEFFZ_EDGES = {{U, K}, {A, Q}, {B, M}, {C, I}, {D, E}, {R, H}, {T, N}, {L, F}, {J, P}, {V, O}, {W, S}, {X, G}};
 	protected static final Integer[][] SPEFFZ_WINGS = {{U}, {A}, {B}, {C}, {D}, {E}, {F}, {G}, {H}, {I}, {J}, {K}, {L}, {M}, {N}, {O}, {P}, {Q}, {R}, {S}, {T}, {V}, {W}, {X}};
-	protected static final Integer[][] SPEFFZ_TCENTERS = {{U, V, W, X}, {A, B, C, D}, {E, F, G, H}, {I, J, K, L}, {M, N, O, P}, {Q, R, S, T}};
 	protected static final Integer[][] SPEFFZ_XCENTERS = {{A, B, C, D}, {E, F, G, H}, {I, J, K, L}, {M, N, O, P}, {Q, R, S, T}, {U, V, W, X}};
+	protected static final Integer[][] SPEFFZ_TCENTERS = {{U, V, W, X}, {A, B, C, D}, {E, F, G, H}, {I, J, K, L}, {M, N, O, P}, {Q, R, S, T}};
 
 	protected static final String[][] REORIENTATIONS = {
 			{"", "y", "", "y'", "y2", ""},
@@ -191,6 +190,8 @@ public abstract class BldCube extends BldPuzzle {
 
 		List<Integer> cycles = this.cycles.get(type);
 
+		Boolean breakInOpt = this.optimizeBreakIns.get(type);
+
 		int divBase = type.getNumPieces() / this.getPiecePermutations(type);
 		int modBase = this.getPieceOrientations(type);
 
@@ -199,8 +200,10 @@ public abstract class BldCube extends BldPuzzle {
 			this.increaseCycleCount(type);
 
 			int targetCount = type.getNumPieces();
-			List<Integer> breakInPerms = Arrays.asList(ArrayUtil.autobox(ArrayUtil.fill(targetCount))).subList(1, targetCount); //Can optimize here
-			//TODO ensure that if user-optimized break ins are smaller than targetCount, rest is filled up
+			int lastTarget = this.getLastTarget(type);
+			List<Integer> breakInPerms = lastTarget > 0
+					? this.getBreakInPermutationsAfter(lastTarget, type) //Can optimize here
+					: Arrays.asList(ArrayUtil.autobox(ArrayUtil.fill(targetCount))).subList(1, targetCount);
 
 			for (int i = 0; i < type.getNumPiecesNoBuffer() && !pieceCycled; i++) {
 				int b = breakInPerms.get(i);
@@ -210,7 +213,9 @@ public abstract class BldCube extends BldPuzzle {
 					int baseIndex = b / divBase;
 					int parts = type.getTargetsPerPiece();
 
-					int bestOrient = 0; //Can optimize here
+					int bestOrient = lastTarget > 0
+							? this.getBreakInOrientationsAfter(lastTarget, type)
+							: 0;
 					bestOrient += modBase - b;
 					bestOrient %= parts;
 
@@ -248,7 +253,7 @@ public abstract class BldCube extends BldPuzzle {
 
 					if (assumeMatch && !solvedPieces[(i * divBase) + (j / pieceTargets)]) {
 						int pieceIndex = j;
-						if (state[reference[i][pieceIndex % modBase]] / divBase == reference[0][0] / divBase) { //TODO add option to deactivate this at will (if (optimWanted && ...))
+						if (breakInOpt && state[reference[i][pieceIndex % modBase]] / divBase == reference[0][0] / divBase) {
 							for (int k = j + 1; k < divBase; k++) {
 								if (!solvedPieces[(i * divBase) + k / pieceTargets] && state[reference[i][k % modBase]] / divBase != reference[0][0] / divBase) {
 									pieceIndex = k;
