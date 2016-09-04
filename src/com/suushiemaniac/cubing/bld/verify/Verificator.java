@@ -32,7 +32,8 @@ public class Verificator {
         Set<String> algStringList = this.source.getRawAlg(type, letterPair);
         if (algStringList != null)
             for (String alg : algStringList)
-                solutionMap.put(alg, ParseUtils.isParseable(alg, this.reader) && FiveBldCube.solves(type, this.reader.parse(alg).plain().toFormatString(), letterPair));
+                solutionMap.put(alg, ParseUtils.isParseable(alg, this.reader));
+                        //&& FiveBldCube.solves(type, this.reader.parse(alg).plain().toFormatString(), letterPair));
         return solutionMap;
     }
 

@@ -165,7 +165,7 @@ public abstract class BldPuzzle {
 	protected void scramblePuzzle(Algorithm scramble) {
 		scramble = this.getSolvingOrientationPremoves().merge(scramble);
 
-		scramble.forEach(this::permute);
+		scramble.stream().filter(move -> this.permutations.keySet().contains(move)).forEach(this::permute);
 	}
 
 	protected void permute(Move permutation) {
@@ -307,7 +307,7 @@ public abstract class BldPuzzle {
 	}
 
 	public String getSolutionPairs(PieceType type) {
-		String pairs = type.humanName() + ": ";
+		String pairs = "";
 
 		List<Integer> currentCycles = this.cycles.get(type);
 
@@ -337,7 +337,7 @@ public abstract class BldPuzzle {
 		if (withRotation)
 			solutionParts.add("Rotations: " + (this.scrambleOrientationPremoves.algLength() > 0 ? this.scrambleOrientationPremoves.toFormatString() : "/"));
 
-		solutionParts.addAll(this.getPieceTypes().stream().map(this::getSolutionPairs).collect(Collectors.toList()));
+		solutionParts.addAll(this.getPieceTypes().stream().map((type) -> type.humanName() + ": " + getSolutionPairs(type)).collect(Collectors.toList()));
 
 		return String.join("\n", solutionParts);
 	}

@@ -88,7 +88,7 @@ public class FourBldCube extends BldCube {
 		return new SimpleAlg();
 	}
 
-	//TODO refactor the following two methods to be handled internally (if PieceType != referenceArray.length)
+	//TODO maybe refactor the following two methods to be handled internally (if PieceType != referenceArray.length)
 
 	@Override
 	protected int getPieceOrientations(PieceType type) {

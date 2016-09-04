@@ -5,6 +5,7 @@ import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.algsheet.BldAlgSheet;
 import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
+import com.suushiemaniac.cubing.bld.analyze.cube.FiveBldCube;
 import com.suushiemaniac.cubing.bld.analyze.cube.FourBldCube;
 import com.suushiemaniac.cubing.bld.analyze.cube.ThreeBldCube;
 import com.suushiemaniac.cubing.bld.database.CubeDb;
@@ -13,8 +14,10 @@ import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
+import puzzle.NoInspectionFiveByFiveCubePuzzle;
 import puzzle.NoInspectionFourByFourCubePuzzle;
 import puzzle.NoInspectionThreeByThreeCubePuzzle;
+import puzzle.ThreeByThreeCubePuzzle;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,17 +56,15 @@ public class Main {
 			System.out.println();
 		}*/
 
-		BldCube newCube = new FourBldCube();
-		//newCube.setSolvingOrientation(0, 1);
-		Puzzle tNoodle = new NoInspectionThreeByThreeCubePuzzle();
+		BldCube newCube = new FiveBldCube();
+		Puzzle tNoodle = new NoInspectionFiveByFiveCubePuzzle();
 		NotationReader reader = new CubicAlgorithmReader();
 
-		for (int i = 0; i < 100; i++) {
+		for (int i = 0; i < 50; i++) {
 			//String scrString = tNoodle.generateScramble();
 			String scrString = tNoodle.generateScramble();
 
 			Algorithm scramble = reader.parse(scrString);
-			scramble = new SimpleAlg(scramble.stream().filter(move -> move.getDepth() > 1).collect(Collectors.toList()));
 			newCube.parseScramble(scramble);
 
 			System.out.println(scrString);

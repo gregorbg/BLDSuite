@@ -114,9 +114,6 @@ public abstract class BldCube extends BldPuzzle {
 
 	@Override
 	protected void solvePieces(PieceType type) {
-		if (type == XCENTER)
-			System.out.println("XCenter");
-
 		while (!this.isSolved(type))
 			this.cycleByBuffer(type);
 
@@ -184,7 +181,7 @@ public abstract class BldCube extends BldPuzzle {
 		return isSolved;
 	}
 
-	protected void cycleByBuffer(PieceType type) { //TODO break-in optimization (overall via class and single-target pieces:[tx]centers)
+	protected void cycleByBuffer(PieceType type) {
 		boolean pieceCycled = false;
 
 		Integer[] state  = this.state.get(type);
@@ -200,34 +197,34 @@ public abstract class BldCube extends BldPuzzle {
 		// If the buffer is solved, replace it with an unsolved corner
 		if (solvedPieces[0]) {
 			this.increaseCycleCount(type);
-			// First unsolved piece is selected
 
 			int targetCount = type.getNumPieces();
 			List<Integer> breakInPerms = Arrays.asList(ArrayUtil.autobox(ArrayUtil.fill(targetCount))).subList(1, targetCount); //Can optimize here
+			//TODO ensure that if user-optimized break ins are smaller than targetCount, rest is filled up
 
-			for (int i = 0; i < breakInPerms.size() && !pieceCycled; i++) {
+			for (int i = 0; i < type.getNumPiecesNoBuffer() && !pieceCycled; i++) {
 				int b = breakInPerms.get(i);
-				int baseIndex = b / divBase;
 
+				// First unsolved piece is selected
 				if (!solvedPieces[b]) {
+					int baseIndex = b / divBase;
 					int parts = type.getTargetsPerPiece();
 
 					int bestOrient = 0; //Can optimize here
 					bestOrient += modBase - b;
 					bestOrient %= parts;
 
-					// Buffer is placed in a... um... buffer
 					int[] tempPiece = new int[parts];
-
 					for (int j = 0; j < parts; j++) {
 						int extIndex = (b + bestOrient + j) % modBase;
 
+						// Buffer is placed in a temp piece
 						tempPiece[j] = state[reference[0][j % modBase]];
 
-						// Buffer piece is replaced with corner
+						// Buffer is replaced with piece
 						state[reference[0][j % modBase]] = state[reference[baseIndex][extIndex]];
 
-						// Piece is replaced with buffer
+						// Piece is replaced with temp piece
 						state[reference[baseIndex][extIndex]] = tempPiece[j];
 					}
 
@@ -241,27 +238,37 @@ public abstract class BldCube extends BldPuzzle {
 		// If the buffer is not solved, swap it to the position where the piece belongs
 		else {
 			for (int i = 0; i < this.getPiecePermutations(type) && !pieceCycled; i++) {
-				int parts = this.getPieceOrientations(type);
 
-				for (int j = 0; j < parts && !pieceCycled; j++) {
+				for (int j = 0; j < this.getPieceOrientations(type) && !pieceCycled; j++) {
 
+					int pieceTargets = type.getTargetsPerPiece();
 					boolean assumeMatch = true;
-					for (int k = 0; k < type.getTargetsPerPiece(); k++)
-						assumeMatch &= state[reference[0][k]].equals(reference[i][(j + k) % modBase]);
+					for (int k = 0; k < pieceTargets; k++)
+						assumeMatch &= state[reference[0][k]] / divBase == reference[i][(j + k) % modBase] / divBase;
 
-					if (assumeMatch) {
-						for (int l = 0; l < type.getTargetsPerPiece(); l++) {
-							int currentRot = (j + l) % modBase;
+					if (assumeMatch && !solvedPieces[(i * divBase) + (j / pieceTargets)]) {
+						int pieceIndex = j;
+						if (state[reference[i][pieceIndex % modBase]] / divBase == reference[0][0] / divBase) { //TODO add option to deactivate this at will (if (optimWanted && ...))
+							for (int k = j + 1; k < divBase; k++) {
+								if (!solvedPieces[(i * divBase) + k / pieceTargets] && state[reference[i][k % modBase]] / divBase != reference[0][0] / divBase) {
+									pieceIndex = k;
+									break;
+								}
+							}
+						}
+
+						for (int k = 0; k < pieceTargets; k++) {
+							int currentRot = (pieceIndex + k) % modBase;
 
 							// Buffer piece is replaced with piece
-							state[reference[0][l]] = state[reference[i][currentRot]];
+							state[reference[0][k]] = state[reference[i][currentRot]];
 
 							// Piece is solved
 							state[reference[i][currentRot]] = reference[i][currentRot];
 						}
 
 						// Piece cycle is inserted into solution array
-						cycles.add(reference[i][j % modBase]);
+						cycles.add(reference[i][pieceIndex]);
 						pieceCycled = true;
 					}
 				}

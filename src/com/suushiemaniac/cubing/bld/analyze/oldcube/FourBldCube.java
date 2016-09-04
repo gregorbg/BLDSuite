@@ -616,24 +616,17 @@ public class FourBldCube extends ThreeBldCube {
             // First unsolved corner is selected
             for (int i = 0; i < 23 && !centerCycled; i++) {
                 if (!solvedXCenters[i]) {
-                    int centerIndex = i;
-                    if (avoidXBreakIns && xCenters[xCenterCubies[i / 4][i % 4]] / 4 == xCenterCubies[0][0] / 4) //TODO reverse-engineer this once I have an actual 4x4 at hand
-                        for (int j = i; j < (i + 4) - (i % 4); j++)
-                            if (!solvedXCenters[j] && xCenters[xCenterCubies[j / 4][j % 4]] / 4 != xCenterCubies[0][0] / 4) {
-                                centerIndex = j;
-                                break;
-                            }
-                    // Buffer is placed in a... um... buffer
+					// Buffer is placed in a... um... buffer
                     int tempXCenter = xCenters[xCenterCubies[0][0]];
 
                     // Buffer corner is replaced with corner
-                    xCenters[xCenterCubies[0][0]] = xCenters[xCenterCubies[centerIndex / 4][centerIndex % 4]];
+                    xCenters[xCenterCubies[0][0]] = xCenters[xCenterCubies[i / 4][i % 4]];
 
                     // Corner is replaced with buffer
-                    xCenters[xCenterCubies[centerIndex / 4][centerIndex % 4]] = tempXCenter;
+                    xCenters[xCenterCubies[i / 4][i % 4]] = tempXCenter;
 
                     // Corner cycle is inserted into solution array
-                    xCenterCycles.add(xCenterCubies[centerIndex / 4][centerIndex % 4]);
+                    xCenterCycles.add(xCenterCubies[i / 4][i % 4]);
                     centerCycled = true;
                 }
             }
@@ -644,11 +637,14 @@ public class FourBldCube extends ThreeBldCube {
                 if (xCenters[xCenterCubies[0][0]] == xCenterCubies[i][j]) {
                     int centerIndex = j;
                     for (int k = (i * 4 + j) - (j % 4); k < ((i + 1) * 4 + j) - (j % 4); k++)
+                    	//Match first center of this color, instead of choosing the exact center
+						//Because you can't tell the difference between the 4 X-Centers
                         if (!solvedXCenters[k]) {
                             centerIndex = k % 4;
                             break;
                         }
                     if (avoidXBreakIns && xCenters[xCenterCubies[i][centerIndex]] / 4 == xCenterCubies[0][0] / 4)
+                    	//If next target is white, try to skip it
                         for (int l = (i * 4) + centerIndex; l < (i + 1) * 4; l++)
                             if (!solvedXCenters[l] && xCenters[xCenterCubies[l / 4][l % 4]] / 4 != xCenterCubies[0][0] / 4) {
                                 centerIndex = l % 4;

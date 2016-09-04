@@ -37,7 +37,13 @@ public class FiveBldCube extends ThreeBldCube {
 		return superTypes;
 	}
 
-	public static boolean solves(PieceType type, String algString, String letterPair) { //TODO
-		return algString.length() % 2 == 1;
+	@Override
+	protected int getPieceOrientations(PieceType type) {
+		return type == XCENTER || type == TCENTER ? 4 : super.getPieceOrientations(type);
+	}
+
+	@Override
+	protected int getPiecePermutations(PieceType type) {
+		return type == XCENTER || type == TCENTER ? 6 : super.getPiecePermutations(type);
 	}
 }
