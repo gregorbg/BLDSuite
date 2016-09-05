@@ -3,12 +3,11 @@ import com.suushiemaniac.cubing.alglib.exception.InvalidNotationException;
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.algsheet.BldAlgSheet;
-import com.suushiemaniac.cubing.bld.algsheet.GregorBldExcel;
 import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
 import com.suushiemaniac.cubing.bld.analyze.cube.ThreeBldCube;
 import com.suushiemaniac.cubing.bld.database.CubeDb;
 import com.suushiemaniac.cubing.bld.model.AlgSource;
-import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.CubePuzzle;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 import com.suushiemaniac.cubing.bld.optim.BreakInOptim;
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
@@ -16,12 +15,10 @@ import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.NoInspectionThreeByThreeCubePuzzle;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
 
@@ -48,7 +45,7 @@ public class Main {
 		Puzzle tNoodle = new NoInspectionThreeByThreeCubePuzzle();
 		NotationReader reader = new CubicAlgorithmReader();
 
-		for (int i = 0; i < 5; i++) {
+		for (int i = 0; i < 3; i++) {
 			//String scrString = tNoodle.generateScramble();
 			String scrString = tNoodle.generateScramble();
 
@@ -59,6 +56,9 @@ public class Main {
 			System.out.println(newCube.getSolutionPairs(true));
 			System.out.println();
 		}
+
+		//System.out.println(CubePuzzle.fromSize(3));
+		reader.parse("f b").forEach(move -> System.out.println(move.getDepth()));
 
 		//System.out.println(new FiveBldCube("").jsonPermutations().toFormatString());
 	}
