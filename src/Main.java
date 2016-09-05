@@ -42,7 +42,7 @@ public class Main {
         //printBadAlgorithms(source);
         //migrateExcelToDb(source, target);
 
-		Set<Algorithm> algList = target.getAlg(CORNER, "VN");
+		Set<Algorithm> algList = source.getAlg(CORNER, "VN");
 		for (Algorithm alg : algList) {
 			System.out.println(alg.toFormatString());
 		}

@@ -83,7 +83,8 @@ public class GregorBldExcel extends BldAlgSheet {
         Set<String> algs = new HashSet<>();
 
         for (String alg : baseAlgs) {
-            if (alg.replace("#ENNVAU", "#NV").startsWith("#"))
+            alg = alg.replace("ENNVAU", "NV");
+            if (alg.startsWith("#"))
                 algs.addAll(this.getAlg(type, alg.substring(1)).stream().map(invAlg -> invAlg.inverse().toFormatString()).collect(Collectors.toList()));
             else
                 algs.add(alg);
