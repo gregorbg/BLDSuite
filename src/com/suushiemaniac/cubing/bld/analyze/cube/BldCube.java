@@ -190,7 +190,7 @@ public abstract class BldCube extends BldPuzzle {
 
 		List<Integer> cycles = this.cycles.get(type);
 
-		Boolean breakInOpt = this.optimizeBreakIns.get(type);
+		Boolean breakInOpt = this.avoidBreakIns.get(type);
 
 		int divBase = type.getNumPieces() / this.getPiecePermutations(type);
 		int modBase = this.getPieceOrientations(type);
@@ -200,9 +200,13 @@ public abstract class BldCube extends BldPuzzle {
 			this.increaseCycleCount(type);
 
 			int targetCount = type.getNumPieces();
+
 			int lastTarget = this.getLastTarget(type);
-			List<Integer> breakInPerms = lastTarget > 0
-					? this.getBreakInPermutationsAfter(lastTarget, type) //Can optimize here
+			int currentCycleCount = this.cycles.get(type).size();
+			boolean optimizeBreakIns = this.optimizeBreakIns.get(type);
+
+			List<Integer> breakInPerms = optimizeBreakIns && lastTarget > 0 && currentCycleCount % 2 == 1
+					? this.getBreakInPermutationsAfter(lastTarget, type)
 					: Arrays.asList(ArrayUtil.autobox(ArrayUtil.fill(targetCount))).subList(1, targetCount);
 
 			for (int i = 0; i < type.getNumPiecesNoBuffer() && !pieceCycled; i++) {
@@ -213,7 +217,7 @@ public abstract class BldCube extends BldPuzzle {
 					int baseIndex = b / divBase;
 					int parts = type.getTargetsPerPiece();
 
-					int bestOrient = lastTarget > 0
+					int bestOrient = optimizeBreakIns && lastTarget > 0 && currentCycleCount % 2 == 1
 							? this.getBreakInOrientationsAfter(lastTarget, type)
 							: 0;
 					bestOrient += modBase - b;

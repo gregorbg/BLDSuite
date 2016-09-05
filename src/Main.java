@@ -5,24 +5,23 @@ import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.algsheet.BldAlgSheet;
 import com.suushiemaniac.cubing.bld.algsheet.GregorBldExcel;
 import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
-import com.suushiemaniac.cubing.bld.analyze.cube.FiveBldCube;
 import com.suushiemaniac.cubing.bld.analyze.cube.ThreeBldCube;
 import com.suushiemaniac.cubing.bld.database.CubeDb;
 import com.suushiemaniac.cubing.bld.model.AlgSource;
+import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 import com.suushiemaniac.cubing.bld.optim.BreakInOptim;
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
-import puzzle.NoInspectionFiveByFiveCubePuzzle;
 import puzzle.NoInspectionThreeByThreeCubePuzzle;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
 
@@ -30,10 +29,10 @@ public class Main {
     public static void main(String[] args) throws SQLException, IOException {
         //System.out.println(new CubicAlgorithmReader().parse("[U2; [U, [U'; [U2; [U, M']]]]]").plain().toFormatString());
 
-        File excelFile = new File("/home/suushie_maniac/Schreibtisch/3Style_Gregor.xlsx");
+        //File excelFile = new File("/home/suushie_maniac/Schreibtisch/3Style_Gregor.xlsx");
 
-        if (!excelFile.exists()) return;
-        BldAlgSheet source = new GregorBldExcel(excelFile);
+        //if (!excelFile.exists()) return;
+        //BldAlgSheet source = new GregorBldExcel(excelFile);
 
         CubeDb target = new CubeDb("jdbc:mysql://localhost:3306/bld-algs?useSSL=false&user=root&password=localsql");
 
@@ -42,25 +41,14 @@ public class Main {
         //printBadAlgorithms(source);
         //migrateExcelToDb(source, target);
 
-		Set<Algorithm> algList = source.getAlg(CORNER, "VN");
-		for (Algorithm alg : algList) {
-			System.out.println(alg.toFormatString());
-		}
-
-        BreakInOptim optim = new BreakInOptim(target, false);
-		System.out.println(optim.optimizeBreakInTargetsAfter("P", CORNER));
-		System.out.println(optim.optimizeBreakInTargetsAfter("K", CORNER));
-		System.out.println(optim.optimizeBreakInTargetsAfter("V", CORNER));
-		System.out.println(optim.optimizeBreakInTargetsAfter("W", CORNER));
-		System.out.println(optim.optimizeBreakInTargetsAfter("O", CORNER));
-		System.out.println(optim.optimizeBreakInTargetsAfter("T", CORNER));
+		System.out.println(new BreakInOptim(target, false).optimizeBreakInTargetsAfter("I", EDGE));
 
 		BldCube newCube = new ThreeBldCube();
 		newCube.setAlgSource(target);
 		Puzzle tNoodle = new NoInspectionThreeByThreeCubePuzzle();
 		NotationReader reader = new CubicAlgorithmReader();
 
-		for (int i = 0; i < 50; i++) {
+		for (int i = 0; i < 5; i++) {
 			//String scrString = tNoodle.generateScramble();
 			String scrString = tNoodle.generateScramble();
 

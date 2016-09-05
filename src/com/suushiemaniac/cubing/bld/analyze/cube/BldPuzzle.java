@@ -32,6 +32,7 @@ public abstract class BldPuzzle {
 	protected Map<PieceType, Boolean> parities;
 
 	protected Map<PieceType, String[]> letterSchemes;
+	protected Map<PieceType, Boolean> avoidBreakIns;
 	protected Map<PieceType, Boolean> optimizeBreakIns;
 
 	protected AlgSource algSource;
@@ -44,7 +45,8 @@ public abstract class BldPuzzle {
 		this.cubies = this.initCubies();
 
 		this.letterSchemes = this.initSchemes();
-		this.optimizeBreakIns = this.allOptimize();
+		this.avoidBreakIns = this.allActive();
+		this.optimizeBreakIns = this.allActive();
 
 		this.algSource = null;
 
@@ -166,7 +168,7 @@ public abstract class BldPuzzle {
 		return parities;
 	}
 
-	protected Map<PieceType, Boolean> allOptimize() {
+	protected Map<PieceType, Boolean> allActive() {
 		Map<PieceType, Boolean> optimize = new HashMap<>();
 
 		for (PieceType type : this.getPieceTypes())
@@ -268,6 +270,10 @@ public abstract class BldPuzzle {
 
 	protected int getBreakInOrientationsAfter(int piece, PieceType type) {
 		return 0;
+	}
+
+	public void setAvoidBreakIns(PieceType type, boolean optimize) {
+		this.avoidBreakIns.put(type, optimize);
 	}
 
 	public void setOptimizeBreakIns(PieceType type, boolean optimize) {

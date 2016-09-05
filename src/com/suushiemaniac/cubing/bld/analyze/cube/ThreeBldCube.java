@@ -95,6 +95,7 @@ public class ThreeBldCube extends BldCube {
 				.map(t -> ArrayUtil.index(this.letterSchemes.get(type), t))
 				.filter(i -> i > -1)
 				.map(i -> ArrayUtil.deepOuterIndex(this.cubies.get(type), i))
+				.filter(i -> i > -1)
 				.distinct()
 				.collect(Collectors.toList());
 
@@ -113,7 +114,9 @@ public class ThreeBldCube extends BldCube {
 		List<String> bestTargets = this.optim.optimizeBreakInTargetsAfter(lastTarget, type);
 		List<Integer> breakInOrients = bestTargets.stream()
 				.map(t -> ArrayUtil.index(this.letterSchemes.get(type), t))
+				.filter(i -> i > -1)
 				.map(i -> ArrayUtil.deepInnerIndex(this.cubies.get(type), i))
+				.filter(i -> i > -1)
 				.collect(Collectors.toList());
 
 		return breakInOrients.get(0); //TODO why discard everything else here and simply take [0] ??
