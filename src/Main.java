@@ -48,8 +48,10 @@ public class Main {
 
 					((ThreeBldCube) newCube).setSolvingOrientation(i, j);
 					newCube.parseScramble(superSolve);
-					System.out.print(i + ", " + j + ": ");
+					System.out.println(i + ", " + j + ": ");
 					System.out.println(newCube.getStatString());
+					System.out.println(newCube.getSolutionPairs(true));
+					System.out.println();
 				}
 			}
 		}
