@@ -1,5 +1,6 @@
 package com.suushiemaniac.cubing.bld.model.enumeration;
 
+import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.analyze.cube.BldPuzzle;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 
@@ -11,4 +12,6 @@ public interface TwistyPuzzle {
 	BldPuzzle getAnalyzingPuzzle();
 
 	PieceType[] getPieceTypes();
+
+	NotationReader getReader();
 }

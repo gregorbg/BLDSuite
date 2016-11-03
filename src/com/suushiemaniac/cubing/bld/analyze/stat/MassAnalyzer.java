@@ -1,17 +1,33 @@
 package com.suushiemaniac.cubing.bld.analyze.stat;
 
+import com.suushiemaniac.cubing.alglib.alg.Algorithm;
+
 import java.util.*;
 
 public abstract class MassAnalyzer {
-    public abstract void analyzeProperties(int numCubes);
+	public abstract void analyzeProperties(List<Algorithm> scrambles);
 
-    public abstract void analyzeScrambleDist(int numCubes);
+    public void analyzeProperties(int numCubes) {
+		this.analyzeProperties(this.generateRandom(numCubes));
+	}
 
-    public abstract void analyzeLetterPairs(int numCubes, boolean singleLetter);
+	public abstract void analyzeScrambleDist(List<Algorithm> scrambles);
+
+    public void analyzeScrambleDist(int numCubes) {
+		this.analyzeScrambleDist(this.generateRandom(numCubes));
+	}
+
+	public abstract void analyzeLetterPairs(List<Algorithm> scramles, boolean singleLetter);
+
+    public void analyzeLetterPairs(int numCubes, boolean singleLetter) {
+		this.analyzeLetterPairs(this.generateRandom(numCubes), singleLetter);
+	}
 
     public void analyzeLetterPairs(int numCubes) {
         this.analyzeLetterPairs(numCubes, false);
     }
+
+    public abstract List<Algorithm> generateRandom(int numCubes);
 
     protected static void numericMapPrint(Map<Integer, Integer> toPrint) {
         List<Integer> sortedKeys = new ArrayList<>(toPrint.keySet());

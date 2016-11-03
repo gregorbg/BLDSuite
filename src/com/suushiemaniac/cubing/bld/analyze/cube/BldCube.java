@@ -20,6 +20,7 @@ public abstract class BldCube extends BldPuzzle {
 	protected static final Integer[][] SPEFFZ_WINGS = {{U}, {A}, {B}, {C}, {D}, {E}, {F}, {G}, {H}, {I}, {J}, {K}, {L}, {M}, {N}, {O}, {P}, {Q}, {R}, {S}, {T}, {V}, {W}, {X}};
 	protected static final Integer[][] SPEFFZ_XCENTERS = {{A, B, C, D}, {E, F, G, H}, {I, J, K, L}, {M, N, O, P}, {Q, R, S, T}, {U, V, W, X}};
 	protected static final Integer[][] SPEFFZ_TCENTERS = {{U, V, W, X}, {A, B, C, D}, {E, F, G, H}, {I, J, K, L}, {M, N, O, P}, {Q, R, S, T}};
+	protected static final Integer[][] SPEFFZ_OBLIQUES = {{U, V, W, X}, {A, B, C, D}, {E, F, G, H}, {I, J, K, L}, {M, N, O, P}, {Q, R, S, T}};
 
 	protected static final String[][] REORIENTATIONS = {
 			{"", "y", "", "y'", "y2", ""},
@@ -85,7 +86,7 @@ public abstract class BldCube extends BldPuzzle {
 
 	@Override
 	protected Algorithm getSolvingOrientationPremoves() {
-		return this.getRotationsFromOrientation(this.top, this.front).inverse();
+		return this.getRotationsFromOrientation(this.top, this.front);
 	}
 
 	public void setSolvingOrientation(int top, int front) {
@@ -124,9 +125,11 @@ public abstract class BldCube extends BldPuzzle {
 		boolean isSolved = true;
 
 		Integer[] state = this.state.get(type);
+		Integer[] lastScrambledState = this.lastScrambledState.get(type);
 		Integer[][] reference = this.cubies.get(type);
 
 		Boolean[] solvedPieces = this.solvedPieces.get(type);
+		Boolean[] preSolvedPieces = this.preSolvedPieces.get(type);
 		Boolean[][] misOrientations = this.misOrientedPieces.get(type);
 
 		int divBase = type.getNumPieces() / this.getPiecePermutations(type);
@@ -148,9 +151,16 @@ public abstract class BldCube extends BldPuzzle {
 				}
 
 				// Piece is solved and oriented
-				if (assumeSolved)
+				if (assumeSolved) {
 					solvedPieces[i] = true;
-				else {
+
+					boolean assumePreSolved = true;
+
+					for (int k = 0; k < type.getTargetsPerPiece(); k++)
+						assumePreSolved &= lastScrambledState[reference[baseIndex][(i + k) % modBase]].equals(reference[baseIndex][(i + k) % modBase]);
+
+					preSolvedPieces[i] = assumePreSolved;
+				} else {
 					// Piece is in correct position but needs to be rotated
 					boolean isRotated = false;
 

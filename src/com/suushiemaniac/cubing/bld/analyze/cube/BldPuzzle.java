@@ -28,6 +28,7 @@ public abstract class BldPuzzle {
 	protected Map<PieceType, List<Integer>> cycles;
 	protected Map<PieceType, Integer> cycleCount;
 	protected Map<PieceType, Boolean[]> solvedPieces;
+	protected Map<PieceType, Boolean[]> preSolvedPieces;
 	protected Map<PieceType, Boolean[][]> misOrientedPieces;
 	protected Map<PieceType, Boolean> parities;
 
@@ -197,10 +198,10 @@ public abstract class BldPuzzle {
 	}
 
     protected void solvePuzzle() {
-		this.getPieceTypes(true).forEach(this::saveState);
+		this.getOrientationPieceTypes().forEach(this::saveState);
 
 		this.reorientPuzzle();
-
+		this.getPieceTypes().forEach(this::saveState);
 		this.getPieceTypes().forEach(this::solvePieces);
 	}
 
@@ -226,6 +227,7 @@ public abstract class BldPuzzle {
 		this.cycles = this.emptyCycles();
 		this.cycleCount = this.emptyCycleCount();
 		this.solvedPieces = this.emptySolvedPieces();
+		this.preSolvedPieces = this.emptySolvedPieces();
 		this.misOrientedPieces = this.orientedPieces();
 		this.parities = this.noParities();
 	}
@@ -401,7 +403,7 @@ public abstract class BldPuzzle {
 
 	public int getPreSolvedCount(PieceType type) {
 		int count = 0;
-		Boolean[] solvedFlags = this.solvedPieces.get(type);
+		Boolean[] solvedFlags = this.preSolvedPieces.get(type);
 
 		for (boolean b : solvedFlags)
 			if (b) count++;
@@ -487,7 +489,13 @@ public abstract class BldPuzzle {
 	}
 
 	public boolean isBufferSolved(PieceType type) {
-		return this.solvedPieces.get(type)[0];
+		boolean bufferSolved = this.preSolvedPieces.get(type)[0];
+
+		for (int i = 0; i < type.getTargetsPerPiece(); i++) {
+			bufferSolved |= this.misOrientedPieces.get(type)[i][0];
+		}
+
+		return bufferSolved;
 	}
 
 	public List<PieceType> getPieceTypes(boolean withOrientationModel) {

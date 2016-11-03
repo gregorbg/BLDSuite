@@ -46,7 +46,8 @@ public class FourBldCube extends BldCube {
 				"", "y'", "y", "y2", "z y", "z",
 				"z y2", "z y'", "x y2", "x y'", "x y", "x",
 				"z' y'", "z'", "z' y2", "z' y", "x'", "x' y'",
-				"x' y", "x' y2", "x2 y'", "z2", "x2 y", "x2"};
+				"x' y", "x' y2", "x2 y'", "z2", "x2 y", "x2"
+		};
 		Integer[] copyXCenters = new Integer[24];
 		double max = Double.MIN_VALUE;
 		int maxIndex = 0;

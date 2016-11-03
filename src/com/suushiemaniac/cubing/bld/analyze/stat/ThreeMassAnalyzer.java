@@ -1,20 +1,43 @@
 package com.suushiemaniac.cubing.bld.analyze.stat;
 
+import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.analyze.cube.ThreeBldCube;
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
+import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.NoInspectionThreeByThreeCubePuzzle;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.CORNER;
 import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.EDGE;
 
 public class ThreeMassAnalyzer extends MassAnalyzer {
-    @Override
-    public void analyzeProperties(int numCubes) {
+	@Override
+	public List<Algorithm> generateRandom(int numCubes) {
+		int steps = numCubes / Math.min(100, numCubes);
+		Puzzle tNoodle = new NoInspectionThreeByThreeCubePuzzle();
+		NotationReader reader = new CubicAlgorithmReader();
+
+		List<Algorithm> scrambles = new ArrayList<>();
+
+		for (int i = 0; i < numCubes; i++) {
+			if (i % steps == 0) System.out.println("Cube " + i);
+			String rawScramble = tNoodle.generateScramble();
+			Algorithm scramble = reader.parse(rawScramble);
+
+			scrambles.add(scramble);
+		}
+
+		return scrambles;
+	}
+
+	@Override
+    public void analyzeProperties(List<Algorithm> scrambles) {
         long cornerParity = 0;
 
         long cornerBufferSolved = 0;
@@ -29,18 +52,10 @@ public class ThreeMassAnalyzer extends MassAnalyzer {
         Map<Integer, Integer> cornerMisOrient = new HashMap<>();
         Map<Integer, Integer> edgeMisOrient = new HashMap<>();
 
-        NoInspectionThreeByThreeCubePuzzle threeNoodle = new NoInspectionThreeByThreeCubePuzzle();
         ThreeBldCube threeAnalyze = new ThreeBldCube();
-		NotationReader reader = new CubicAlgorithmReader();
 
-        int steps = numCubes / Math.min(100, numCubes);
-        for (int i = 0; i < numCubes; i++) {
-            if (i % steps == 0) System.out.println("Cube " + i);
-            String scramble = threeNoodle.generateScramble();
-			threeAnalyze.parseScramble(reader.parse(scramble));
-
-            if (threeAnalyze.getStatLength(CORNER) == 0) System.out.println(scramble);
-            if (threeAnalyze.getStatLength(EDGE) < 6) System.out.println(scramble);
+        for (Algorithm scramble : scrambles) {
+			threeAnalyze.parseScramble(scramble);
 
             cornerParity += threeAnalyze.hasParity(CORNER) ? 1 : 0;
 
@@ -56,6 +71,8 @@ public class ThreeMassAnalyzer extends MassAnalyzer {
             cornerMisOrient.put(threeAnalyze.getMisOrientedCount(CORNER), cornerMisOrient.getOrDefault(threeAnalyze.getMisOrientedCount(CORNER), 0) + 1);
             edgeMisOrient.put(threeAnalyze.getMisOrientedCount(EDGE), edgeMisOrient.getOrDefault(threeAnalyze.getMisOrientedCount(EDGE), 0) + 1);
         }
+
+        int numCubes = scrambles.size();
 
         System.out.println();
         System.out.println("Parity: " + cornerParity);
@@ -92,21 +109,17 @@ public class ThreeMassAnalyzer extends MassAnalyzer {
         numericMapPrint(edgeMisOrient);
     }
 
-    @Override
-    public void analyzeScrambleDist(int numCubes) {
+	@Override
+    public void analyzeScrambleDist(List<Algorithm> scrambles) {
         Map<String, Integer> corner = new HashMap<>();
         Map<String, Integer> edge = new HashMap<>();
 
         Map<String, Integer> overall = new HashMap<>();
 
-        NoInspectionThreeByThreeCubePuzzle threeNoodle = new NoInspectionThreeByThreeCubePuzzle();
         ThreeBldCube threeAnalyze = new ThreeBldCube();
-		NotationReader reader = new CubicAlgorithmReader();
-        int steps = numCubes / Math.min(100, numCubes);
-        for (int i = 0; i < numCubes; i++) {
-            if (i % steps == 0) System.out.println("Cube " + i);
-			String scrString = threeNoodle.generateScramble();
-            threeAnalyze.parseScramble(reader.parse(scrString));
+
+        for (Algorithm scramble : scrambles) {
+            threeAnalyze.parseScramble(scramble);
 
             corner.put(threeAnalyze.getStatString(CORNER), corner.getOrDefault(threeAnalyze.getStatString(CORNER), 0) + 1);
             edge.put(threeAnalyze.getStatString(EDGE), edge.getOrDefault(threeAnalyze.getStatString(EDGE), 0) + 1);
@@ -124,20 +137,15 @@ public class ThreeMassAnalyzer extends MassAnalyzer {
         stringMapPrint(overall);
     }
 
-    @Override
-    public void analyzeLetterPairs(int numCubes, boolean singleLetter) {
+	@Override
+    public void analyzeLetterPairs(List<Algorithm> scrambles, boolean singleLetter) {
         Map<String, Integer> corner = new HashMap<>();
         Map<String, Integer> edge = new HashMap<>();
 
-        NoInspectionThreeByThreeCubePuzzle threeNoodle = new NoInspectionThreeByThreeCubePuzzle();
         ThreeBldCube threeAnalyze = new ThreeBldCube();
-		NotationReader reader = new CubicAlgorithmReader();
 
-        int steps = numCubes / Math.min(100, numCubes);
-        for (int i = 0; i < numCubes; i++) {
-            if (i % steps == 0) System.out.println("Cube " + i);
-			String scrString = threeNoodle.generateScramble();
-            threeAnalyze.parseScramble(reader.parse(scrString));
+        for (Algorithm scramble : scrambles) {
+            threeAnalyze.parseScramble(scramble);
 
             if (threeAnalyze.getStatLength(CORNER) > 0) {
                 String[] cornerPairs = threeAnalyze.getSolutionPairs(CORNER).replaceAll(singleLetter ? "\\s+?" : "$.", "").split(singleLetter ? "" : "\\s+?");
