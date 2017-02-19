@@ -59,16 +59,14 @@ public class BreakInOptim {
         for (String t : this.refCube.getLetteringScheme(type)) {
             Set<Algorithm> sourceList = this.source.getAlg(type, target + t);
             if (sourceList == null) continue;
-            algList.addAll(sourceList);
 
-			for (Algorithm alg : sourceList)
+			for (Algorithm alg : sourceList) {
+				algList.add(alg);
 				targetMap.put(alg, t);
+			}
         }
 
-        Collections.sort(algList, (o1, o2) -> o1.getSubGroup().toFormatString().compareTo(o2.getSubGroup().toFormatString()));
-        Collections.sort(algList, (o1, o2) -> Integer.compare(o1.getSubGroup().size(), o2.getSubGroup().size()));
-        Collections.sort(algList, (o1, o2) -> Integer.compare(o1.algLength(), o2.algLength()));
-        Collections.sort(algList, (o1, o2) -> Integer.compare(o1.moveLength(), o2.moveLength()));
+        algList.sort(AlgComparator.INST());
 
     	List<String> optimizedList = algList.stream()
 				.map(targetMap::get)

@@ -30,11 +30,13 @@ public abstract class BldScramble {
         BlockingQueue<Algorithm> scrambleQueue = new ArrayBlockingQueue<>(50);
         ScrambleProducer producer = new ScrambleProducer(scrambleQueue);
         ScrambleConsumer consumer = new ScrambleConsumer(numScrambles, scrambleQueue);
+
         for (int i = 0; i < numThreads; i++) {
             Thread genThread = new Thread(producer, "Producer " + (i + 1));
             genThread.setDaemon(true);
             genThread.start();
         }
+
         new Thread(consumer, "Consumer").start();
     }
 
@@ -63,11 +65,13 @@ public abstract class BldScramble {
 
     protected final class ScrambleConsumer implements Runnable {
         private final int numScrambles;
+        private int readScrambles;
         private final BldCube testCube;
         private final BlockingQueue<Algorithm> scrambleQueue;
 
         public ScrambleConsumer(int numScrambles, BlockingQueue<Algorithm> queue) {
             this.numScrambles = numScrambles;
+            this.readScrambles = 0;
             this.testCube = BldScramble.this.getAnalyzingPuzzle();
             this.scrambleQueue = queue;
         }
@@ -78,8 +82,15 @@ public abstract class BldScramble {
             do {
                 try {
                     this.testCube.parseScramble(this.scrambleQueue.take());
+                    this.readScrambles++;
+
                     if (matchingConditions(this.testCube)) {
-                        System.out.println((this.numScrambles > 1 ? (count + 1) + "\t" : "") + this.testCube.getScramble());
+                        String header = (this.numScrambles > 1 ? (count + 1) + "\t" : "");
+                        String findCount = this.readScrambles + "\t\t";
+
+                        System.out.println(header + findCount + this.testCube.getScramble().toFormatString());
+
+                        this.readScrambles = 0;
                         count++;
                     }
                 } catch (InterruptedException e) {
@@ -95,6 +106,10 @@ public abstract class BldScramble {
     protected abstract Puzzle getScramblingPuzzle();
 
     protected abstract BldCube getAnalyzingPuzzle();
+
+    public void setSolvingOrientation(int top, int front) {
+        this.getAnalyzingPuzzle().setSolvingOrientation(top, front);
+    }
 
     protected static int getNumInStatArray(int[] stat, int pos, int offset, int scale) {
         int mem = 0;

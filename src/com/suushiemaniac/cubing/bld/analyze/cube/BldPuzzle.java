@@ -12,6 +12,7 @@ import com.suushiemaniac.lang.json.JSON;
 import java.io.File;
 import java.net.URL;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public abstract class BldPuzzle {
@@ -62,9 +63,8 @@ public abstract class BldPuzzle {
 	private Map<Move, Map<PieceType, Integer[]>> loadPermutations() {
 		String filename = "permutations/" + getClass().getSimpleName() + ".json";
 		URL fileURL = getClass().getResource(filename);
-		File jsonFile = new File(fileURL.getFile());
 
-		JSON json = JSON.fromFile(jsonFile);
+		JSON json = JSON.fromURL(fileURL);
 		Map<Move, Map<PieceType, Integer[]>> permutations = new HashMap<>();
 
 		for (String key : json.nativeKeySet()) {
@@ -88,6 +88,45 @@ public abstract class BldPuzzle {
 
 	public void setAlgSource(AlgSource source) {
 		this.algSource = source;
+	}
+
+	public boolean matchesExecution(PieceType type, Predicate<Algorithm> filter) {
+		if (this.algSource == null) {
+			return false;
+		}
+
+		String rawSolution = this.getSolutionRaw(type);
+		boolean matches = true;
+
+		if (rawSolution.equals("Solved")) {
+			return true;
+		} else {
+			for (String letterPair : rawSolution.split("(?<=\\G[A-Z]{2})")) {
+			    if (letterPair.length() < 2) {
+			    	continue;
+				}
+
+				boolean exists = false;
+
+			    for (Algorithm alg : this.algSource.getAlg(type, letterPair)) {
+			        exists |= filter.test(alg);
+			    }
+
+				matches &= exists;
+			}
+		}
+
+		return matches;
+	}
+
+	public boolean matchesExecution(Predicate<Algorithm> filter) {
+		boolean matches = true;
+
+		for (PieceType type : this.getPieceTypes()) {
+		    matches &= this.matchesExecution(type, filter);
+		}
+
+		return matches;
 	}
 
 	public void parseScramble(Algorithm scramble) {
@@ -335,6 +374,51 @@ public abstract class BldPuzzle {
 		return Arrays.copyOf(original, original.length);
 	}
 
+	public int getScrambleScore(PieceType type) {
+		return 1; // TODO
+	}
+
+	public int getScrambleScore() {
+		int score = 0;
+
+		for (PieceType type : this.getPieceTypes()) {
+			score += this.getScrambleScore(type);
+		}
+
+		return score;
+	}
+
+	public String getSolutionRaw(PieceType type) {
+		String pairs = "";
+
+		List<Integer> currentCycles = this.cycles.get(type);
+
+		if (currentCycles.size() > 0) {
+			for (Integer currentCycle : currentCycles) {
+				pairs += this.letterSchemes.get(type)[currentCycle];
+			}
+		} else {
+			return "Solved";
+		}
+
+		return pairs.trim();
+	}
+
+	public String getSolutionRaw(boolean withRotation) {
+		List<String> solutionParts = new ArrayList<>();
+
+		if (withRotation)
+			solutionParts.add("Rotations: " + (this.scrambleOrientationPremoves.algLength() > 0 ? this.scrambleOrientationPremoves.toFormatString() : "/"));
+
+		solutionParts.addAll(this.getPieceTypes().stream().map((type) -> type.humanName() + ": " + getSolutionRaw(type)).collect(Collectors.toList()));
+
+		return String.join("\n", solutionParts);
+	}
+
+	public String getSolutionRaw() {
+		return this.getSolutionRaw(false);
+	}
+
 	public String getSolutionPairs(PieceType type) {
 		String pairs = "";
 
@@ -397,6 +481,16 @@ public abstract class BldPuzzle {
 		return this.cycleCount.get(type);
 	}
 
+	public boolean isSingleCycle() {
+		boolean singleCycle = true;
+
+		for (PieceType type : this.getPieceTypes()) {
+		    singleCycle &= this.isSingleCycle(type);
+		}
+
+		return singleCycle;
+	}
+
 	public boolean isSingleCycle(PieceType type) {
 		return this.getBreakInCount(type) == 0;
 	}
@@ -407,6 +501,26 @@ public abstract class BldPuzzle {
 
 		for (boolean b : solvedFlags)
 			if (b) count++;
+
+		return count;
+	}
+
+	public int getMisOrientedCount() {
+		int count = 0;
+
+		for (PieceType type : this.getPieceTypes()) {
+		    count += this.getMisOrientedCount(type);
+		}
+
+		return count;
+	}
+
+	public int getMisOrientedCount(int orientation) {
+		int count = 0;
+
+		for (PieceType type : this.getPieceTypes()) {
+			count += this.getMisOrientedCount(type, orientation);
+		}
 
 		return count;
 	}
@@ -450,6 +564,16 @@ public abstract class BldPuzzle {
 
 	public boolean hasParity(PieceType type) {
 		return this.parities.get(type);
+	}
+
+	public boolean hasParity() {
+		boolean hasParity = false;
+
+		for (PieceType type : this.getPieceTypes()) {
+		    hasParity |= this.hasParity(type);
+		}
+
+		return hasParity;
 	}
 
 	public String getNoahtation(PieceType type) {

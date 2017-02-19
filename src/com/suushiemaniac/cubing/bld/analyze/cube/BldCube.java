@@ -2,6 +2,7 @@ package com.suushiemaniac.cubing.bld.analyze.cube;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg;
+import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
@@ -119,6 +120,15 @@ public abstract class BldCube extends BldPuzzle {
 
 		if (this.cycles.get(type).size() % 2 == 1)
 			this.parities.put(type, true);
+	}
+
+	@Override
+	public boolean hasParity(PieceType type) {
+		if (type == CubicPieceType.EDGE) {
+			return this.hasParity(CubicPieceType.CORNER);
+		}
+
+		return super.hasParity(type);
 	}
 
 	protected boolean isSolved(PieceType type) {

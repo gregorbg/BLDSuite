@@ -3,3 +3,6 @@
 /out/
 *.class
 *.jar
+
+src/Main.java
+src/META-INF/

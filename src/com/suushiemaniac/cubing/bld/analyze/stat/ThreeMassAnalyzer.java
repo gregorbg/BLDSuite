@@ -57,6 +57,10 @@ public class ThreeMassAnalyzer extends MassAnalyzer {
         for (Algorithm scramble : scrambles) {
 			threeAnalyze.parseScramble(scramble);
 
+			if (threeAnalyze.getPreSolvedCount(CORNER) >= 3 && !threeAnalyze.isBufferSolved(CORNER) && !threeAnalyze.hasParity(CORNER) && threeAnalyze.getMisOrientedCount(EDGE) == 0 && threeAnalyze.getMisOrientedCount(CORNER) == 0) {
+				System.out.println(scramble.toFormatString());
+			}
+
             cornerParity += threeAnalyze.hasParity(CORNER) ? 1 : 0;
 
             cornerBufferSolved += threeAnalyze.isBufferSolved(CORNER) ? 1 : 0;
@@ -74,7 +78,8 @@ public class ThreeMassAnalyzer extends MassAnalyzer {
 
         int numCubes = scrambles.size();
 
-        System.out.println();
+		System.out.println("Total scrambles: " + numCubes);
+		System.out.println();
         System.out.println("Parity: " + cornerParity);
         System.out.println("Average: " + (cornerParity / (float) numCubes));
         System.out.println();
