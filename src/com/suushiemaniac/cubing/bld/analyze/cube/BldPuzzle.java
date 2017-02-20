@@ -374,18 +374,37 @@ public abstract class BldPuzzle {
 		return Arrays.copyOf(original, original.length);
 	}
 
-	public int getScrambleScore(PieceType type) {
-		return 1; // TODO
-	}
+	public float getScrambleScore(PieceType type) { // TODO refine
+		int num = type.getNumPieces();
+		float scoreBase = num * num;
 
-	public int getScrambleScore() {
-		int score = 0;
+		scoreBase -= this.getStatLength(type);
+		scoreBase += this.getPreSolvedCount(type);
+		scoreBase -= this.getMisOrientedCount(type) * type.getTargetsPerPiece();
+		scoreBase -= this.getBreakInCount(type) * type.getNumPiecesNoBuffer();
 
-		for (PieceType type : this.getPieceTypes()) {
-			score += this.getScrambleScore(type);
+		if (this.hasParity(type)) {
+			scoreBase -= 0.25 * scoreBase;
 		}
 
-		return score;
+		if (this.isBufferSolved(type)) {
+			scoreBase -= 0.25 * scoreBase;
+		}
+
+		return Math.max(0, scoreBase);
+	}
+
+	public float getScrambleScore() {
+		float score = 0;
+		int weight = 0;
+		List<PieceType> pieceTypes = this.getPieceTypes();
+
+		for (PieceType type : pieceTypes) {
+			weight += type.getNumPieces();
+			score += type.getNumPieces() * this.getScrambleScore(type);
+		}
+
+		return score / weight;
 	}
 
 	public String getSolutionRaw(PieceType type) {
