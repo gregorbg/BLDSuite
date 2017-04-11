@@ -6,6 +6,8 @@ import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -24,6 +26,20 @@ public abstract class BldScramble {
         } while (!this.matchingConditions(testCube));
 
         return scramble;
+    }
+
+    public List<String> findScramblesOnThread(int num) {
+        List<String> scrambles = new ArrayList<>();
+
+        for (int i = 0; i < num; i++) {
+            if (i % (num / Math.min(100, num)) == 0) {
+                System.out.println(i);
+            }
+
+            scrambles.add(this.findScrambleOnThread());
+        }
+
+        return scrambles;
     }
 
     public void findScrambleThreadModel(int numScrambles, int numThreads) {
