@@ -12,6 +12,10 @@ import java.util.*;
 import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
 
 public abstract class BldCube extends BldPuzzle {
+	public enum ParityMethod {
+		SWAP_UB_UL, APPLY_ALGORITHM
+	}
+
 	protected static final int A = 0, B = 1, C = 2, D = 3, E = 4, F = 5, G = 6, H = 7, I = 8, J = 9, K = 10, L = 11, M = 12, N = 13, O = 14, P = 15, Q = 16, R = 17, S = 18, T = 19, U = 20, V = 21, W = 22, X = 23, Z = -1;
 	protected static final int UP = 0, LEFT = 1, FRONT = 2, RIGHT = 3, BACK = 4, DOWN = 5;
 
@@ -33,6 +37,7 @@ public abstract class BldCube extends BldPuzzle {
 	};
 
 	protected Algorithm solvingOrientationPremoves;
+	protected ParityMethod parityMethod;
 	protected int top, front;
 
 	public BldCube() {
@@ -40,6 +45,7 @@ public abstract class BldCube extends BldPuzzle {
 		this.top = 0;
 		this.front = 2;
 		this.solvingOrientationPremoves = new SimpleAlg();
+		this.parityMethod = ParityMethod.SWAP_UB_UL;
 	}
 
 	public BldCube(Algorithm scramble) {
@@ -47,6 +53,7 @@ public abstract class BldCube extends BldPuzzle {
 		this.top = 0;
 		this.front = 2;
 		this.solvingOrientationPremoves = new SimpleAlg();
+		this.parityMethod = ParityMethod.SWAP_UB_UL;
 	}
 
 	@Override
@@ -95,6 +102,15 @@ public abstract class BldCube extends BldPuzzle {
 			this.top = top;
 			this.front = front;
 		}
+	}
+
+	public ParityMethod getParityMethod() {
+		return this.parityMethod;
+	}
+
+	public void setParityMethod(ParityMethod parityMethod) {
+		this.parityMethod = parityMethod;
+		this.resolve();
 	}
 
 	private Set<Integer> getAdjacentCenters(int center) {

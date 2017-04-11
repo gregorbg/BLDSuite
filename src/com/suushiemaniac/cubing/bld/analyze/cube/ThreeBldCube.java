@@ -42,7 +42,7 @@ public class ThreeBldCube extends BldCube {
 			if (!this.isSolved(CORNER))
 				this.solvePieces(CORNER);
 
-			if (this.parities.get(CORNER))
+			if (this.parities.get(CORNER) && this.getParityMethod() == ParityMethod.SWAP_UB_UL)
 				this.swapParityEdges();
 		}
 
