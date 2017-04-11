@@ -1,6 +1,5 @@
 package com.suushiemaniac.cubing.bld.filter;
 
-import com.sun.corba.se.spi.logging.CORBALogDomains;
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.exception.InvalidNotationException;
 import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
@@ -8,13 +7,14 @@ import com.suushiemaniac.cubing.bld.analyze.cube.ThreeBldCube;
 import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition;
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
 import com.suushiemaniac.cubing.bld.model.AlgSource;
-import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.NoInspectionThreeByThreeCubePuzzle;
 
-import java.util.*;
+import java.util.Random;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,7 +30,11 @@ public class ThreeBldScramble extends TwoBldScramble {
         Random rand = new Random();
         int size = 100000;
         boolean[] parity = new boolean[size];
-        for (int i = 0; i < parity.length; i++) parity[i] = i < 50270;
+
+        for (int i = 0; i < parity.length; i++) {
+            parity[i] = i < 50270;
+        }
+
         //corner-edge num
         int[] cTargets = {5, 12, 100, 551, 2548, 8496, 20713, 32608, 25658, 8599, 710};
         int[] eTargets = {6, 184, 3911, 34275, 55169, 6432, 23}; //offset +4, times 2
@@ -40,6 +44,7 @@ public class ThreeBldScramble extends TwoBldScramble {
         int[] eSolved = {58120, 31491, 8623, 1544, 198, 22, 2};
         int[] cMisOrient = {55683, 32807, 9443, 1796, 250, 19, 2};
         int[] eMisOrient = {63173, 28982, 6676, 1031, 126, 12};
+
         return new ThreeBldScramble(
                 EXACT(getNumInStatArray(cTargets, rand.nextInt(size))),
                 EXACT(getNumInStatArray(cBreakIn, rand.nextInt(size))),
@@ -98,14 +103,17 @@ public class ThreeBldScramble extends TwoBldScramble {
     public static ThreeBldScramble levelScramble(int level) {
         level = Math.min(11, level);
         level = Math.max(0, level);
+
         String[] cLevel = {"8 #", "_7", "_7 # ~", "6 ~", "_9 ##", "_7 # +", "8 #", "8 #", "8 #", "8 #", "6 +", "8 #"};
         String[] eLevel = {"12 #", "12 #", "12 #", "12 #", "12 #", "12 #", "12 ## +", "10 ~", "10 +", "12 ## ~", "12 #", "10 # ~ +"};
+
         return ThreeBldScramble.fromStatString("C: " + cLevel[level] + " | E: " + eLevel[level]);
     }
 
     public static ThreeBldScramble fromStatString(String statString) {
         Pattern statPattern = Pattern.compile("C:(_?)(0|[1-9][0-9]*)\\*?(#*)(~*)(\\+*)\\|E:(0|[1-9][0-9]*)\\*?(#*)(~*)(\\+*)");
         Matcher statMatcher = statPattern.matcher(statString.replaceAll("\\s", ""));
+
         if (statMatcher.find()) {
             boolean hasParity = statMatcher.group(1).length() > 0;
             int cornerLength = Integer.parseInt(statMatcher.group(2));
@@ -129,7 +137,9 @@ public class ThreeBldScramble extends TwoBldScramble {
                     EXACT(edgeSolved),
                     EXACT(edgeFlipped)
             );
-        } else return null;
+        } else {
+        	return null;
+		}
     }
 
     protected BooleanCondition edgeSingleCycle;
@@ -193,8 +203,9 @@ public class ThreeBldScramble extends TwoBldScramble {
             }
         }
 
-        if (matches.size() > 0)
-            this.edgePredicateRegex = "(" + String.join("|", matches) + ")*";
+        if (matches.size() > 0) {
+			this.edgePredicateRegex = "(" + String.join("|", matches) + ")*";
+		}
     }
 
     public void setSolvedFlippedEdges(IntCondition solvedEdges, IntCondition flippedEdges) {

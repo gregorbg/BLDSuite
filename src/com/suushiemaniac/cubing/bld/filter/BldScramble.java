@@ -4,6 +4,7 @@ import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
+import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 
 import java.util.ArrayList;
@@ -125,6 +126,14 @@ public abstract class BldScramble {
 
     public void setSolvingOrientation(int top, int front) {
         this.getAnalyzingPuzzle().setSolvingOrientation(top, front);
+    }
+
+    public void setBuffer(PieceType type, String newBuffer) {
+        this.getAnalyzingPuzzle().setBuffer(type, newBuffer);
+    }
+
+    public void setBuffer(PieceType type, int newBuffer) {
+        this.getAnalyzingPuzzle().setBuffer(type, newBuffer);
     }
 
     protected static int getNumInStatArray(int[] stat, int pos, int offset, int scale) {
