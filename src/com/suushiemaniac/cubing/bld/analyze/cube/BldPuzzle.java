@@ -633,12 +633,13 @@ public abstract class BldPuzzle {
 
 	public boolean isBufferSolved(PieceType type) {
 		boolean bufferSolved = this.preSolvedPieces.get(type)[0];
+		boolean bufferTwisted = true;
 
 		for (int i = 0; i < type.getTargetsPerPiece(); i++) {
-			bufferSolved |= this.misOrientedPieces.get(type)[i][0];
+			bufferTwisted &= this.misOrientedPieces.get(type)[i][0];
 		}
 
-		return bufferSolved;
+		return bufferSolved || bufferTwisted;
 	}
 
 	public List<PieceType> getPieceTypes(boolean withOrientationModel) {

@@ -26,6 +26,7 @@ import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.CORN
 import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.EDGE;
 
 public class ThreeBldScramble extends TwoBldScramble {
+    // TODO buffer solved
     public static ThreeBldScramble averageScramble() {
         Random rand = new Random();
         int size = 100000;
@@ -51,10 +52,12 @@ public class ThreeBldScramble extends TwoBldScramble {
                 parity[rand.nextInt(size)] ? YES() : NO(),
                 EXACT(getNumInStatArray(cSolved, rand.nextInt(size))),
                 EXACT(getNumInStatArray(cMisOrient, rand.nextInt(size))),
+                UNIMPORTANT(), // TODO
                 EXACT(getNumInStatArray(eTargets, rand.nextInt(size), 4, 2)),
                 EXACT(getNumInStatArray(eBreakIn, rand.nextInt(size))),
                 EXACT(getNumInStatArray(eSolved, rand.nextInt(size))),
-                EXACT(getNumInStatArray(eMisOrient, rand.nextInt(size)))
+                EXACT(getNumInStatArray(eMisOrient, rand.nextInt(size))),
+                UNIMPORTANT() // TODO
         );
     }
 
@@ -65,10 +68,12 @@ public class ThreeBldScramble extends TwoBldScramble {
                 NO(),
                 EXACT(0),
                 EXACT(0),
+                UNIMPORTANT(), // TODO
                 EXACT(12),
                 EXACT(1),
                 EXACT(0),
-                EXACT(0)
+                EXACT(0),
+                UNIMPORTANT() // TODO
         );
     }
 
@@ -79,10 +84,12 @@ public class ThreeBldScramble extends TwoBldScramble {
                 UNIMPORTANT(),
                 ANY(),
                 ANY(),
+                UNIMPORTANT(), // TODO
                 EXACT(12),
                 EXACT(1),
                 EXACT(0),
-                EXACT(0)
+                EXACT(0),
+                UNIMPORTANT() // TODO
         );
     }
 
@@ -93,10 +100,12 @@ public class ThreeBldScramble extends TwoBldScramble {
                 NO(),
                 EXACT(0),
                 EXACT(0),
+                UNIMPORTANT(), // TODO
                 ANY(),
                 ANY(),
                 ANY(),
-                ANY()
+                ANY(),
+                UNIMPORTANT() // TODO
         );
     }
 
@@ -111,20 +120,22 @@ public class ThreeBldScramble extends TwoBldScramble {
     }
 
     public static ThreeBldScramble fromStatString(String statString) {
-        Pattern statPattern = Pattern.compile("C:(_?)(0|[1-9][0-9]*)\\*?(#*)(~*)(\\+*)\\|E:(0|[1-9][0-9]*)\\*?(#*)(~*)(\\+*)");
+        Pattern statPattern = Pattern.compile("C:(_?)(0|[1-9][0-9]*)(\\*?)(#*)(~*)(\\+*)\\|E:(0|[1-9][0-9]*)(\\*?)(#*)(~*)(\\+*)");
         Matcher statMatcher = statPattern.matcher(statString.replaceAll("\\s", ""));
 
         if (statMatcher.find()) {
             boolean hasParity = statMatcher.group(1).length() > 0;
             int cornerLength = Integer.parseInt(statMatcher.group(2));
-            int cornerBreakIn = statMatcher.group(3).length();
-            int cornerTwisted = statMatcher.group(4).length();
-            int cornerSolved = statMatcher.group(5).length();
+            boolean cornerBufferSolved = statMatcher.group(3).length() > 0;
+            int cornerBreakIn = statMatcher.group(4).length();
+            int cornerTwisted = statMatcher.group(5).length();
+            int cornerSolved = statMatcher.group(6).length();
 
-            int edgeLength = Integer.parseInt(statMatcher.group(6));
-            int edgeBreakIn = statMatcher.group(7).length();
-            int edgeFlipped = statMatcher.group(8).length();
-            int edgeSolved = statMatcher.group(9).length();
+            int edgeLength = Integer.parseInt(statMatcher.group(7));
+            boolean edgeBufferSolved = statMatcher.group(8).length() > 0;
+            int edgeBreakIn = statMatcher.group(9).length();
+            int edgeFlipped = statMatcher.group(10).length();
+            int edgeSolved = statMatcher.group(11).length();
 
             return new ThreeBldScramble(
                     EXACT(cornerLength),
@@ -132,17 +143,19 @@ public class ThreeBldScramble extends TwoBldScramble {
                     hasParity ? YES() : NO(),
                     EXACT(cornerSolved),
                     EXACT(cornerTwisted),
+                    cornerBufferSolved ? YES() : NO(),
                     EXACT(edgeLength),
                     EXACT(edgeBreakIn),
                     EXACT(edgeSolved),
-                    EXACT(edgeFlipped)
+                    EXACT(edgeFlipped),
+                    edgeBufferSolved ? YES() : NO()
             );
         } else {
         	return null;
 		}
     }
 
-    protected BooleanCondition edgeSingleCycle;
+    protected BooleanCondition edgeSingleCycle, edgeBufferSolved;
     protected IntCondition edgeTargets, edgeBreakIns, solvedEdges, flippedEdges;
     protected String edgeMemoRegex, edgePredicateRegex;
 
@@ -151,15 +164,18 @@ public class ThreeBldScramble extends TwoBldScramble {
                             BooleanCondition hasCornerParity,
                             IntCondition solvedCorners,
                             IntCondition twistedCorners,
+                            BooleanCondition cornerBufferSolved,
                             IntCondition edgeTargets,
                             IntCondition edgeBreakIns,
                             IntCondition solvedEdges,
-                            IntCondition flippedEdges) {
-        super(cornerTargets, cornerBreakIns, hasCornerParity, solvedCorners, twistedCorners);
+                            IntCondition flippedEdges,
+                            BooleanCondition edgeBufferSolved) {
+        super(cornerTargets, cornerBreakIns, hasCornerParity, solvedCorners, twistedCorners, cornerBufferSolved);
         this.setEdgeTargets(edgeTargets);
         this.setEdgeBreakIns(edgeBreakIns);
         this.setEdgeSingleCycle();
         this.setSolvedFlippedEdges(solvedEdges, flippedEdges);
+        this.setEdgeBufferSolved(edgeBufferSolved);
 
         this.edgeMemoRegex = BldScramble.REGEX_UNIV;
         this.edgePredicateRegex = BldScramble.REGEX_UNIV;
@@ -185,6 +201,10 @@ public class ThreeBldScramble extends TwoBldScramble {
 
     public void setEdgeSingleCycle() {
         this.edgeSingleCycle = edgeBreakIns.getMax() == 0 ? YES() : edgeBreakIns.getMin() == 0 ? UNIMPORTANT() : NO();
+    }
+
+    public void setEdgeBufferSolved(BooleanCondition edgeBufferSolved) {
+        this.edgeBufferSolved = edgeBufferSolved;
     }
 
     public void setEdgeMemoRegex(String regex) {
@@ -239,11 +259,13 @@ public class ThreeBldScramble extends TwoBldScramble {
         IntCondition cornerTargets = strict ? EXACT(refCube.getStatLength(CORNER)) : MAXIMUM(refCube.getStatLength(CORNER));
         IntCondition preCorners = strict ? EXACT(refCube.getPreSolvedCount(CORNER)) : MINIMUM(refCube.getPreSolvedCount(CORNER));
         IntCondition preTwisted = strict ? EXACT(refCube.getMisOrientedCount(CORNER)) : MAXIMUM(refCube.getMisOrientedCount(CORNER));
+        BooleanCondition isCornerBufferSolved = refCube.isBufferSolved(CORNER) ? strict ? YES() : UNIMPORTANT() : NO();
         IntCondition edgeBreakIns = strict ? EXACT(refCube.getBreakInCount(EDGE)) : MAXIMUM(refCube.getBreakInCount(EDGE));
         IntCondition edgeTargets = strict ? EXACT(refCube.getStatLength(EDGE)) : MAXIMUM(refCube.getStatLength(EDGE));
         IntCondition preEdges = strict ? EXACT(refCube.getPreSolvedCount(EDGE)) : MINIMUM(refCube.getPreSolvedCount(EDGE));
         IntCondition preFlipped = strict ? EXACT(refCube.getMisOrientedCount(EDGE)) : MAXIMUM(refCube.getMisOrientedCount(EDGE));
-        return new ThreeBldScramble(cornerTargets, cornerBreakIns, hasCornerParity, preCorners, preTwisted, edgeTargets, edgeBreakIns, preEdges, preFlipped);
+        BooleanCondition isEdgeBufferSolved = refCube.isBufferSolved(EDGE) ? strict ? YES() : UNIMPORTANT() : NO();
+        return new ThreeBldScramble(cornerTargets, cornerBreakIns, hasCornerParity, preCorners, preTwisted, isCornerBufferSolved, edgeTargets, edgeBreakIns, preEdges, preFlipped, isEdgeBufferSolved);
     }
 
     @Override
@@ -261,6 +283,8 @@ public class ThreeBldScramble extends TwoBldScramble {
                     && this.solvedEdges.evaluate(randCube.getPreSolvedCount(EDGE))
                     && this.twistedCorners.evaluate(randCube.getMisOrientedCount(CORNER))
                     && this.flippedEdges.evaluate(randCube.getMisOrientedCount(EDGE))
+                    && this.cornerBufferSolved.evaluatePositive(randCube.isBufferSolved(CORNER))
+                    && this.edgeBufferSolved.evaluatePositive(randCube.isBufferSolved(EDGE))
                     && randCube.getSolutionPairs(CORNER).replaceAll("\\s*", "").matches(this.cornerMemoRegex)
                     && randCube.getSolutionPairs(CORNER).replaceAll("\\s*", "").matches(this.cornerPredicateRegex)
                     && randCube.getSolutionPairs(EDGE).replaceAll("\\s*", "").matches(this.edgeMemoRegex)

@@ -1,11 +1,9 @@
 package com.suushiemaniac.cubing.bld.filter;
 
-import com.sun.corba.se.spi.logging.CORBALogDomains;
 import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
 import com.suushiemaniac.cubing.bld.analyze.cube.FiveBldCube;
 import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition;
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
-import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.NoInspectionFiveByFiveCubePuzzle;
 
@@ -13,7 +11,7 @@ import static com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.*;
 import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
 
 public class FiveBldScramble extends FourBldScramble {
-    protected BooleanCondition hasTCenterParity, tCenterSingleCycle;
+    protected BooleanCondition hasTCenterParity, tCenterSingleCycle, tCenterBufferSolved;
     protected IntCondition tCenterBreakIns, tCenterTargets, solvedTCenters;
 
     public FiveBldScramble(IntCondition cornerTargets,
@@ -21,32 +19,39 @@ public class FiveBldScramble extends FourBldScramble {
                            BooleanCondition hasCornerParity,
                            IntCondition solvedCorners,
                            IntCondition twistedCorners,
+                           BooleanCondition cornerBufferSolved,
                            IntCondition edgeTargets,
                            IntCondition edgeBreakIns,
                            IntCondition solvedEdges,
                            IntCondition flippedEdges,
+                           BooleanCondition edgeBufferSolved,
                            IntCondition wingTargets,
                            IntCondition wingBreakIns,
                            BooleanCondition hasWingParity,
                            IntCondition solvedWings,
+                           BooleanCondition wingBufferSolved,
                            IntCondition xCenterTargets,
                            IntCondition xCenterBreakIns,
                            BooleanCondition hasXCenterParity,
                            IntCondition solvedXCenters,
+                           BooleanCondition xCenterBufferSolved,
                            IntCondition tCenterTargets,
                            IntCondition tCenterBreakIns,
                            BooleanCondition hasTCenterParity,
-                           IntCondition solvedTCenters) {
-        super(cornerTargets, cornerBreakIns, hasCornerParity, solvedCorners, twistedCorners, wingTargets, wingBreakIns, hasWingParity, solvedWings, xCenterTargets, xCenterBreakIns, hasXCenterParity, solvedXCenters);
+                           IntCondition solvedTCenters,
+                           BooleanCondition tCenterBufferSolved) {
+        super(cornerTargets, cornerBreakIns, hasCornerParity, solvedCorners, twistedCorners, cornerBufferSolved, wingTargets, wingBreakIns, hasWingParity, solvedWings, wingBufferSolved, xCenterTargets, xCenterBreakIns, hasXCenterParity, solvedXCenters, xCenterBufferSolved);
         this.setEdgeTargets(edgeTargets);
         this.setEdgeBreakIns(edgeBreakIns);
         this.setEdgeSingleCycle();
         this.setSolvedFlippedEdges(solvedEdges, flippedEdges);
+        this.setEdgeBufferSolved(edgeBufferSolved);
         this.setTCenterTargets(tCenterTargets);
         this.setTCenterBreakIns(tCenterBreakIns);
         this.setTCenterSingleCycle();
         this.setTCenterParity(hasTCenterParity);
         this.setSolvedTCenters(solvedTCenters);
+        this.setTCenterBufferSolved(tCenterBufferSolved);
     }
 
     public void setTCenterTargets(IntCondition tCenterTargets) {
@@ -74,6 +79,10 @@ public class FiveBldScramble extends FourBldScramble {
         solvedTCenters.capMin(Math.max(0, 23 + this.tCenterBreakIns.getMax() - this.tCenterTargets.getMax()));
         solvedTCenters.capMax(Math.max(0, 23 + this.tCenterBreakIns.getMin() - this.tCenterTargets.getMin()));
         this.solvedTCenters = solvedTCenters;
+    }
+
+    public void setTCenterBufferSolved(BooleanCondition tCenterBufferSolved) {
+        this.tCenterBufferSolved = tCenterBufferSolved;
     }
 
     @Override
@@ -105,7 +114,12 @@ public class FiveBldScramble extends FourBldScramble {
                     && this.solvedXCenters.evaluate(randCube.getPreSolvedCount(XCENTER))
                     && this.solvedTCenters.evaluate(randCube.getPreSolvedCount(TCENTER))
                     && this.twistedCorners.evaluate(randCube.getMisOrientedCount(CORNER))
-                    && this.flippedEdges.evaluate(randCube.getMisOrientedCount(EDGE));
+                    && this.flippedEdges.evaluate(randCube.getMisOrientedCount(EDGE))
+                    && this.edgeBufferSolved.evaluatePositive(randCube.isBufferSolved(EDGE))
+                    && this.cornerBufferSolved.evaluatePositive(randCube.isBufferSolved(CORNER))
+                    && this.wingBufferSolved.evaluatePositive(randCube.isBufferSolved(WING))
+                    && this.xCenterBufferSolved.evaluatePositive(randCube.isBufferSolved(XCENTER))
+                    && this.tCenterBufferSolved.evaluatePositive(randCube.isBufferSolved(TCENTER));
         } else return false;
     }
 

@@ -15,7 +15,7 @@ import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.WING
 import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.XCENTER;
 
 public class FourBldScramble extends ThreeBldScramble {
-    protected BooleanCondition hasWingParity, hasXCenterParity, wingSingleCycle, xCenterSingleCycle;
+    protected BooleanCondition hasWingParity, hasXCenterParity, wingSingleCycle, xCenterSingleCycle, wingBufferSolved, xCenterBufferSolved;
     protected IntCondition wingBreakIns, xCenterBreakIns, wingTargets, solvedWings, xCenterTargets, solvedXCenters;
 
     public FourBldScramble(IntCondition cornerTargets,
@@ -23,25 +23,30 @@ public class FourBldScramble extends ThreeBldScramble {
                            BooleanCondition hasCornerParity,
                            IntCondition solvedCorners,
                            IntCondition twistedCorners,
+                           BooleanCondition cornerBufferSolved,
                            IntCondition wingTargets,
                            IntCondition wingBreakIns,
                            BooleanCondition hasWingParity,
                            IntCondition solvedWings,
+                           BooleanCondition wingBufferSolved,
                            IntCondition xCenterTargets,
                            IntCondition xCenterBreakIns,
                            BooleanCondition hasXCenterParity,
-                           IntCondition solvedXCenters) {
-        super(cornerTargets, cornerBreakIns, hasCornerParity, solvedCorners, twistedCorners, ANY(), ANY(), ANY(), ANY());
+                           IntCondition solvedXCenters,
+                           BooleanCondition xCenterBufferSolved) {
+        super(cornerTargets, cornerBreakIns, hasCornerParity, solvedCorners, twistedCorners, cornerBufferSolved, ANY(), ANY(), ANY(), ANY(), UNIMPORTANT());
         this.setWingTargets(wingTargets);
         this.setWingBreakIns(wingBreakIns);
         this.setWingSingleCycle();
         this.setWingParity(hasWingParity);
         this.setSolvedWings(solvedWings);
+        this.setWingBufferSolved(wingBufferSolved);
         this.setXCenterTargets(xCenterTargets);
         this.setXCenterBreakIns(xCenterBreakIns);
         this.setXCenterSingleCycle();
         this.setXCenterParity(hasXCenterParity);
         this.setSolvedXCenters(solvedXCenters);
+        this.setXCenterBufferSolved(xCenterBufferSolved);
     }
 
     public void setWingTargets(IntCondition wingTargets) {
@@ -71,6 +76,10 @@ public class FourBldScramble extends ThreeBldScramble {
         this.solvedWings = solvedWings;
     }
 
+    public void setWingBufferSolved(BooleanCondition wingBufferSolved) {
+        this.wingBufferSolved = wingBufferSolved;
+    }
+
     public void setXCenterTargets(IntCondition xCenterTargets) {
         xCenterTargets.capMin(0);
         xCenterTargets.capMax(34);
@@ -98,6 +107,10 @@ public class FourBldScramble extends ThreeBldScramble {
         this.solvedXCenters = solvedXCenters;
     }
 
+    public void setXCenterBufferSolved(BooleanCondition xCenterBufferSolved) {
+        this.xCenterBufferSolved = xCenterBufferSolved;
+    }
+
     @Override
     protected <T extends BldCube> boolean matchingConditions(T inCube) {
         if (inCube instanceof FourBldCube) {
@@ -117,7 +130,10 @@ public class FourBldScramble extends ThreeBldScramble {
                     && this.solvedCorners.evaluate(randCube.getPreSolvedCount(CORNER))
                     && this.solvedWings.evaluate(randCube.getPreSolvedCount(WING))
                     && this.solvedXCenters.evaluate(randCube.getPreSolvedCount(XCENTER))
-                    && this.twistedCorners.evaluate(randCube.getMisOrientedCount(CORNER));
+                    && this.twistedCorners.evaluate(randCube.getMisOrientedCount(CORNER))
+                    && this.cornerBufferSolved.evaluatePositive(randCube.isBufferSolved(CORNER))
+                    && this.wingBufferSolved.evaluatePositive(randCube.isBufferSolved(WING))
+                    && this.xCenterBufferSolved.evaluatePositive(randCube.isBufferSolved(XCENTER));
         } else return false;
     }
 
