@@ -198,7 +198,7 @@ public abstract class BldCube extends BldPuzzle {
 						for (int k = 0; k < rotations; k++)
 							assumeRotated &= state[reference[i][k]].equals(reference[i][(k + j) % rotations]);
 
-						if (assumeRotated) {
+						if (assumeRotated) { // TODO MAYBE only assume buffer as rotated if he is in origin position?
 							isRotated = true;
 							solvedPieces[i] = true;
 							misOrientations[j][i] = true;
