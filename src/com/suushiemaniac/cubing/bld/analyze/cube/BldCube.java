@@ -12,7 +12,7 @@ import java.util.*;
 import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
 
 public abstract class BldCube extends BldPuzzle {
-	public enum ParityMethod {
+	public enum CornerParityMethod {
 		SWAP_UB_UL, APPLY_ALGORITHM
 	}
 
@@ -37,7 +37,7 @@ public abstract class BldCube extends BldPuzzle {
 	};
 
 	protected Algorithm solvingOrientationPremoves;
-	protected ParityMethod parityMethod;
+	protected CornerParityMethod cornerParityMethod;
 	protected int top, front;
 
 	public BldCube() {
@@ -45,15 +45,16 @@ public abstract class BldCube extends BldPuzzle {
 		this.top = 0;
 		this.front = 2;
 		this.solvingOrientationPremoves = new SimpleAlg();
-		this.parityMethod = ParityMethod.SWAP_UB_UL;
+		this.cornerParityMethod = CornerParityMethod.SWAP_UB_UL;
 	}
 
 	public BldCube(Algorithm scramble) {
-		super(scramble);
+		this();
 		this.top = 0;
 		this.front = 2;
 		this.solvingOrientationPremoves = new SimpleAlg();
-		this.parityMethod = ParityMethod.SWAP_UB_UL;
+		this.cornerParityMethod = CornerParityMethod.SWAP_UB_UL;
+		this.parseScramble(scramble);
 	}
 
 	@Override
@@ -104,12 +105,12 @@ public abstract class BldCube extends BldPuzzle {
 		}
 	}
 
-	public ParityMethod getParityMethod() {
-		return this.parityMethod;
+	public CornerParityMethod getCornerParityMethod() {
+		return this.cornerParityMethod;
 	}
 
-	public void setParityMethod(ParityMethod parityMethod) {
-		this.parityMethod = parityMethod;
+	public void setCornerParityMethod(CornerParityMethod cornerParityMethod) {
+		this.cornerParityMethod = cornerParityMethod;
 		this.resolve();
 	}
 

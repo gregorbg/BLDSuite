@@ -13,6 +13,10 @@ public class BooleanCondition {
         return new BooleanCondition(false, false);
     }
 
+    public static BooleanCondition MAYBE() {
+        return BooleanCondition.UNIMPORTANT();
+    }
+
     private boolean truthValue, isImportant;
 
     private BooleanCondition(boolean truthValue, boolean isImportant) {

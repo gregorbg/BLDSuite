@@ -5,6 +5,10 @@ public class IntCondition {
         return new IntCondition(point, point);
     }
 
+    public static IntCondition POINT(int point) {
+        return IntCondition.EXACT(point);
+    }
+
     public static IntCondition PLUSMINUS(int point, int plusMinus) {
         return new IntCondition(point - plusMinus, point + plusMinus);
     }
@@ -17,8 +21,16 @@ public class IntCondition {
         return new IntCondition(min, Integer.MAX_VALUE);
     }
 
+    public static IntCondition MIN(int min) {
+        return IntCondition.MINIMUM(min);
+    }
+
     public static IntCondition MAXIMUM(int max) {
         return new IntCondition(Integer.MIN_VALUE, max);
+    }
+
+    public static IntCondition MAX(int max) {
+        return IntCondition.MAXIMUM(max);
     }
 
     public static IntCondition ANY() {
@@ -26,7 +38,7 @@ public class IntCondition {
     }
 
     public static IntCondition NONE() {
-        return new IntCondition(0, 0);
+        return IntCondition.EXACT(0);
     }
 
     private int min, max;
