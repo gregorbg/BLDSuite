@@ -9,7 +9,6 @@ import com.suushiemaniac.cubing.bld.optim.BreakInOptim;
 import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 import com.suushiemaniac.lang.json.JSON;
 
-import java.io.File;
 import java.net.URL;
 import java.util.*;
 import java.util.function.Predicate;
@@ -129,6 +128,16 @@ public abstract class BldPuzzle {
 		return matches;
 	}
 
+	public boolean solves(PieceType type, Algorithm alg, String solutionCase) {
+		Algorithm currentScramble = this.getScramble();
+
+		this.parseScramble(alg.inverse());
+		boolean solves = this.getSolutionRaw(type).equalsIgnoreCase(solutionCase.replaceAll("\\s", ""));
+
+		this.parseScramble(currentScramble);
+		return solves;
+	}
+
 	public void parseScramble(Algorithm scramble) {
 		this.resetPuzzle();
 
@@ -149,8 +158,9 @@ public abstract class BldPuzzle {
 	protected Map<PieceType, List<Integer>> emptyCycles() {
 		Map<PieceType, List<Integer>> cycles = new HashMap<>();
 
-		for (PieceType type : this.getPieceTypes())
+		for (PieceType type : this.getPieceTypes()) {
 			cycles.put(type, new ArrayList<>());
+		}
 
 		return cycles;
 	}
@@ -158,8 +168,9 @@ public abstract class BldPuzzle {
 	protected Map<PieceType, Integer> emptyCycleCount() {
 		Map<PieceType, Integer> cycleCount = new HashMap<>();
 
-		for (PieceType type : this.getPieceTypes())
+		for (PieceType type : this.getPieceTypes()) {
 			cycleCount.put(type, 0);
+		}
 
 		return cycleCount;
 	}
@@ -171,8 +182,9 @@ public abstract class BldPuzzle {
 			int numPieces = type.getNumPieces();
 			Boolean[] nonSolved = new Boolean[numPieces];
 
-			for (int i = 0; i < numPieces; i++)
+			for (int i = 0; i < numPieces; i++) {
 				nonSolved[i] = false;
+			}
 
 			solvedPieces.put(type, nonSolved);
 		}
@@ -189,9 +201,11 @@ public abstract class BldPuzzle {
 
 			Boolean[][] oriented = new Boolean[targetsPerPiece][numPieces];
 
-			for (int i = 0; i < targetsPerPiece; i++)
-				for (int j = 0; j < numPieces; j++)
+			for (int i = 0; i < targetsPerPiece; i++) {
+				for (int j = 0; j < numPieces; j++) {
 					oriented[i][j] = false;
+				}
+			}
 
 			orientedPieces.put(type, oriented);
 		}
@@ -202,8 +216,9 @@ public abstract class BldPuzzle {
 	protected Map<PieceType, Boolean> noParities() {
 		Map<PieceType, Boolean> parities = new HashMap<>();
 
-		for (PieceType type : this.getPieceTypes())
+		for (PieceType type : this.getPieceTypes()) {
 			parities.put(type, false);
+		}
 
 		return parities;
 	}
@@ -211,8 +226,9 @@ public abstract class BldPuzzle {
 	protected Map<PieceType, Boolean> allActive() {
 		Map<PieceType, Boolean> optimize = new HashMap<>();
 
-		for (PieceType type : this.getPieceTypes())
+		for (PieceType type : this.getPieceTypes()) {
 			optimize.put(type, true);
+		}
 
 		return optimize;
 	}
@@ -231,8 +247,17 @@ public abstract class BldPuzzle {
 			Integer[] exchanges = new Integer[perm.length];
 			ArrayUtil.fillWith(exchanges, -1);
 
-			for (int i = 0; i < exchanges.length; i++) if (perm[i] != -1) exchanges[perm[i]] = current[i];
-			for (int i = 0; i < exchanges.length; i++) if (exchanges[i] != -1) current[i] = exchanges[i];
+			for (int i = 0; i < exchanges.length; i++) {
+				if (perm[i] != -1) {
+					exchanges[perm[i]] = current[i];
+				}
+			}
+
+			for (int i = 0; i < exchanges.length; i++) {
+				if (exchanges[i] != -1) {
+					current[i] = exchanges[i];
+				}
+			}
 		}
 	}
 
@@ -362,6 +387,7 @@ public abstract class BldPuzzle {
 
 		if (oldScheme != null && oldScheme.length == newScheme.length) {
 			this.letterSchemes.put(type, newScheme);
+
 			this.resolve();
 			return true;
 		}
@@ -408,26 +434,27 @@ public abstract class BldPuzzle {
 	}
 
 	public String getSolutionRaw(PieceType type) {
-		String pairs = "";
+		StringBuilder pairs = new StringBuilder();
 
 		List<Integer> currentCycles = this.cycles.get(type);
 
 		if (currentCycles.size() > 0) {
 			for (Integer currentCycle : currentCycles) {
-				pairs += this.letterSchemes.get(type)[currentCycle];
+				pairs.append(this.letterSchemes.get(type)[currentCycle]);
 			}
 		} else {
 			return "Solved";
 		}
 
-		return pairs.trim();
+		return pairs.toString().trim();
 	}
 
 	public String getSolutionRaw(boolean withRotation) {
 		List<String> solutionParts = new ArrayList<>();
 
-		if (withRotation)
+		if (withRotation) {
 			solutionParts.add("Rotations: " + (this.scrambleOrientationPremoves.algLength() > 0 ? this.scrambleOrientationPremoves.toFormatString() : "/"));
+		}
 
 		solutionParts.addAll(this.getPieceTypes().stream().map((type) -> type.humanName() + ": " + getSolutionRaw(type)).collect(Collectors.toList()));
 
@@ -439,35 +466,39 @@ public abstract class BldPuzzle {
 	}
 
 	public String getSolutionPairs(PieceType type) {
-		String pairs = "";
+		StringBuilder pairs = new StringBuilder();
 
 		List<Integer> currentCycles = this.cycles.get(type);
 
 		if (currentCycles.size() > 0 || this.getMisOrientedCount(type) > 0) {
 			for (int i = 0; i < currentCycles.size(); i++) {
-				pairs += this.letterSchemes.get(type)[currentCycles.get(i)];
-				if (i % 2 == 1) pairs += " ";
+				pairs.append(this.letterSchemes.get(type)[currentCycles.get(i)]);
+
+				if (i % 2 == 1) {
+					pairs.append(" ");
+				}
 			}
 
 			for (int i = 1; i < type.getTargetsPerPiece(); i++) {
 				if (this.getMisOrientedCount(type, i) > 0) {
-					pairs += pairs.endsWith(" ") ? "" : " ";
-					pairs += "Orient " + i + ": ";
-					pairs += String.join(" ", this.getMisOrientedPieces(type, i));
+					pairs.append(pairs.toString().endsWith(" ") ? "" : " ");
+					pairs.append("Orient ").append(i).append(": ");
+					pairs.append(String.join(" ", this.getMisOrientedPieces(type, i)));
 				}
 			}
 		} else {
 			return "Solved";
 		}
 
-		return pairs.trim();
+		return pairs.toString().trim();
 	}
 
 	public String getSolutionPairs(boolean withRotation) {
 		List<String> solutionParts = new ArrayList<>();
 
-		if (withRotation)
+		if (withRotation) {
 			solutionParts.add("Rotations: " + (this.scrambleOrientationPremoves.algLength() > 0 ? this.scrambleOrientationPremoves.toFormatString() : "/"));
+		}
 
 		solutionParts.addAll(this.getPieceTypes().stream().map((type) -> type.humanName() + ": " + getSolutionPairs(type)).collect(Collectors.toList()));
 
@@ -518,8 +549,9 @@ public abstract class BldPuzzle {
 		int count = 0;
 		Boolean[] solvedFlags = this.preSolvedPieces.get(type);
 
-		for (boolean b : solvedFlags)
+		for (boolean b : solvedFlags) {
 			if (b) count++;
+		}
 
 		return count;
 	}
@@ -547,8 +579,9 @@ public abstract class BldPuzzle {
 	public int getMisOrientedCount(PieceType type) {
 		int count = 0;
 
-		for (int i = 0; i < type.getTargetsPerPiece(); i++)
+		for (int i = 0; i < type.getTargetsPerPiece(); i++) {
 			count += this.getMisOrientedCount(type, i);
+		}
 
 		return count;
 	}
@@ -560,8 +593,9 @@ public abstract class BldPuzzle {
 		int count = 0;
 
 		for (int i = 1; i < orientations.length; i++) {
-			if (orientations[i])
+			if (orientations[i]) {
 				count++;
+			}
 		}
 
 		return count;
@@ -574,9 +608,11 @@ public abstract class BldPuzzle {
 
 		List<String> misOrientedPieces = new ArrayList<>();
 
-		for (int i = 1; i < orientations.length; i++)
-			if (orientations[i])
+		for (int i = 1; i < orientations.length; i++) {
+			if (orientations[i]) {
 				misOrientedPieces.add(lettering[cubies[i][orientation]]);
+			}
+		}
 
 		return misOrientedPieces;
 	}
@@ -596,8 +632,11 @@ public abstract class BldPuzzle {
 	}
 
 	public String getNoahtation(PieceType type) {
-		String misOriented = "";
-		for (int i = 0; i < this.getMisOrientedCount(type); i++) misOriented += "'";
+		StringBuilder misOriented = new StringBuilder();
+
+		for (int i = 0; i < this.getMisOrientedCount(type); i++) {
+			misOriented.append("'");
+		}
 
 		return type.mnemonic() + ": " + this.getStatLength(type) + misOriented;
 	}
@@ -609,20 +648,33 @@ public abstract class BldPuzzle {
 	}
 
 	public String getStatString(PieceType type) {
-		String cornerStat = type.mnemonic() + ":";
-		cornerStat += this.hasParity(type) ? "_" : " ";
-		cornerStat += this.getStatLength(type);
-		cornerStat += this.isBufferSolved(type) ? "*" : " ";
-		cornerStat += " ";
+		StringBuilder cornerStat = new StringBuilder(type.mnemonic() + ":");
+		cornerStat.append(this.hasParity(type) ? "_" : " ");
+		cornerStat.append(this.getStatLength(type));
+		cornerStat.append(this.isBufferSolved(type) ? "*" : " ");
+		cornerStat.append(" ");
 
-		for (int i = 0; i < this.getBreakInCount(type); i++) cornerStat += "#";
-		if (cornerStat.endsWith("#")) cornerStat += " ";
+		for (int i = 0; i < this.getBreakInCount(type); i++) {
+			cornerStat.append("#");
+		}
 
-		for (int i = 0; i < this.getMisOrientedCount(type); i++) cornerStat += "~";
-		if (cornerStat.endsWith("~")) cornerStat += " ";
+		if (cornerStat.toString().endsWith("#")) {
+			cornerStat.append(" ");
+		}
 
-		for (int i = 0; i < this.getPreSolvedCount(type); i++) cornerStat += "+";
-		return cornerStat;
+		for (int i = 0; i < this.getMisOrientedCount(type); i++) {
+			cornerStat.append("~");
+		}
+
+		if (cornerStat.toString().endsWith("~")) {
+			cornerStat.append(" ");
+		}
+
+		for (int i = 0; i < this.getPreSolvedCount(type); i++) {
+			cornerStat.append("+");
+		}
+
+		return cornerStat.toString();
 	}
 
 	public String getStatString() {
@@ -631,7 +683,7 @@ public abstract class BldPuzzle {
 		return String.join(" | ", statStringParts);
 	}
 
-	public boolean isBufferSolved(PieceType type) {
+	public boolean isBufferSolved(PieceType type) { // TODO add flag to control if also accept twisted?
 		boolean bufferSolved = this.preSolvedPieces.get(type)[0];
 		boolean bufferTwisted = false;
 
@@ -656,8 +708,9 @@ public abstract class BldPuzzle {
 	public List<PieceType> getPieceTypes(boolean withOrientationModel) {
 		List<PieceType> pieceTypes = this.getPermutationPieceTypes();
 
-		if (withOrientationModel)
+		if (withOrientationModel) {
 			pieceTypes.addAll(this.getOrientationPieceTypes());
+		}
 
 		return pieceTypes;
 	}

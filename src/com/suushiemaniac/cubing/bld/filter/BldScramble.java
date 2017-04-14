@@ -128,8 +128,8 @@ public abstract class BldScramble {
         this.getAnalyzingPuzzle().setSolvingOrientation(top, front);
     }
 
-    public void setBuffer(PieceType type, String newBuffer) {
-        this.getAnalyzingPuzzle().setBuffer(type, newBuffer);
+    public boolean setBuffer(PieceType type, String newBuffer) {
+        return this.getAnalyzingPuzzle().setBuffer(type, newBuffer);
     }
 
     public void setBuffer(PieceType type, int newBuffer) {
