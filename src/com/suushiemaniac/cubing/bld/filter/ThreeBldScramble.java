@@ -1,32 +1,22 @@
 package com.suushiemaniac.cubing.bld.filter;
 
-import com.suushiemaniac.cubing.alglib.alg.Algorithm;
-import com.suushiemaniac.cubing.alglib.exception.InvalidNotationException;
-import com.suushiemaniac.cubing.bld.analyze.BldCube;
 import com.suushiemaniac.cubing.bld.analyze.ThreeBldCube;
 import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition;
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
-import com.suushiemaniac.cubing.bld.model.AlgSource;
-import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
-import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
-import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.NoInspectionThreeByThreeCubePuzzle;
 
 import java.util.Random;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.*;
-import static com.suushiemaniac.cubing.bld.filter.condition.IntCondition.*;
+import static com.suushiemaniac.cubing.bld.filter.condition.IntCondition.ANY;
+import static com.suushiemaniac.cubing.bld.filter.condition.IntCondition.EXACT;
 import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.CORNER;
 import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.EDGE;
 
-public class ThreeBldScramble extends TwoBldScramble {
-    // TODO buffer solved
+public class ThreeBldScramble extends BldScramble {
+    // TODO buffer preSolved
     public static ThreeBldScramble averageScramble() {
         Random rand = new Random();
         int size = 100000;
@@ -119,7 +109,7 @@ public class ThreeBldScramble extends TwoBldScramble {
         return ThreeBldScramble.fromStatString("C: " + cLevel[level] + " | E: " + eLevel[level]);
     }
 
-    public static ThreeBldScramble fromStatString(String statString) {
+    public static ThreeBldScramble fromStatString(String statString) { // TODO move up to super class?
         Pattern statPattern = Pattern.compile("C:(_?)(0|[1-9][0-9]*)(\\*?)(#*)(~*)(\\+*)\\|E:(0|[1-9][0-9]*)(\\*?)(#*)(~*)(\\+*)");
         Matcher statMatcher = statPattern.matcher(statString.replaceAll("\\s", ""));
 
@@ -155,10 +145,6 @@ public class ThreeBldScramble extends TwoBldScramble {
 		}
     }
 
-    protected BooleanCondition edgeSingleCycle, edgeBufferSolved;
-    protected IntCondition edgeTargets, edgeBreakIns, solvedEdges, flippedEdges;
-    protected String edgeMemoRegex, edgePredicateRegex;
-
     public ThreeBldScramble(IntCondition cornerTargets,
                             IntCondition cornerBreakIns,
                             BooleanCondition hasCornerParity,
@@ -170,135 +156,18 @@ public class ThreeBldScramble extends TwoBldScramble {
                             IntCondition solvedEdges,
                             IntCondition flippedEdges,
                             BooleanCondition edgeBufferSolved) {
-        super(cornerTargets, cornerBreakIns, hasCornerParity, solvedCorners, twistedCorners, cornerBufferSolved);
-        this.setEdgeTargets(edgeTargets);
-        this.setEdgeBreakIns(edgeBreakIns);
-        this.setEdgeSingleCycle();
-        this.setSolvedFlippedEdges(solvedEdges, flippedEdges);
-        this.setEdgeBufferSolved(edgeBufferSolved);
+        super(new ThreeBldCube(), NoInspectionThreeByThreeCubePuzzle::new);
 
-        this.edgeMemoRegex = BldScramble.REGEX_UNIV;
-        this.edgePredicateRegex = BldScramble.REGEX_UNIV;
-    }
+        this.setTargets(CORNER, cornerTargets);
+        this.setBreakIns(CORNER, cornerBreakIns);
+        this.setParity(CORNER, hasCornerParity);
+        this.setSolvedMisOriented(CORNER, solvedCorners, twistedCorners);
+        this.setBufferSolved(CORNER, cornerBufferSolved);
 
-    public void setEdgeTargets(IntCondition edgeTargets) {
-        edgeTargets.capMin(0);
-        edgeTargets.capMax(16);
-
-        if (edgeTargets.getMin() == edgeTargets.getMax() && edgeTargets.getMin() % 2 == 1) {
-            edgeTargets.setMin(edgeTargets.getMin() - 1);
-            edgeTargets.setMax(this.hasCornerParity.getNegative() ? edgeTargets.getMin() : edgeTargets.getMax() + 1);
-        }
-
-        this.edgeTargets = edgeTargets;
-    }
-
-    public void setEdgeBreakIns(IntCondition edgeBreakIns) {
-        edgeBreakIns.capMin(Math.max(0, this.edgeTargets.getMin() - 11));
-        edgeBreakIns.capMax(5);
-        this.edgeBreakIns = edgeBreakIns;
-    }
-
-    public void setEdgeSingleCycle() {
-        this.edgeSingleCycle = edgeBreakIns.getMax() == 0 ? YES() : edgeBreakIns.getMin() == 0 ? UNIMPORTANT() : NO();
-    }
-
-    public void setEdgeBufferSolved(BooleanCondition edgeBufferSolved) {
-        this.edgeBufferSolved = edgeBufferSolved;
-    }
-
-    public void setEdgeMemoRegex(String regex) {
-        this.edgeMemoRegex = regex;
-    }
-
-    public void filterEdgeExecution(AlgSource algSource, Predicate<Algorithm> filter) {
-        SortedSet<String> matches = new TreeSet<>();
-        String[] possPairs = BruteForceUtil.genBlockString(SpeffzUtil.FULL_SPEFFZ, 2, false);
-
-        for (String pair : possPairs) {
-            try {
-                matches.addAll(algSource.getAlg(EDGE, pair).stream().filter(filter).map(alg -> pair).collect(Collectors.toList()));
-            } catch (InvalidNotationException e) {
-                continue;
-            }
-        }
-
-        if (matches.size() > 0) {
-			this.edgePredicateRegex = "(" + String.join("|", matches) + ")*";
-		}
-    }
-
-    public void setSolvedFlippedEdges(IntCondition solvedEdges, IntCondition flippedEdges) {
-        int leftOverMin = Math.max(0, 11 + this.edgeBreakIns.getMax() - this.edgeTargets.getMax());
-
-        solvedEdges.capMin(0);
-        flippedEdges.capMin(0);
-
-        solvedEdges.capMax(12);
-        flippedEdges.capMax(12);
-
-        int sumMin = solvedEdges.getMin() + flippedEdges.getMin();
-        int sumMax = solvedEdges.getMax() + flippedEdges.getMax();
-
-        if (sumMin > leftOverMin) {
-            if (solvedEdges.isPrecise() || !flippedEdges.isPrecise()) flippedEdges.setMin(flippedEdges.getMin() - sumMin + leftOverMin);
-            if (flippedEdges.isPrecise() || !solvedEdges.isPrecise()) solvedEdges.setMin(solvedEdges.getMin() - sumMin + leftOverMin);
-        } else if (sumMax < leftOverMin) {
-            if (solvedEdges.isPrecise() || !flippedEdges.isPrecise()) flippedEdges.setMax(flippedEdges.getMax() + leftOverMin - sumMax);
-            if (flippedEdges.isPrecise() || !solvedEdges.isPrecise()) solvedEdges.setMax(flippedEdges.getMax() + leftOverMin - sumMax);
-        }
-
-        this.solvedEdges = solvedEdges;
-        this.flippedEdges = flippedEdges;
-    }
-
-    public static ThreeBldScramble cloneFrom(Algorithm scramble, boolean strict) {
-        ThreeBldCube refCube = new ThreeBldCube(scramble);
-        BooleanCondition hasCornerParity = refCube.hasParity(CORNER) ? strict ? YES() : UNIMPORTANT() : NO();
-        IntCondition cornerBreakIns = strict ? EXACT(refCube.getBreakInCount(CORNER)) : MAXIMUM(refCube.getBreakInCount(CORNER));
-        IntCondition cornerTargets = strict ? EXACT(refCube.getStatLength(CORNER)) : MAXIMUM(refCube.getStatLength(CORNER));
-        IntCondition preCorners = strict ? EXACT(refCube.getPreSolvedCount(CORNER)) : MINIMUM(refCube.getPreSolvedCount(CORNER));
-        IntCondition preTwisted = strict ? EXACT(refCube.getMisOrientedCount(CORNER)) : MAXIMUM(refCube.getMisOrientedCount(CORNER));
-        BooleanCondition isCornerBufferSolved = refCube.isBufferSolved(CORNER) ? strict ? YES() : UNIMPORTANT() : NO();
-        IntCondition edgeBreakIns = strict ? EXACT(refCube.getBreakInCount(EDGE)) : MAXIMUM(refCube.getBreakInCount(EDGE));
-        IntCondition edgeTargets = strict ? EXACT(refCube.getStatLength(EDGE)) : MAXIMUM(refCube.getStatLength(EDGE));
-        IntCondition preEdges = strict ? EXACT(refCube.getPreSolvedCount(EDGE)) : MINIMUM(refCube.getPreSolvedCount(EDGE));
-        IntCondition preFlipped = strict ? EXACT(refCube.getMisOrientedCount(EDGE)) : MAXIMUM(refCube.getMisOrientedCount(EDGE));
-        BooleanCondition isEdgeBufferSolved = refCube.isBufferSolved(EDGE) ? strict ? YES() : UNIMPORTANT() : NO();
-        return new ThreeBldScramble(cornerTargets, cornerBreakIns, hasCornerParity, preCorners, preTwisted, isCornerBufferSolved, edgeTargets, edgeBreakIns, preEdges, preFlipped, isEdgeBufferSolved);
-    }
-
-    @Override
-    protected <T extends BldCube> boolean matchingConditions(T inCube) {
-        if (inCube instanceof ThreeBldCube) {
-            ThreeBldCube randCube = (ThreeBldCube) inCube;
-            return this.hasCornerParity.evaluatePositive(randCube.hasParity(CORNER))
-                    && this.cornerSingleCycle.evaluatePositive(randCube.isSingleCycle(CORNER))
-                    && this.cornerBreakIns.evaluate(randCube.getBreakInCount(CORNER))
-                    && this.edgeSingleCycle.evaluatePositive(randCube.isSingleCycle(EDGE))
-                    && this.edgeBreakIns.evaluate(randCube.getBreakInCount(EDGE))
-                    && this.cornerTargets.evaluate(randCube.getStatLength(CORNER))
-                    && this.edgeTargets.evaluate(randCube.getStatLength(EDGE))
-                    && this.solvedCorners.evaluate(randCube.getPreSolvedCount(CORNER))
-                    && this.solvedEdges.evaluate(randCube.getPreSolvedCount(EDGE))
-                    && this.twistedCorners.evaluate(randCube.getMisOrientedCount(CORNER))
-                    && this.flippedEdges.evaluate(randCube.getMisOrientedCount(EDGE))
-                    && this.cornerBufferSolved.evaluatePositive(randCube.isBufferSolved(CORNER))
-                    && this.edgeBufferSolved.evaluatePositive(randCube.isBufferSolved(EDGE))
-                    && randCube.getSolutionPairs(CORNER).replaceAll("\\s*", "").matches(this.cornerMemoRegex)
-                    && randCube.getSolutionPairs(CORNER).replaceAll("\\s*", "").matches(this.cornerPredicateRegex)
-                    && randCube.getSolutionPairs(EDGE).replaceAll("\\s*", "").matches(this.edgeMemoRegex)
-                    && randCube.getSolutionPairs(EDGE).replaceAll("\\s*", "").matches(this.edgePredicateRegex);
-        } else return false;
-    }
-
-    @Override
-    protected Puzzle getScramblingPuzzle() {
-        return new NoInspectionThreeByThreeCubePuzzle();
-    }
-
-    @Override
-    protected BldCube getAnalyzingPuzzle() {
-        return new ThreeBldCube();
+        this.setTargets(EDGE, edgeTargets);
+        this.setBreakIns(EDGE, edgeBreakIns);
+        this.setParity(EDGE, hasCornerParity); // FIXME only preliminary
+        this.setSolvedMisOriented(EDGE, solvedEdges, flippedEdges);
+        this.setBufferSolved(EDGE, edgeBufferSolved);
     }
 }

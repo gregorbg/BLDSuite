@@ -98,11 +98,15 @@ public abstract class BldCube extends BldPuzzle {
 		return this.getRotationsFromOrientation(this.top, this.front);
 	}
 
-	public void setSolvingOrientation(int top, int front) {
+	public boolean setSolvingOrientation(int top, int front) {
 		if (this.getAdjacentCenters(top).contains(front)) {
 			this.top = top;
 			this.front = front;
+
+			return true;
 		}
+
+		return false;
 	}
 
 	public CornerParityMethod getCornerParityMethod() {
@@ -163,7 +167,7 @@ public abstract class BldCube extends BldPuzzle {
 		int divBase = type.getNumPieces() / this.getPiecePermutations(type);
 		int modBase = this.getPieceOrientations(type);
 
-		// Check if pieces marked as unsolved haven't been solved yet
+		// Check if pieces marked as unsolved haven't been preSolved yet
 		for (int i = 0; i < type.getNumPieces(); i++) {
 			if (i == 0 || !solvedPieces[i]) {
 				int baseIndex = i / divBase;
@@ -178,7 +182,7 @@ public abstract class BldCube extends BldPuzzle {
 					assumeSolved |= currentSolved;
 				}
 
-				// Piece is solved and oriented
+				// Piece is preSolved and oriented
 				if (assumeSolved) {
 					solvedPieces[i] = true;
 
@@ -233,7 +237,7 @@ public abstract class BldCube extends BldPuzzle {
 		int divBase = type.getNumPieces() / this.getPiecePermutations(type);
 		int modBase = this.getPieceOrientations(type);
 
-		// If the buffer is solved, replace it with an unsolved corner
+		// If the buffer is preSolved, replace it with an unsolved corner
 		if (solvedPieces[0]) {
 			this.increaseCycleCount(type);
 
@@ -282,7 +286,7 @@ public abstract class BldCube extends BldPuzzle {
 			}
 		}
 
-		// If the buffer is not solved, swap it to the position where the piece belongs
+		// If the buffer is not preSolved, swap it to the position where the piece belongs
 		else {
 			for (int i = 0; i < this.getPiecePermutations(type) && !pieceCycled; i++) {
 
@@ -310,7 +314,7 @@ public abstract class BldCube extends BldPuzzle {
 							// Buffer piece is replaced with piece
 							state[reference[0][k]] = state[reference[i][currentRot]];
 
-							// Piece is solved
+							// Piece is preSolved
 							state[reference[i][currentRot]] = reference[i][currentRot];
 						}
 

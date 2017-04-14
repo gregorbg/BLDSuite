@@ -82,10 +82,10 @@ public class ThreeMassAnalyzer extends MassAnalyzer {
         System.out.println("Parity: " + cornerParity);
         System.out.println("Average: " + (cornerParity / (float) numCubes));
         System.out.println();
-        System.out.println("Corner buffer solved: " + cornerBufferSolved);
+        System.out.println("Corner buffer preSolved: " + cornerBufferSolved);
         System.out.println("Average: " + (cornerBufferSolved / (float) numCubes));
         System.out.println();
-        System.out.println("Edge buffer solved: " + edgeBufferSolved);
+        System.out.println("Edge buffer preSolved: " + edgeBufferSolved);
         System.out.println("Average: " + (edgeBufferSolved / (float) numCubes));
         System.out.println();
         System.out.println("Corner targets");
@@ -100,10 +100,10 @@ public class ThreeMassAnalyzer extends MassAnalyzer {
         System.out.println("Edge break-ins");
         numericMapPrint(edgeBreakIn);
         System.out.println();
-        System.out.println("Corners solved");
+        System.out.println("Corners preSolved");
         numericMapPrint(cornerSolved);
         System.out.println();
-        System.out.println("Edges solved");
+        System.out.println("Edges preSolved");
         numericMapPrint(edgeSolved);
         System.out.println();
         System.out.println("Corners mis-oriented");

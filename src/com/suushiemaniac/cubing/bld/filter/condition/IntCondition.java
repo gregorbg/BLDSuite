@@ -72,6 +72,10 @@ public class IntCondition {
         return this.min == this.max;
     }
 
+    public boolean isExact() {
+        return this.isPrecise();
+    }
+
     public int getInterval() {
         return this.max - this.min;
     }
@@ -92,6 +96,22 @@ public class IntCondition {
 
     @Override
     public String toString() {
-        return this.min + ":" + this.max;
+        return this.toString(":");
+    }
+
+    public String toString(String delimiter) {
+        return this.min + delimiter + this.max;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other instanceof IntCondition) {
+            IntCondition ic = (IntCondition) other;
+
+            return this.min == ic.min
+                    && this.max == ic.max;
+        } else {
+            return false;
+        }
     }
 }

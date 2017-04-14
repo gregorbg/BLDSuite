@@ -60,4 +60,16 @@ public class BooleanCondition {
     public String toString() {
         return this.isImportant ? String.valueOf(this.truthValue) : "unimportant";
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other instanceof BooleanCondition) {
+            BooleanCondition bc = (BooleanCondition) other;
+
+            return this.truthValue == bc.truthValue
+                    && this.isImportant == bc.isImportant;
+        } else {
+            return false;
+        }
+    }
 }

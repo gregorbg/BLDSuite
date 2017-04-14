@@ -14,7 +14,7 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public abstract class BldPuzzle {
+public abstract class BldPuzzle implements Cloneable {
 	public enum MisOrientMethod {
 		SOLVE_DIRECT, SINGLE_TARGET
 	}
@@ -740,6 +740,15 @@ public abstract class BldPuzzle {
 
 	public boolean isBufferSolved(PieceType type, boolean acceptMisOrient) {
 		boolean bufferSolved = this.preSolvedPieces.get(type)[0];
+
+		return bufferSolved || (acceptMisOrient && this.isBufferSolvedAndMisOriented(type));
+	}
+
+	public boolean isBufferSolved(PieceType type) {
+		return this.isBufferSolved(type, true);
+	}
+
+	public boolean isBufferSolvedAndMisOriented(PieceType type) {
 		boolean bufferTwisted = false;
 
 		int orientations = type.getTargetsPerPiece();
@@ -747,7 +756,7 @@ public abstract class BldPuzzle {
 		Integer[][] reference = this.cubies.get(type);
 		Integer[] state = this.lastScrambledState.get(type);
 
-		for (int i = 0; i < orientations; i++) {
+		for (int i = 1; i < orientations; i++) {
 			boolean bufferCurrentOrigin = true;
 
 			for (int j = 0; j < orientations; j++) {
@@ -757,11 +766,7 @@ public abstract class BldPuzzle {
 			bufferTwisted |= bufferCurrentOrigin;
 		}
 
-		return bufferSolved || (acceptMisOrient && bufferTwisted);
-	}
-
-	public boolean isBufferSolved(PieceType type) {
-		return this.isBufferSolved(type, true);
+		return bufferTwisted;
 	}
 
 	public List<PieceType> getPieceTypes(boolean withOrientationModel) {
@@ -772,6 +777,16 @@ public abstract class BldPuzzle {
 		}
 
 		return pieceTypes;
+	}
+
+	@Override
+	public BldPuzzle clone() {
+		try {
+			return (BldPuzzle) super.clone();
+		} catch (CloneNotSupportedException e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	public List<PieceType> getPieceTypes() {
