@@ -1,10 +1,9 @@
 package com.suushiemaniac.cubing.bld.filter;
 
-import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
-import com.suushiemaniac.cubing.bld.analyze.cube.FourBldCube;
+import com.suushiemaniac.cubing.bld.analyze.BldCube;
+import com.suushiemaniac.cubing.bld.analyze.FourBldCube;
 import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition;
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
-import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.NoInspectionFourByFourCubePuzzle;
 

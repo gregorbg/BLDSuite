@@ -1,7 +1,7 @@
 package com.suushiemaniac.cubing.bld.filter;
 
-import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
-import com.suushiemaniac.cubing.bld.analyze.cube.FiveBldCube;
+import com.suushiemaniac.cubing.bld.analyze.BldCube;
+import com.suushiemaniac.cubing.bld.analyze.FiveBldCube;
 import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition;
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
 import net.gnehzr.tnoodle.scrambles.Puzzle;

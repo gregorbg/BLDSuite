@@ -2,7 +2,8 @@ package com.suushiemaniac.cubing.bld.model.enumeration;
 
 import com.suushiemaniac.cubing.alglib.lang.MegaminxAlgorithmReader;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
-import com.suushiemaniac.cubing.bld.analyze.cube.*;
+import com.suushiemaniac.cubing.bld.analyze.BldPuzzle;
+import com.suushiemaniac.cubing.bld.analyze.TwoBldCube;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.MegaminxPuzzle;
 

@@ -1,4 +1,4 @@
-package com.suushiemaniac.cubing.bld.analyze.cube;
+package com.suushiemaniac.cubing.bld.analyze;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;

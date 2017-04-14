@@ -2,7 +2,7 @@ package com.suushiemaniac.cubing.bld.model.enumeration;
 
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
-import com.suushiemaniac.cubing.bld.analyze.cube.*;
+import com.suushiemaniac.cubing.bld.analyze.*;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.*;
 

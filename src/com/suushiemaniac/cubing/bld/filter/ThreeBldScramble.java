@@ -2,8 +2,8 @@ package com.suushiemaniac.cubing.bld.filter;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.exception.InvalidNotationException;
-import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
-import com.suushiemaniac.cubing.bld.analyze.cube.ThreeBldCube;
+import com.suushiemaniac.cubing.bld.analyze.BldCube;
+import com.suushiemaniac.cubing.bld.analyze.ThreeBldCube;
 import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition;
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
 import com.suushiemaniac.cubing.bld.model.AlgSource;

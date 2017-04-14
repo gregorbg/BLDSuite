@@ -3,8 +3,7 @@ package com.suushiemaniac.cubing.bld.analyze.stat;
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
-import com.suushiemaniac.cubing.bld.analyze.cube.ThreeBldCube;
-import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
+import com.suushiemaniac.cubing.bld.analyze.ThreeBldCube;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.NoInspectionThreeByThreeCubePuzzle;
 

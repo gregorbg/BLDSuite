@@ -3,7 +3,7 @@ package com.suushiemaniac.cubing.bld.filter;
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
-import com.suushiemaniac.cubing.bld.analyze.cube.BldCube;
+import com.suushiemaniac.cubing.bld.analyze.BldCube;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 
