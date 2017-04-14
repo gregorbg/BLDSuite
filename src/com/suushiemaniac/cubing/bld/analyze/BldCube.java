@@ -114,6 +114,7 @@ public abstract class BldCube extends BldPuzzle {
 		this.resolve();
 	}
 
+	// TODO MAYBE derive this dynamically in superclass?
 	private Set<Integer> getAdjacentCenters(int center) {
 		Integer[][] adjacenceMatrix = {
 				{1,2,3,4},

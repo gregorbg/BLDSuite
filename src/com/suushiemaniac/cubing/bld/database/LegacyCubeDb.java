@@ -2,7 +2,7 @@ package com.suushiemaniac.cubing.bld.database;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.util.ParseUtils;
-import com.suushiemaniac.cubing.bld.analyze.oldcube.FiveBldCube;
+import com.suushiemaniac.cubing.bld.analyze.FiveBldCube;
 import com.suushiemaniac.cubing.bld.model.AlgSource;
 import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
@@ -39,7 +39,7 @@ public class LegacyCubeDb implements AlgSource {
             e.printStackTrace();
         }
 
-        this.refCube = new FiveBldCube("");
+        this.refCube = new FiveBldCube();
     }
 
     public LegacyCubeDb(String connString) throws SQLException {
@@ -51,12 +51,12 @@ public class LegacyCubeDb implements AlgSource {
             e.printStackTrace();
         }
 
-        this.refCube = new FiveBldCube("");
+        this.refCube = new FiveBldCube();
     }
 
     private void createTables() throws SQLException {
         Statement stat = conn.createStatement();
-        for (PieceType type : FiveBldCube.getPieceTypeArray()) {
+        for (PieceType type : this.refCube.getPieceTypes(true)) {
             stat.execute("create table if not exists " + type.name() + "s(letterpair char(2), alg varchar(255) primary key, score int)");
             stat.execute("create table if not exists " + type.name() + "scheme(letterpair char(2), alg varchar(255) primary key)");
         }
@@ -97,7 +97,7 @@ public class LegacyCubeDb implements AlgSource {
     public void setCompleteSchemes() throws SQLException {
         PreparedStatement stat;
         for (String type : this.getSchemeTypesArray()) {
-            String[] scheme = this.refCube.getScheme(type);
+            String[] scheme = this.refCube.getLetteringScheme(CubicPieceType.valueOf(type));
             String joinedScheme = String.join(",", scheme);
             String typeColumn = type.equals("color") ? "color" : "letter";
             stat = conn.prepareStatement("delete from " + type + "scheme");
@@ -115,7 +115,7 @@ public class LegacyCubeDb implements AlgSource {
             ResultSet search = conn.createStatement().executeQuery("select * from " + type + "scheme where " + typeColumn + "list != 'null'");
             while (search.next()) letterSearch = search.getString(typeColumn + "list");
             if (letterSearch.length() > 0 && letterSearch.contains(","))
-                this.refCube.setScheme(type, letterSearch.split(","));
+                this.refCube.setLetteringScheme(CubicPieceType.valueOf(type), letterSearch.split(","));
         }
     }
 
@@ -130,7 +130,7 @@ public class LegacyCubeDb implements AlgSource {
     }
 
     public void addAlgorithm(String letterPair, String alg, PieceType type) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(type.name()));
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme(type));
         this.addAlgorithm(speffz, alg, type.name());
     }
 
@@ -148,7 +148,7 @@ public class LegacyCubeDb implements AlgSource {
     }
 
     public Set<String> readAlgorithm(String letterPair, PieceType type) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(type.name()));
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme(type));
         return this.readAlgorithm(speffz, type.name());
     }
 
@@ -210,7 +210,7 @@ public class LegacyCubeDb implements AlgSource {
     }
 
     public void removeAlgorithm(String letterPair, String alg, PieceType type) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(type.name()));
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme(type));
         this.removeAlgorithm(speffz, alg, type.name());
     }
 
@@ -224,7 +224,7 @@ public class LegacyCubeDb implements AlgSource {
     }
 
     public void updateAlgorithm(String letterPair, String oldAlg, String newAlg, PieceType pieceType) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getScheme(pieceType.name()));
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme(pieceType));
         this.updateAlgorithm(speffz, oldAlg, newAlg, pieceType.name());
     }
 
