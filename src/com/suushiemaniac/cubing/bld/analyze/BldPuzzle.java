@@ -702,40 +702,73 @@ public abstract class BldPuzzle implements Cloneable {
 		return String.join(" / ", noahtationParts);
 	}
 
+	public String getStatString(PieceType type, boolean indent) {
+		StringBuilder statString = new StringBuilder(type.mnemonic() + ": ");
+
+		statString.append(this.hasParity(type) ? "_" : (indent ? " " : ""));
+
+		int targets = this.getStatLength(type);
+		statString.append(targets);
+
+		statString.append(this.isBufferSolved(type) ? "*" : (indent ? " " : ""));
+		statString.append(this.isBufferSolvedAndMisOriented(type) ? "*" : (indent ? " " : ""));
+
+		int maxTargets = ((type.getNumPiecesNoBuffer() / 2) * 3) + (type.getNumPiecesNoBuffer() % 2);
+		int lenDiff = Integer.toString(maxTargets).length() - Integer.toString(targets).length();
+		statString.append(String.join("", Collections.nCopies(lenDiff + 1, " ")));
+
+		int breakInMax = type.getNumPiecesNoBuffer() / 2;
+		int breakIns = this.getBreakInCount(type);
+
+		statString.append(String.join("", Collections.nCopies(breakIns, "#")));
+
+		if (indent) {
+			statString.append(String.join("", Collections.nCopies(breakInMax - breakIns, " ")));
+		}
+
+		int misOrientPreSolvedMax = type.getNumPiecesNoBuffer();
+
+		if (type.getTargetsPerPiece() > 1) {
+			int misOriented = this.getMisOrientedCount(type);
+
+			if (misOriented > 0 && !statString.toString().endsWith(" ")) {
+				statString.append(" ");
+			}
+
+			statString.append(String.join("", Collections.nCopies(misOriented, "~")));
+
+			if (indent) {
+				statString.append(String.join("", Collections.nCopies(misOrientPreSolvedMax - misOriented, " ")));
+			}
+		}
+
+		int preSolved = this.getPreSolvedCount(type);
+
+		if (preSolved > 0 && !statString.toString().endsWith(" ")) {
+			statString.append(" ");
+		}
+
+		statString.append(String.join("", Collections.nCopies(preSolved, "+")));
+
+		if (indent) {
+			statString.append(String.join("", Collections.nCopies(misOrientPreSolvedMax - preSolved, " ")));
+		}
+
+		return indent ? statString.toString() : statString.toString().trim();
+	}
+
 	public String getStatString(PieceType type) {
-		StringBuilder cornerStat = new StringBuilder(type.mnemonic() + ":");
-		cornerStat.append(this.hasParity(type) ? "_" : " ");
-		cornerStat.append(this.getStatLength(type));
-		cornerStat.append(this.isBufferSolved(type) ? "*" : " ");
-		cornerStat.append(" ");
+		return this.getStatString(type, false);
+	}
 
-		for (int i = 0; i < this.getBreakInCount(type); i++) {
-			cornerStat.append("#");
-		}
+	public String getStatString(boolean indent) {
+		List<String> statStringParts = this.getPieceTypes().stream().map(type -> getStatString(type, indent)).collect(Collectors.toList());
 
-		if (cornerStat.toString().endsWith("#")) {
-			cornerStat.append(" ");
-		}
-
-		for (int i = 0; i < this.getMisOrientedCount(type); i++) {
-			cornerStat.append("~");
-		}
-
-		if (cornerStat.toString().endsWith("~")) {
-			cornerStat.append(" ");
-		}
-
-		for (int i = 0; i < this.getPreSolvedCount(type); i++) {
-			cornerStat.append("+");
-		}
-
-		return cornerStat.toString();
+		return String.join(" | ", statStringParts);
 	}
 
 	public String getStatString() {
-		List<String> statStringParts = this.getPieceTypes().stream().map(this::getStatString).collect(Collectors.toList());
-
-		return String.join(" | ", statStringParts);
+		return this.getStatString(false);
 	}
 
 	public boolean isBufferSolved(PieceType type, boolean acceptMisOrient) {

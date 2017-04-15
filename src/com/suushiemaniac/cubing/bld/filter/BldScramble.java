@@ -30,10 +30,15 @@ import static com.suushiemaniac.cubing.bld.filter.condition.IntCondition.*;
 public class BldScramble {
     public static final String REGEX_UNIV = ".*";
     
-    public static boolean ALLOW_TWISTED_BUFFER = true;
+    protected static boolean ALLOW_TWISTED_BUFFER = true;
+    protected static boolean SHOW_DISCARDED = false;
     
     public static void setAllowTwistedBuffer(boolean allowTwistedBuffer) {
     	BldScramble.ALLOW_TWISTED_BUFFER = allowTwistedBuffer;
+	}
+
+	public static void setShowDiscarded(boolean showDiscarded) {
+    	BldScramble.SHOW_DISCARDED = showDiscarded;
 	}
 
 	protected BldPuzzle analyzingPuzzle;
@@ -80,7 +85,7 @@ public class BldScramble {
 		return this.analyzingPuzzle;
 	}
 
-	protected BldPuzzle generateAnalyzingPuzzle() {
+	public BldPuzzle generateAnalyzingPuzzle() {
 		return this.analyzingSupplier.get();
 	}
 
@@ -88,7 +93,7 @@ public class BldScramble {
 		return this.scramblingPuzzle;
 	}
 
-	protected Puzzle generateScramblingPuzzle() {
+	public Puzzle generateScramblingPuzzle() {
 		return this.scramblingSupplier.get();
 	}
 
@@ -124,7 +129,7 @@ public class BldScramble {
 
 	private void writeBreakIns(PieceType type, IntCondition breakIns) {
 		// C=7 E=11 W=23 XC=23 TC=23
-		breakIns.capMin(Math.max(this.solvedBuffers.get(type).getNegative() ? 1 : 0, this.targets.get(type).getMin() - type.getNumPiecesNoBuffer()));
+		breakIns.capMin(Math.max(this.isBufferSolved(type).getNegative() ? 1 : 0, this.getTargets(type).getMin() - type.getNumPiecesNoBuffer()));
 		// C=3 E=5 W=11 XC=11 TC=11
 		breakIns.capMax(type.getNumPiecesNoBuffer() / 2);
 
@@ -148,8 +153,8 @@ public class BldScramble {
 	}
 
 	private void writeParity(PieceType type, BooleanCondition hasParity) {
-		if (this.targets.get(type).isExact()) {
-			hasParity.setValue(this.targets.get(type).getMax() % 2 == 1);
+		if (this.getTargets(type).isExact()) {
+			hasParity.setValue(this.getTargets(type).getMax() % 2 == 1);
 		}
 
 		this.parities.put(type, hasParity);
@@ -204,7 +209,8 @@ public class BldScramble {
 
 	private void writeSolvedMisOriented(PieceType type, IntCondition solved, IntCondition misOriented) {
 		// C=7 E=11 W=23 XC=23 TC=23
-		int leftOverMin = Math.max(0, type.getNumPiecesNoBuffer() + this.breakIns.get(type).getMax() - this.targets.get(type).getMax());
+		int leftOverMin = Math.max(0, type.getNumPiecesNoBuffer() + this.getBreakIns(type).getMax() - this.getTargets(type).getMax());
+		int leftOverMax = Math.min(type.getNumPiecesNoBuffer(), type.getNumPiecesNoBuffer() + this.getBreakIns(type).getMin() - this.getTargets(type).getMin());
 
 		solved.capMin(0);
 		misOriented.capMin(0);
@@ -217,13 +223,13 @@ public class BldScramble {
 		int sumMin = solved.getMin() + misOriented.getMin();
 		int sumMax = solved.getMax() + misOriented.getMax();
 
-		if (sumMin > leftOverMin) {
+		if (sumMin > leftOverMax) {
 			if (solved.isPrecise() || !misOriented.isPrecise()) {
-				misOriented.setMin(misOriented.getMin() - sumMin + leftOverMin);
+				misOriented.setMin(misOriented.getMin() - sumMin + leftOverMax);
 			}
 
 			if (misOriented.isPrecise() || !solved.isPrecise()) {
-				solved.setMin(solved.getMin() - sumMin + leftOverMin);
+				solved.setMin(solved.getMin() - sumMin + leftOverMax);
 			}
 		} else if (sumMax < leftOverMin) {
 			if (solved.isPrecise() || !misOriented.isPrecise()) {
@@ -295,23 +301,22 @@ public class BldScramble {
 		}
 	}
 
-    public String findScrambleOnThread() {
+    public Algorithm findScrambleOnThread() {
         BldPuzzle testCube = this.getAnalyzingPuzzle();
         Puzzle tNoodle = this.getScramblingPuzzle();
         NotationReader reader = new CubicAlgorithmReader();
 
-        String scramble;
-        
         do {
-            scramble = tNoodle.generateScramble();
-            testCube.parseScramble(reader.parse(scramble));
+            String scrString = tNoodle.generateScramble();
+            Algorithm scramble = reader.parse(scrString);
+            testCube.parseScramble(scramble);
         } while (!this.matchingConditions(testCube));
 
-        return scramble;
+        return testCube.getScramble();
     }
 
-    public List<String> findScramblesOnThread(int num) {
-        List<String> scrambles = new ArrayList<>();
+    public List<Algorithm> findScramblesOnThread(int num) {
+        List<Algorithm> scrambles = new ArrayList<>();
 
         for (int i = 0; i < num; i++) {
             if (i % (num / Math.min(100, num)) == 0) {
@@ -343,7 +348,10 @@ public class BldScramble {
     protected <T extends BldPuzzle> boolean matchingConditions(T inCube) {
 		for (PieceType checkType : this.getAnalyzingPuzzle().getPieceTypes()) {
 			if (!this.matchingConditions(inCube, checkType)) {
-				System.out.println("Discarded " + inCube.getStatString());
+				if (SHOW_DISCARDED) {
+					System.out.println("Discarded " + inCube.getStatString(true));
+				}
+
 				return false;
 			}
 		}
@@ -360,27 +368,26 @@ public class BldScramble {
 				&& this.getTargets(checkType).evaluate(inCube.getStatLength(checkType))
 				&& this.getPreSolved(checkType).evaluate(inCube.getPreSolvedCount(checkType))
 				&& this.getMisOriented(checkType).evaluate(inCube.getMisOrientedCount(checkType))
-				&& inCube.getSolutionPairs(checkType).replaceAll("\\s*", "").matches(this.getMemoRegex(checkType))
-				&& inCube.getSolutionPairs(checkType).replaceAll("\\s*", "").matches(this.getPredicateRegex(checkType));
+				&& inCube.getSolutionRaw(checkType).matches(this.getMemoRegex(checkType))
+				&& inCube.getSolutionRaw(checkType).matches(this.getPredicateRegex(checkType));
 	}
 
 	@Override
 	public String toString() {
-		List<String> pieceTypeStrings = new ArrayList<>();
+		return this.getStatString();
+	}
 
-		for (PieceType type : this.getAnalyzingPuzzle().getPieceTypes()) {
-			pieceTypeStrings.add(this.toString(type));
-		}
-
+	public String getStatString() {
+		List<String> pieceTypeStrings = this.getAnalyzingPuzzle().getPieceTypes().stream().map(this::getStatString).collect(Collectors.toList());
 		return String.join(" | ", pieceTypeStrings);
 	}
 
-	protected String toString(PieceType type) {
+	protected String getStatString(PieceType type) {
 		return type.mnemonic() + ": " + (this.hasParity(type).getPositive() ? "_" : "") +
 				(this.hasParity(type).isImportant() ? "! " : "? ") +
 				this.getTargets(type).toString() +
 				" " +
-				(this.isBufferSolved(type).getPositive() ? "*" : "") +
+				(this.isBufferSolved(type).getPositive() ? (this.isAllowTwistedBuffer(type) ? "**" : "*") : "") +
 				(this.isBufferSolved(type).isImportant() ? "! " : "? ") +
 				this.getBreakIns(type).toString("#") +
 				" " +
