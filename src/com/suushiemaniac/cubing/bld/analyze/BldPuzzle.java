@@ -731,7 +731,7 @@ public abstract class BldPuzzle implements Cloneable {
 		if (type.getTargetsPerPiece() > 1) {
 			int misOriented = this.getMisOrientedCount(type);
 
-			if (misOriented > 0 && !statString.toString().endsWith(" ")) {
+			if (indent || (misOriented > 0 && !statString.toString().endsWith(" "))) {
 				statString.append(" ");
 			}
 
@@ -744,7 +744,7 @@ public abstract class BldPuzzle implements Cloneable {
 
 		int preSolved = this.getPreSolvedCount(type);
 
-		if (preSolved > 0 && !statString.toString().endsWith(" ")) {
+		if (indent || (preSolved > 0 && !statString.toString().endsWith(" "))) {
 			statString.append(" ");
 		}
 

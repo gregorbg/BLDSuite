@@ -338,6 +338,7 @@ public class BldScramble {
         ScrambleProducer producer = new ScrambleProducer(this.generateScramblingPuzzle(), scrambleQueue);
         ScrambleConsumer consumer = new ScrambleConsumer(this.generateAnalyzingPuzzle(), this::matchingConditions, numScrambles, scrambleQueue);
 
+        // TODO MAYBE have multiple threads to check conformity?
 		FutureTask<List<Algorithm>> consumerFuture = new FutureTask<>(consumer);
 
 		for (int i = 0; i < numThreads; i++) {
