@@ -18,6 +18,8 @@ import puzzle.*;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -329,21 +331,31 @@ public class BldScramble {
         return scrambles;
     }
 
-    public void findScrambleThreadModel(int numScrambles, int numThreads) {
-        BlockingQueue<Algorithm> scrambleQueue = new ArrayBlockingQueue<>(50);
+    public List<Algorithm> findScramblesThreadModel(int numScrambles) {
+		int numThreads = Runtime.getRuntime().availableProcessors() + 1;
+        BlockingQueue<Algorithm> scrambleQueue = new ArrayBlockingQueue<>(numScrambles * numThreads * numThreads);
         
         ScrambleProducer producer = new ScrambleProducer(this.generateScramblingPuzzle(), scrambleQueue);
         ScrambleConsumer consumer = new ScrambleConsumer(this.generateAnalyzingPuzzle(), this::matchingConditions, numScrambles, scrambleQueue);
 
-        for (int i = 0; i < numThreads; i++) {
+		FutureTask<List<Algorithm>> consumerFuture = new FutureTask<>(consumer);
+
+		for (int i = 0; i < numThreads; i++) {
             Thread genThread = new Thread(producer, "Producer " + (i + 1));
         
             genThread.setDaemon(true);
             genThread.start();
         }
 
-        new Thread(consumer, "Consumer").start();
-    }
+        new Thread(consumerFuture, "Consumer").start();
+
+        try {
+			return consumerFuture.get();
+		} catch (InterruptedException | ExecutionException e) {
+			e.printStackTrace();
+			return consumer.getAlgList();
+		}
+	}
 
     protected <T extends BldPuzzle> boolean matchingConditions(T inCube) {
 		for (PieceType checkType : this.getAnalyzingPuzzle().getPieceTypes()) {
