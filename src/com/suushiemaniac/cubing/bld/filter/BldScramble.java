@@ -376,11 +376,11 @@ public class BldScramble {
 	}
 
 	protected String toString(PieceType type) {
-		return type.mnemonic() + ": " + (this.hasParity(type).getPositive() ? "_" : " ") +
+		return type.mnemonic() + ": " + (this.hasParity(type).getPositive() ? "_" : "") +
 				(this.hasParity(type).isImportant() ? "! " : "? ") +
 				this.getTargets(type).toString() +
 				" " +
-				(this.isBufferSolved(type).getPositive() ? "*" : " ") +
+				(this.isBufferSolved(type).getPositive() ? "*" : "") +
 				(this.isBufferSolved(type).isImportant() ? "! " : "? ") +
 				this.getBreakIns(type).toString("#") +
 				" " +
