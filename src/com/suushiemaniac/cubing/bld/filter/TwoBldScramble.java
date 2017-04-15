@@ -16,10 +16,13 @@ public class TwoBldScramble extends BldScramble {
                           BooleanCondition cornerBufferSolved) {
         super(new TwoBldCube(), TwoByTwoCubePuzzle::new);
 
-        this.setTargets(CORNER, cornerTargets);
-        this.setBreakIns(CORNER, cornerBreakIns);
-        this.setParity(CORNER, hasCornerParity);
-        this.setSolvedMisOriented(CORNER, solvedCorners, twistedCorners);
-        this.setBufferSolved(CORNER, cornerBufferSolved);
+        this.writeProperties(CORNER,
+                cornerTargets,
+                cornerBreakIns,
+                hasCornerParity,
+                solvedCorners,
+                twistedCorners,
+                cornerBufferSolved
+        );
     }
 }

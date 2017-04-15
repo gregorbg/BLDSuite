@@ -37,34 +37,49 @@ public class FiveBldScramble extends BldScramble {
                            BooleanCondition tCenterBufferSolved) {
         super(new FiveBldCube(), NoInspectionFiveByFiveCubePuzzle::new);
 
-        this.setTargets(CORNER, cornerTargets);
-        this.setBreakIns(CORNER, cornerBreakIns);
-        this.setParity(CORNER, hasCornerParity);
-        this.setSolvedMisOriented(CORNER, solvedCorners, twistedCorners);
-        this.setBufferSolved(CORNER, cornerBufferSolved);
+        this.writeProperties(CORNER,
+                cornerTargets,
+                cornerBreakIns,
+                hasCornerParity,
+                solvedCorners,
+                twistedCorners,
+                cornerBufferSolved
+        );
 
-        this.setTargets(EDGE, edgeTargets);
-        this.setBreakIns(EDGE, edgeBreakIns);
-        this.setParity(EDGE, hasCornerParity); // FIXME preliminary!
-        this.setSolvedMisOriented(EDGE, solvedEdges, flippedEdges);
-        this.setBufferSolved(EDGE, edgeBufferSolved);
+        this.writeProperties(EDGE,
+                edgeTargets,
+                edgeBreakIns,
+                hasCornerParity, // FIXME only preliminary
+                solvedEdges,
+                flippedEdges,
+                edgeBufferSolved
+        );
 
-        this.setTargets(WING, wingTargets);
-        this.setBreakIns(WING, wingBreakIns);
-        this.setParity(WING, hasWingParity);
-        this.setSolvedMisOriented(WING, solvedWings, ANY()); // FIXME
-        this.setBufferSolved(WING, wingBufferSolved);
+        this.writeProperties(WING,
+                wingTargets,
+                wingBreakIns,
+                hasWingParity,
+                solvedWings,
+                ANY(), // FIXME
+                wingBufferSolved
+        );
 
-        this.setTargets(XCENTER, xCenterTargets);
-        this.setBreakIns(XCENTER, xCenterBreakIns);
-        this.setParity(XCENTER, hasXCenterParity);
-        this.setSolvedMisOriented(XCENTER, solvedXCenters, ANY()); // FIXME
-        this.setBufferSolved(XCENTER, xCenterBufferSolved);
+        this.writeProperties(XCENTER,
+                xCenterTargets,
+                xCenterBreakIns,
+                hasXCenterParity,
+                solvedXCenters,
+                ANY(), // FIXME
+                xCenterBufferSolved
+        );
 
-        this.setTargets(TCENTER, tCenterTargets);
-        this.setBreakIns(TCENTER, tCenterBreakIns);
-        this.setParity(TCENTER, hasTCenterParity);
-        this.setSolvedMisOriented(TCENTER, solvedTCenters, ANY()); // FIXME
-        this.setBufferSolved(TCENTER, tCenterBufferSolved);
+        this.writeProperties(TCENTER,
+                tCenterTargets,
+                tCenterBreakIns,
+                hasTCenterParity,
+                solvedTCenters,
+                ANY(), // FIXME
+                tCenterBufferSolved
+        );
     }
 }

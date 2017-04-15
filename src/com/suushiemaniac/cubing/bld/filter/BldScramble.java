@@ -20,6 +20,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.*;
@@ -90,7 +92,11 @@ public class BldScramble {
 		return this.scramblingSupplier.get();
 	}
 
-	public void setTargets(PieceType type, IntCondition targets) {
+	protected IntCondition getTargets(PieceType type) {
+		return this.targets.getOrDefault(type, ANY());
+	}
+
+	private void writeTargets(PieceType type, IntCondition targets) {
 		targets.capMin(0);
 		// C=10 E=16 W=34 XC=34 TC=34
 		targets.capMax(((type.getNumPiecesNoBuffer() / 2) * 3) + (type.getNumPiecesNoBuffer() % 2));
@@ -101,9 +107,24 @@ public class BldScramble {
 		// parity
 	}
 
-	public void setBreakIns(PieceType type, IntCondition breakIns) {
+	public void setTargets(PieceType type, IntCondition targets) {
+		this.writeProperties(type,
+				targets,
+				this.getBreakIns(type),
+				this.hasParity(type),
+				this.getPreSolved(type),
+				this.getMisOriented(type),
+				this.isBufferSolved(type)
+		);
+	}
+
+	protected IntCondition getBreakIns(PieceType type) {
+		return this.breakIns.getOrDefault(type, ANY());
+	}
+
+	private void writeBreakIns(PieceType type, IntCondition breakIns) {
 		// C=7 E=11 W=23 XC=23 TC=23
-		breakIns.capMin(Math.max(0, this.targets.get(type).getMin() - type.getNumPiecesNoBuffer()));
+		breakIns.capMin(Math.max(this.solvedBuffers.get(type).getNegative() ? 1 : 0, this.targets.get(type).getMin() - type.getNumPiecesNoBuffer()));
 		// C=3 E=5 W=11 XC=11 TC=11
 		breakIns.capMax(type.getNumPiecesNoBuffer() / 2);
 
@@ -111,7 +132,22 @@ public class BldScramble {
 		// targets
 	}
 
-	public void setParity(PieceType type, BooleanCondition hasParity) {
+	public void setBreakIns(PieceType type, IntCondition breakIns) {
+		this.writeProperties(type,
+				this.getTargets(type),
+				breakIns,
+				this.hasParity(type),
+				this.getPreSolved(type),
+				this.getMisOriented(type),
+				this.isBufferSolved(type)
+		);
+	}
+
+	protected BooleanCondition hasParity(PieceType type) {
+		return this.parities.getOrDefault(type, MAYBE());
+	}
+
+	private void writeParity(PieceType type, BooleanCondition hasParity) {
 		if (this.targets.get(type).isExact()) {
 			hasParity.setValue(this.targets.get(type).getMax() % 2 == 1);
 		}
@@ -119,34 +155,54 @@ public class BldScramble {
 		this.parities.put(type, hasParity);
 	}
 
-	public void setBufferSolved(PieceType type, BooleanCondition bufferSolved) {
-		this.solvedBuffers.put(type, bufferSolved); // TODO work out relations to other scramble properties!!
-		// targets
+	public void setParity(PieceType type, BooleanCondition parity) {
+		this.writeProperties(type,
+				this.getTargets(type),
+				this.getBreakIns(type),
+				parity,
+				this.getPreSolved(type),
+				this.getMisOriented(type),
+				this.isBufferSolved(type)
+		);
+	}
+
+	protected BooleanCondition isBufferSolved(PieceType type) {
+		return this.solvedBuffers.getOrDefault(type, BooleanCondition.MAYBE());
+	}
+
+	private void writeBufferSolved(PieceType type, BooleanCondition bufferSolved) {
+		this.solvedBuffers.put(type, bufferSolved);
 		// break-ins
+	}
+
+	public void setBufferSolved(PieceType type, BooleanCondition bufferSolved) {
+		this.writeProperties(type,
+				this.getTargets(type),
+				this.getBreakIns(type),
+				this.hasParity(type),
+				this.getPreSolved(type),
+				this.getMisOriented(type),
+				bufferSolved
+		);
+	}
+
+	protected boolean isAllowTwistedBuffer(PieceType type) {
+		return this.allowTwistedBuffers.getOrDefault(type, ALLOW_TWISTED_BUFFER);
 	}
 
 	public void setAllowTwistedBuffer(PieceType type, boolean allowTwisted) {
 		this.allowTwistedBuffers.put(type, allowTwisted);
 	}
 
-	public void setMemoRegex(PieceType type, String regex) {
-		this.memoRegExp.put(type, regex);
+	protected IntCondition getPreSolved(PieceType type) {
+		return this.preSolved.getOrDefault(type, ANY());
 	}
 
-	public void filterExecution(PieceType type, AlgSource algSource, Predicate<Algorithm> filter) {
-		SortedSet<String> matches = new TreeSet<>();
-		String[] possPairs = BruteForceUtil.genBlockString(SpeffzUtil.FULL_SPEFFZ, 2, false);
-
-		for (String pair : possPairs) {
-			matches.addAll(algSource.getAlg(type, pair).stream().filter(filter).map(alg -> pair).collect(Collectors.toList()));
-		}
-
-		if (matches.size() > 0) {
-			this.predicateRegExp.put(type, "(" + String.join("|", matches) + ")*" + (this.parities.get(type).getPositive() ? "[A-Z]?" : ""));
-		}
+	protected IntCondition getMisOriented(PieceType type) {
+		return this.misOriented.getOrDefault(type, ANY());
 	}
 
-	public void setSolvedMisOriented(PieceType type, IntCondition solved, IntCondition misOriented) {
+	private void writeSolvedMisOriented(PieceType type, IntCondition solved, IntCondition misOriented) {
 		// C=7 E=11 W=23 XC=23 TC=23
 		int leftOverMin = Math.max(0, type.getNumPiecesNoBuffer() + this.breakIns.get(type).getMax() - this.targets.get(type).getMax());
 
@@ -182,6 +238,61 @@ public class BldScramble {
 		this.preSolved.put(type, solved);
 		this.misOriented.put(type, misOriented);
 		// targets
+	}
+
+	public void setSolved(PieceType type, IntCondition solved) {
+		this.writeProperties(type,
+				this.getTargets(type),
+				this.getBreakIns(type),
+				this.hasParity(type),
+				solved,
+				this.getMisOriented(type),
+				this.isBufferSolved(type)
+		);
+	}
+
+	public void setMisOriented(PieceType type, IntCondition misOriented) {
+		this.writeProperties(type,
+				this.getTargets(type),
+				this.getBreakIns(type),
+				this.hasParity(type),
+				this.getPreSolved(type),
+				misOriented,
+				this.isBufferSolved(type)
+		);
+	}
+
+	public void writeProperties(PieceType type, IntCondition targets, IntCondition breakIns, BooleanCondition parity, IntCondition solved, IntCondition misOriented, BooleanCondition bufferSolved) {
+		this.writeTargets(type, targets);
+		this.writeBufferSolved(type, bufferSolved);
+		this.writeBreakIns(type, breakIns);
+		this.writeParity(type, parity);
+		this.writeSolvedMisOriented(type, solved, misOriented);
+	}
+
+	protected String getMemoRegex(PieceType type) {
+		return this.memoRegExp.getOrDefault(type, REGEX_UNIV);
+	}
+
+	public void setMemoRegex(PieceType type, String regex) {
+		this.memoRegExp.put(type, regex);
+	}
+
+	public String getPredicateRegex(PieceType type) {
+		return this.predicateRegExp.getOrDefault(type, REGEX_UNIV);
+	}
+
+	public void setPredicateRegExp(PieceType type, AlgSource algSource, Predicate<Algorithm> filter) {
+		SortedSet<String> matches = new TreeSet<>();
+		String[] possPairs = BruteForceUtil.genBlockString(SpeffzUtil.FULL_SPEFFZ, 2, false);
+
+		for (String pair : possPairs) {
+			matches.addAll(algSource.getAlg(type, pair).stream().filter(filter).map(alg -> pair).collect(Collectors.toList()));
+		}
+
+		if (matches.size() > 0) {
+			this.predicateRegExp.put(type, "(" + String.join("|", matches) + ")*" + (this.parities.get(type).getPositive() ? "[A-Z]?" : ""));
+		}
 	}
 
     public String findScrambleOnThread() {
@@ -230,25 +341,27 @@ public class BldScramble {
     }
 
     protected <T extends BldPuzzle> boolean matchingConditions(T inCube) {
-		boolean matches = true;
-
 		for (PieceType checkType : this.getAnalyzingPuzzle().getPieceTypes()) {
-			matches &= this.matchingConditions(inCube, checkType);
+			if (!this.matchingConditions(inCube, checkType)) {
+				System.out.println("Discarded " + inCube.getStatString());
+				return false;
+			}
 		}
 
-		return matches;
+		return true;
 	}
 	
 	protected <T extends BldPuzzle> boolean matchingConditions(T inCube, PieceType checkType) {
-		return this.getAnalyzingPuzzle().getClass().isInstance(inCube)
-				&& this.parities.get(checkType).evaluatePositive(inCube.hasParity(checkType))
-				&& this.solvedBuffers.get(checkType).evaluatePositive(inCube.isBufferSolved(checkType, this.allowTwistedBuffers.getOrDefault(checkType, ALLOW_TWISTED_BUFFER)))
-				&& this.breakIns.get(checkType).evaluate(inCube.getBreakInCount(checkType))
-				&& this.targets.get(checkType).evaluate(inCube.getStatLength(checkType))
-				&& this.preSolved.get(checkType).evaluate(inCube.getPreSolvedCount(checkType))
-				&& this.misOriented.get(checkType).evaluate(inCube.getMisOrientedCount(checkType))
-				&& inCube.getSolutionPairs(checkType).replaceAll("\\s*", "").matches(this.memoRegExp.getOrDefault(checkType, REGEX_UNIV))
-				&& inCube.getSolutionPairs(checkType).replaceAll("\\s*", "").matches(this.predicateRegExp.getOrDefault(checkType, REGEX_UNIV));
+		boolean instance = this.getAnalyzingPuzzle().getClass().isInstance(inCube);
+		return instance
+				&& this.hasParity(checkType).evaluatePositive(inCube.hasParity(checkType))
+				&& this.isBufferSolved(checkType).evaluatePositive(inCube.isBufferSolved(checkType, this.isAllowTwistedBuffer(checkType)))
+				&& this.getBreakIns(checkType).evaluate(inCube.getBreakInCount(checkType))
+				&& this.getTargets(checkType).evaluate(inCube.getStatLength(checkType))
+				&& this.getPreSolved(checkType).evaluate(inCube.getPreSolvedCount(checkType))
+				&& this.getMisOriented(checkType).evaluate(inCube.getMisOrientedCount(checkType))
+				&& inCube.getSolutionPairs(checkType).replaceAll("\\s*", "").matches(this.getMemoRegex(checkType))
+				&& inCube.getSolutionPairs(checkType).replaceAll("\\s*", "").matches(this.getPredicateRegex(checkType));
 	}
 
 	@Override
@@ -263,26 +376,17 @@ public class BldScramble {
 	}
 
 	protected String toString(PieceType type) {
-		StringBuilder cornerStat = new StringBuilder(type.mnemonic() + ": ");
-
-		cornerStat.append(this.parities.get(type).getPositive() ? "_" : " ");
-		cornerStat.append(this.parities.get(type).isImportant() ? " " : "? ");
-
-		cornerStat.append(this.targets.get(type).toString());
-		cornerStat.append(" ");
-		cornerStat.append(this.solvedBuffers.get(type).getPositive() ? "*" : " ");
-		cornerStat.append(this.solvedBuffers.get(type).isImportant() ? "" : "?");
-		cornerStat.append(" ");
-
-		cornerStat.append(this.breakIns.get(type).toString("#"));
-		cornerStat.append(" ");
-
-		cornerStat.append(this.misOriented.get(type).toString("~"));
-		cornerStat.append(" ");
-
-		cornerStat.append(this.preSolved.get(type).toString("+"));
-
-		return cornerStat.toString();
+		return type.mnemonic() + ": " + (this.hasParity(type).getPositive() ? "_" : " ") +
+				(this.hasParity(type).isImportant() ? "! " : "? ") +
+				this.getTargets(type).toString() +
+				" " +
+				(this.isBufferSolved(type).getPositive() ? "*" : " ") +
+				(this.isBufferSolved(type).isImportant() ? "! " : "? ") +
+				this.getBreakIns(type).toString("#") +
+				" " +
+				this.getMisOriented(type).toString("~") +
+				" " +
+				this.getPreSolved(type).toString("+");
 	}
 
     public boolean setBuffer(PieceType type, String newBuffer) {
@@ -311,22 +415,26 @@ public class BldScramble {
         return getNumInStatArray(stat, pos, 0, 1);
     }
 
-    public static BldScramble cloneFrom(BldCube refCube, boolean isStrict) {
+    public static BldScramble cloneFrom(BldPuzzle refCube, boolean isStrict) {
     	BldScramble cloneScr = new BldScramble(refCube, scramblingFactoryFor(refCube));
 
     	for (PieceType type : refCube.getPieceTypes()) {
-    		cloneScr.setParity(type, refCube.hasParity(type) ? isStrict ? YES() : MAYBE() : NO());
-			cloneScr.setBreakIns(type, isStrict ? EXACT(refCube.getBreakInCount(type)) : MAX(refCube.getBreakInCount(type)));
-			cloneScr.setTargets(type, isStrict ? EXACT(refCube.getStatLength(type)) : MAX(refCube.getStatLength(type)));
-			cloneScr.setSolvedMisOriented(type, isStrict ? EXACT(refCube.getPreSolvedCount(type)) : MIN(refCube.getPreSolvedCount(type)), isStrict ? EXACT(refCube.getMisOrientedCount(type)) : MAX(refCube.getMisOrientedCount(type)));
-			cloneScr.setBufferSolved(type, refCube.isBufferSolved(type) ? isStrict ? YES() : MAYBE() : NO());
+			cloneScr.writeProperties(type,
+					isStrict ? EXACT(refCube.getStatLength(type)) : MAX(refCube.getStatLength(type)),
+					isStrict ? EXACT(refCube.getBreakInCount(type)) : MAX(refCube.getBreakInCount(type)),
+					refCube.hasParity(type) ? isStrict ? YES() : MAYBE() : NO(),
+					isStrict ? EXACT(refCube.getPreSolvedCount(type)) : MIN(refCube.getPreSolvedCount(type)),
+					isStrict ? EXACT(refCube.getMisOrientedCount(type)) : MAX(refCube.getMisOrientedCount(type)),
+					refCube.isBufferSolved(type) ? isStrict ? YES() : MAYBE() : NO()
+			);
+
 			cloneScr.setAllowTwistedBuffer(type, !isStrict || refCube.isBufferSolvedAndMisOriented(type));
 		}
 
 		return cloneScr;
 	}
 
-	protected static Supplier<Puzzle> scramblingFactoryFor(BldCube refCube) { // FIXME preliminary
+	protected static Supplier<Puzzle> scramblingFactoryFor(BldPuzzle refCube) { // FIXME preliminary
 		if (refCube instanceof SevenBldCube) {
 			return () -> new CubePuzzle(7);
 		} else if (refCube instanceof SixBldCube) {
@@ -339,6 +447,48 @@ public class BldScramble {
 			return NoInspectionThreeByThreeCubePuzzle::new;
 		} else if (refCube instanceof TwoBldCube) {
 			return TwoByTwoCubePuzzle::new;
+		}
+
+		return null;
+	}
+
+	public static BldScramble fromStatString(String statString, BldPuzzle refCube, boolean isStrict) {
+		BldScramble statScr = new BldScramble(refCube, scramblingFactoryFor(refCube));
+
+		for (String pieceStatString : statString.split("\\|")) {
+			Pattern statPattern = Pattern.compile("([A-Za-z]+?):(_?)(0|[1-9][0-9]*)(\\*?)(#*)(~*)(\\+*)");
+			Matcher statMatcher = statPattern.matcher(pieceStatString.replaceAll("\\s", ""));
+
+			if (statMatcher.find()) {
+				String mnemonic = statMatcher.group(1);
+				PieceType type = findTypeByMnemonic(refCube, mnemonic);
+
+				int targets = Integer.parseInt(statMatcher.group(3));
+				int breakIns = statMatcher.group(5).length();
+				boolean hasParity = statMatcher.group(2).length() > 0;
+				int preSolved = statMatcher.group(7).length();
+				int misOriented = statMatcher.group(6).length();
+				boolean bufferSolved = statMatcher.group(4).length() > 0;
+
+				statScr.writeProperties(type,
+						isStrict ? EXACT(targets) : MAX(targets),
+						isStrict ? EXACT(breakIns) : MAX(breakIns),
+						hasParity ? isStrict ? YES() : MAYBE() : NO(),
+						isStrict ? EXACT(preSolved) : MIN(preSolved),
+						isStrict ? EXACT(misOriented) : MAX(misOriented),
+						bufferSolved ? isStrict ? YES() : MAYBE() : NO()
+				);
+			}
+		}
+
+		return statScr;
+	}
+
+	protected static PieceType findTypeByMnemonic(BldPuzzle refCube, String mnemonic) {
+		for (PieceType type : refCube.getPieceTypes()) {
+			if (type.mnemonic().equalsIgnoreCase(mnemonic)) {
+				return type;
+			}
 		}
 
 		return null;

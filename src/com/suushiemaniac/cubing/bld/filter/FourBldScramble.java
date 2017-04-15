@@ -29,22 +29,31 @@ public class FourBldScramble extends BldScramble {
                            BooleanCondition xCenterBufferSolved) {
         super(new FourBldCube(), NoInspectionFourByFourCubePuzzle::new);
 
-        this.setTargets(CORNER, cornerTargets);
-        this.setBreakIns(CORNER, cornerBreakIns);
-        this.setParity(CORNER, hasCornerParity);
-        this.setSolvedMisOriented(CORNER, solvedCorners, twistedCorners);
-        this.setBufferSolved(CORNER, cornerBufferSolved);
+        this.writeProperties(CORNER,
+                cornerTargets,
+                cornerBreakIns,
+                hasCornerParity,
+                solvedCorners,
+                twistedCorners,
+                cornerBufferSolved
+        );
 
-        this.setTargets(WING, wingTargets);
-        this.setBreakIns(WING, wingBreakIns);
-        this.setParity(WING, hasWingParity);
-        this.setSolvedMisOriented(WING, solvedWings, ANY()); // FIXME
-        this.setBufferSolved(WING, wingBufferSolved);
+        this.writeProperties(WING,
+                wingTargets,
+                wingBreakIns,
+                hasWingParity,
+                solvedWings,
+                ANY(), // FIXME
+                wingBufferSolved
+        );
 
-        this.setTargets(XCENTER, xCenterTargets);
-        this.setBreakIns(XCENTER, xCenterBreakIns);
-        this.setParity(XCENTER, hasXCenterParity);
-        this.setSolvedMisOriented(XCENTER, solvedXCenters, ANY()); // FIXME
-        this.setBufferSolved(XCENTER, xCenterBufferSolved);
+        this.writeProperties(XCENTER,
+                xCenterTargets,
+                xCenterBreakIns,
+                hasXCenterParity,
+                solvedXCenters,
+                ANY(), // FIXME
+                xCenterBufferSolved
+        );
     }
 }

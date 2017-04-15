@@ -6,8 +6,6 @@ import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
 import puzzle.NoInspectionThreeByThreeCubePuzzle;
 
 import java.util.Random;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.*;
 import static com.suushiemaniac.cubing.bld.filter.condition.IntCondition.ANY;
@@ -99,50 +97,14 @@ public class ThreeBldScramble extends BldScramble {
         );
     }
 
-    public static ThreeBldScramble levelScramble(int level) {
+    public static BldScramble levelScramble(int level) {
         level = Math.min(11, level);
         level = Math.max(0, level);
 
         String[] cLevel = {"8 #", "_7", "_7 # ~", "6 ~", "_9 ##", "_7 # +", "8 #", "8 #", "8 #", "8 #", "6 +", "8 #"};
         String[] eLevel = {"12 #", "12 #", "12 #", "12 #", "12 #", "12 #", "12 ## +", "10 ~", "10 +", "12 ## ~", "12 #", "10 # ~ +"};
 
-        return ThreeBldScramble.fromStatString("C: " + cLevel[level] + " | E: " + eLevel[level]);
-    }
-
-    public static ThreeBldScramble fromStatString(String statString) { // TODO move up to super class?
-        Pattern statPattern = Pattern.compile("C:(_?)(0|[1-9][0-9]*)(\\*?)(#*)(~*)(\\+*)\\|E:(0|[1-9][0-9]*)(\\*?)(#*)(~*)(\\+*)");
-        Matcher statMatcher = statPattern.matcher(statString.replaceAll("\\s", ""));
-
-        if (statMatcher.find()) {
-            boolean hasParity = statMatcher.group(1).length() > 0;
-            int cornerLength = Integer.parseInt(statMatcher.group(2));
-            boolean cornerBufferSolved = statMatcher.group(3).length() > 0;
-            int cornerBreakIn = statMatcher.group(4).length();
-            int cornerTwisted = statMatcher.group(5).length();
-            int cornerSolved = statMatcher.group(6).length();
-
-            int edgeLength = Integer.parseInt(statMatcher.group(7));
-            boolean edgeBufferSolved = statMatcher.group(8).length() > 0;
-            int edgeBreakIn = statMatcher.group(9).length();
-            int edgeFlipped = statMatcher.group(10).length();
-            int edgeSolved = statMatcher.group(11).length();
-
-            return new ThreeBldScramble(
-                    EXACT(cornerLength),
-                    EXACT(cornerBreakIn),
-                    hasParity ? YES() : NO(),
-                    EXACT(cornerSolved),
-                    EXACT(cornerTwisted),
-                    cornerBufferSolved ? YES() : NO(),
-                    EXACT(edgeLength),
-                    EXACT(edgeBreakIn),
-                    EXACT(edgeSolved),
-                    EXACT(edgeFlipped),
-                    edgeBufferSolved ? YES() : NO()
-            );
-        } else {
-        	return null;
-		}
+        return BldScramble.fromStatString("C: " + cLevel[level] + " | E: " + eLevel[level], new ThreeBldCube(), true);
     }
 
     public ThreeBldScramble(IntCondition cornerTargets,
@@ -158,16 +120,22 @@ public class ThreeBldScramble extends BldScramble {
                             BooleanCondition edgeBufferSolved) {
         super(new ThreeBldCube(), NoInspectionThreeByThreeCubePuzzle::new);
 
-        this.setTargets(CORNER, cornerTargets);
-        this.setBreakIns(CORNER, cornerBreakIns);
-        this.setParity(CORNER, hasCornerParity);
-        this.setSolvedMisOriented(CORNER, solvedCorners, twistedCorners);
-        this.setBufferSolved(CORNER, cornerBufferSolved);
+        this.writeProperties(CORNER,
+                cornerTargets,
+                cornerBreakIns,
+                hasCornerParity,
+                solvedCorners,
+                twistedCorners,
+                cornerBufferSolved
+        );
 
-        this.setTargets(EDGE, edgeTargets);
-        this.setBreakIns(EDGE, edgeBreakIns);
-        this.setParity(EDGE, hasCornerParity); // FIXME only preliminary
-        this.setSolvedMisOriented(EDGE, solvedEdges, flippedEdges);
-        this.setBufferSolved(EDGE, edgeBufferSolved);
+        this.writeProperties(EDGE,
+                edgeTargets,
+                edgeBreakIns,
+                hasCornerParity, // FIXME only preliminary
+                solvedEdges,
+                flippedEdges,
+                edgeBufferSolved
+        );
     }
 }

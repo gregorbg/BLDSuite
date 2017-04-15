@@ -24,7 +24,7 @@ public class ThreeBldCube extends BldCube {
 
 	@Override
 	protected List<PieceType> getPermutationPieceTypes() {
-		return new ArrayList<>(Arrays.asList(CORNER, EDGE));
+		return new ArrayList<>(Arrays.asList(EDGE, CORNER));
 	}
 
 	@Override
