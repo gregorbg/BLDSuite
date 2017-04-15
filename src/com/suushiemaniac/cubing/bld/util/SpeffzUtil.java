@@ -4,12 +4,13 @@ import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
 import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
 
 public class SpeffzUtil {
-    public static String[] FULL_SPEFFZ = {"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X"};
-    private static String[] cornerMapping = {"UBL", "URB", "UFR", "ULF", "LUB", "LFU", "LDF", "LBD", "FUL", "FRU", "FDR", "FLD", "RUF", "RBU", "RDB", "RFD", "BUR", "BLU", "BDL", "BRD", "DFL", "DRF", "DBR", "DLB"};
-    private static String[] edgeMapping = {"UB", "UR", "UF", "UL", "LU", "LF", "LD", "LB", "FU", "FR", "FD", "FL", "RU", "RB", "RD", "RF", "BU", "BL", "BD", "BR", "DF", "DR", "DB", "DL"};
-    private static String[] xCenterMapping = {"Ubl", "Urb", "Ufr", "Ulf", "Lub", "Lfu", "Ldf", "Lbd", "Ful", "Fru", "Fdr", "Fld", "Ruf", "Rbu", "Rdb", "Rfd", "Bur", "Blu", "Bdl", "Brd", "Dfl", "Drf", "Dbr", "Dlb"};
-    private static String[] wingMapping = {"DFr", "UBr", "URf", "UFl", "ULb", "LUf", "LFd", "LDb", "LBu", "FUr", "FRd", "FDl", "FLu", "RUb", "RBd", "RDf", "RFu", "BUl", "BLd", "BDr", "BRu", "DRb", "DBl", "DLf"};
-    private static String[] tCenterMapping = {"Df", "Dr", "Db", "Dl", "Ub", "Ur", "Uf", "Ul", "Lu", "Lf", "Ld", "Lb", "Fu", "Fr", "Fd", "Fl", "Ru", "Rb", "Rd", "Rf", "Bu", "Bl", "Bd", "Br"};
+    public static final String[] FULL_SPEFFZ = {"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X"};
+
+    public static final String[] CORNER_MAPPING = {"UBL", "URB", "UFR", "ULF", "LUB", "LFU", "LDF", "LBD", "FUL", "FRU", "FDR", "FLD", "RUF", "RBU", "RDB", "RFD", "BUR", "BLU", "BDL", "BRD", "DFL", "DRF", "DBR", "DLB"};
+    public static final String[] EDGE_MAPPING = {"UB", "UR", "UF", "UL", "LU", "LF", "LD", "LB", "FU", "FR", "FD", "FL", "RU", "RB", "RD", "RF", "BU", "BL", "BD", "BR", "DF", "DR", "DB", "DL"};
+    public static final String[] X_CENTER_MAPPING = {"Ubl", "Urb", "Ufr", "Ulf", "Lub", "Lfu", "Ldf", "Lbd", "Ful", "Fru", "Fdr", "Fld", "Ruf", "Rbu", "Rdb", "Rfd", "Bur", "Blu", "Bdl", "Brd", "Dfl", "Drf", "Dbr", "Dlb"};
+    public static final String[] WING_MAPPING = {"DFr", "UBr", "URf", "UFl", "ULb", "LUf", "LFd", "LDb", "LBu", "FUr", "FRd", "FDl", "FLu", "RUb", "RBd", "RDf", "RFu", "BUl", "BLd", "BDr", "BRu", "DRb", "DBl", "DLf"};
+    public static final String[] T_CENTER_MAPPING = {"Df", "Dr", "Db", "Dl", "Ub", "Ur", "Uf", "Ul", "Lu", "Lf", "Ld", "Lb", "Fu", "Fr", "Fd", "Fl", "Ru", "Rb", "Rd", "Rf", "Bu", "Bl", "Bd", "Br"};
 
     public static String[] fullSpeffz() {
         return FULL_SPEFFZ;
@@ -19,15 +20,15 @@ public class SpeffzUtil {
         if (!(type instanceof CubicPieceType)) return "";
         switch ((CubicPieceType) type) {
             case CORNER:
-                return ArrayUtil.mutualIndex(speffz, FULL_SPEFFZ, cornerMapping);
+                return ArrayUtil.mutualIndex(speffz, FULL_SPEFFZ, CORNER_MAPPING);
             case EDGE:
-                return ArrayUtil.mutualIndex(speffz, FULL_SPEFFZ, edgeMapping);
+                return ArrayUtil.mutualIndex(speffz, FULL_SPEFFZ, EDGE_MAPPING);
             case XCENTER:
-                return ArrayUtil.mutualIndex(speffz, FULL_SPEFFZ, xCenterMapping);
+                return ArrayUtil.mutualIndex(speffz, FULL_SPEFFZ, X_CENTER_MAPPING);
             case WING:
-                return ArrayUtil.mutualIndex(speffz, FULL_SPEFFZ, wingMapping);
+                return ArrayUtil.mutualIndex(speffz, FULL_SPEFFZ, WING_MAPPING);
             case TCENTER:
-                return ArrayUtil.mutualIndex(speffz, FULL_SPEFFZ, tCenterMapping);
+                return ArrayUtil.mutualIndex(speffz, FULL_SPEFFZ, T_CENTER_MAPPING);
             default:
                 return "";
         }
@@ -37,15 +38,15 @@ public class SpeffzUtil {
         if (!(type instanceof CubicPieceType)) return "";
         switch ((CubicPieceType) type) {
             case CORNER:
-                return ArrayUtil.mutualIndex(sticker, cornerMapping, FULL_SPEFFZ);
+                return ArrayUtil.mutualIndex(sticker, CORNER_MAPPING, FULL_SPEFFZ);
             case EDGE:
-                return ArrayUtil.mutualIndex(sticker, edgeMapping, FULL_SPEFFZ);
+                return ArrayUtil.mutualIndex(sticker, EDGE_MAPPING, FULL_SPEFFZ);
             case XCENTER:
-                return ArrayUtil.mutualIndex(sticker, xCenterMapping, FULL_SPEFFZ);
+                return ArrayUtil.mutualIndex(sticker, X_CENTER_MAPPING, FULL_SPEFFZ);
             case WING:
-                return ArrayUtil.mutualIndex(sticker, wingMapping, FULL_SPEFFZ);
+                return ArrayUtil.mutualIndex(sticker, WING_MAPPING, FULL_SPEFFZ);
             case TCENTER:
-                return ArrayUtil.mutualIndex(sticker, tCenterMapping, FULL_SPEFFZ);
+                return ArrayUtil.mutualIndex(sticker, T_CENTER_MAPPING, FULL_SPEFFZ);
             default:
                 return "";
         }
