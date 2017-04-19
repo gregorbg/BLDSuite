@@ -409,6 +409,11 @@ public class BldScramble {
 				this.getPreSolved(type).toString("+");
 	}
 
+	public boolean setSolvingOrientation(int top, int front) { // TODO later add other specifications for other puzzle types (pyra, mega…)
+		return this.analyzingPuzzle instanceof BldCube
+			&& ((BldCube) this.getAnalyzingPuzzle()).setSolvingOrientation(top, front);
+	}
+
     public boolean setBuffer(PieceType type, String newBuffer) {
         return this.getAnalyzingPuzzle().setBuffer(type, newBuffer);
     }

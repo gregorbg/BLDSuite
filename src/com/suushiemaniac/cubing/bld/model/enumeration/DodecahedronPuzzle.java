@@ -5,15 +5,18 @@ import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.analyze.BldPuzzle;
 import com.suushiemaniac.cubing.bld.analyze.TwoBldCube;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
+import puzzle.CubePuzzle;
 import puzzle.MegaminxPuzzle;
+
+import java.util.function.Supplier;
 
 import static com.suushiemaniac.cubing.bld.model.enumeration.DodecahedronPieceType.*;
 
 public enum DodecahedronPuzzle implements TwistyPuzzle { //TODO correct puzzle implementations
-	KILO(2, new MegaminxPuzzle(), new TwoBldCube(), CORNER),
-	MEGA(2, new puzzle.CubePuzzle(2), new TwoBldCube(), CORNER, CENTER, EDGE),
-	MASTERKILO(2, new puzzle.CubePuzzle(2), new TwoBldCube(), CORNER, CENTER, EDGE),
-	GIGA(2, new puzzle.CubePuzzle(2), new TwoBldCube(), CORNER, CENTER, EDGE);
+	KILO(2, MegaminxPuzzle::new, new TwoBldCube(), CORNER),
+	MEGA(2, () -> new CubePuzzle(2), new TwoBldCube(), CORNER, CENTER, EDGE),
+	MASTERKILO(2, () -> new CubePuzzle(2), new TwoBldCube(), CORNER, CENTER, EDGE),
+	GIGA(2, () -> new CubePuzzle(2), new TwoBldCube(), CORNER, CENTER, EDGE);
 
 	public static DodecahedronPuzzle fromSize(int size) {
 		for (DodecahedronPuzzle puzzle : values()) {
@@ -28,13 +31,13 @@ public enum DodecahedronPuzzle implements TwistyPuzzle { //TODO correct puzzle i
 	private static NotationReader READER_INST = new MegaminxAlgorithmReader();
 
 	private int size;
-	private Puzzle scramblingPuzzle;
+	private Supplier<Puzzle> scramblingPuzzleGen;
 	private BldPuzzle analyzingPuzzle;
 	private PieceType[] types;
 
-	DodecahedronPuzzle(int size, Puzzle scramblingPuzzle, BldPuzzle analyzingPuzzle, PieceType... types) {
+	DodecahedronPuzzle(int size, Supplier<Puzzle> scramblingPuzzleGen, BldPuzzle analyzingPuzzle, PieceType... types) {
 		this.size = size;
-		this.scramblingPuzzle = scramblingPuzzle;
+		this.scramblingPuzzleGen = scramblingPuzzleGen;
 		this.analyzingPuzzle = analyzingPuzzle;
 		this.types = types;
 	}
@@ -46,7 +49,12 @@ public enum DodecahedronPuzzle implements TwistyPuzzle { //TODO correct puzzle i
 
 	@Override
 	public Puzzle getScramblingPuzzle() {
-		return this.scramblingPuzzle;
+		return this.scramblingPuzzleGen.get();
+	}
+
+	@Override
+	public Supplier<Puzzle> generateScramblingPuzzle() {
+		return this.scramblingPuzzleGen;
 	}
 
 	@Override

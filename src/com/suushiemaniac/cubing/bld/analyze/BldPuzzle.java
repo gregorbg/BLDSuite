@@ -158,7 +158,11 @@ public abstract class BldPuzzle implements Cloneable {
 	}
 
 	public void resolve() {
-		this.parseScramble(this.getScramble());
+		Algorithm current = this.getScramble();
+
+		if (current != null) {
+			this.parseScramble(current);
+		}
 	}
 
 	protected Map<PieceType, List<Integer>> emptyCycles() {

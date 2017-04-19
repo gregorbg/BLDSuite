@@ -4,10 +4,14 @@ import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.analyze.BldPuzzle;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 
+import java.util.function.Supplier;
+
 public interface TwistyPuzzle {
 	int getSize();
 
 	Puzzle getScramblingPuzzle();
+
+	Supplier<Puzzle> generateScramblingPuzzle();
 
 	BldPuzzle getAnalyzingPuzzle();
 
