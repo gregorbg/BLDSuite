@@ -8,6 +8,7 @@ import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition;
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
 import com.suushiemaniac.cubing.bld.filter.thread.ScrambleConsumer;
 import com.suushiemaniac.cubing.bld.filter.thread.ScrambleProducer;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.LetterPairImage;
 import com.suushiemaniac.cubing.bld.model.source.AlgSource;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
@@ -59,6 +60,7 @@ public class BldScramble {
 	protected Map<PieceType, IntCondition> misOriented;
 	
 	protected Map<PieceType, String> memoRegExp;
+	protected Map<PieceType, String> letterPairRegExp;
 	protected Map<PieceType, String> predicateRegExp;
 
 	public BldScramble(BldPuzzle analyzingPuzzle, Supplier<Puzzle> scramblingSupplier) {
@@ -79,6 +81,7 @@ public class BldScramble {
 		this.misOriented = new HashMap<>();
 
 		this.memoRegExp = new HashMap<>();
+		this.letterPairRegExp = new HashMap<>();
 		this.predicateRegExp = new HashMap<>();
 	}
 
@@ -285,11 +288,24 @@ public class BldScramble {
 		this.memoRegExp.put(type, regex);
 	}
 
-	public String getPredicateRegex(PieceType type) {
+	protected String getLetterPairRegex(PieceType type) {
+		return this.letterPairRegExp.getOrDefault(type, REGEX_UNIV);
+	}
+
+	public void setLetterPairRegex(PieceType type, List<String> pairs) {
+		String letters = String.join("", this.analyzingPuzzle.getLetteringScheme(type));
+		String anyLP = "[" + Pattern.quote(letters) + "]{2}";
+		String kleeneLP = "(" + anyLP + ")*";
+
+		String desired = kleeneLP + String.join(kleeneLP, pairs) + kleeneLP;
+		this.letterPairRegExp.put(type, desired);
+	}
+
+	protected String getPredicateRegex(PieceType type) {
 		return this.predicateRegExp.getOrDefault(type, REGEX_UNIV);
 	}
 
-	public void setPredicateRegExp(PieceType type, AlgSource algSource, Predicate<Algorithm> filter) {
+	public void setPredicateRegex(PieceType type, AlgSource algSource, Predicate<Algorithm> filter) {
 		SortedSet<String> matches = new TreeSet<>();
 		String[] possPairs = BruteForceUtil.genBlockString(SpeffzUtil.FULL_SPEFFZ, 2, false);
 
@@ -389,6 +405,7 @@ public class BldScramble {
 				&& this.getPreSolved(checkType).evaluate(inCube.getPreSolvedCount(checkType))
 				&& this.getMisOriented(checkType).evaluate(inCube.getMisOrientedCount(checkType))
 				&& inCube.getSolutionRaw(checkType).matches(this.getMemoRegex(checkType))
+				&& inCube.getSolutionRaw(checkType).matches(this.getLetterPairRegex(checkType))
 				&& inCube.getSolutionRaw(checkType).matches(this.getPredicateRegex(checkType));
 	}
 
