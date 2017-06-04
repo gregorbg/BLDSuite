@@ -367,7 +367,9 @@ public class BldScramble {
             genThread.start();
         }
 
-        new Thread(consumerFuture, "Consumer").start();
+        Thread consThread = new Thread(consumerFuture, "Consumer");
+		consThread.setDaemon(true);
+        consThread.start();
 
         try {
 			return consumerFuture.get();
