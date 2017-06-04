@@ -1,12 +1,10 @@
 package com.suushiemaniac.cubing.bld.algsheet;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
-import com.suushiemaniac.cubing.alglib.exception.InvalidNotationException;
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
-import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType;
 import com.suushiemaniac.cubing.bld.exception.InvalidExcelMapSizeError;
-import com.suushiemaniac.cubing.bld.exception.InvalidPieceTypeException;
-import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.util.ExcelUtil;
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 import org.apache.poi.ss.usermodel.Cell;
@@ -14,7 +12,6 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 
-import java.io.File;
 import java.util.*;
 
 public class LegacyGregorBldExcel {

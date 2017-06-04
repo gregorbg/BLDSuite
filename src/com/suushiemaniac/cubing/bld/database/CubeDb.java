@@ -1,59 +1,45 @@
 package com.suushiemaniac.cubing.bld.database;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
+import com.suushiemaniac.cubing.bld.analyze.BldPuzzle;
 import com.suushiemaniac.cubing.bld.analyze.FiveBldCube;
-import com.suushiemaniac.cubing.bld.model.AlgSource;
-import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.LetterPairImage;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
+import com.suushiemaniac.cubing.bld.model.source.DatabaseAlgSource;
+import com.suushiemaniac.cubing.bld.optim.AlgComparator;
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 
-import java.sql.*;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-public class CubeDb implements AlgSource {
-    private Connection conn;
-
-    private FiveBldCube refCube;
+public class CubeDb extends DatabaseAlgSource {
+    private BldPuzzle refCube;
 
     public CubeDb(String connString) throws SQLException {
-        this.conn = DriverManager.getConnection(connString);
-        this.refCube = new FiveBldCube();
+        this(connString, new FiveBldCube());
     }
 
-    public void addAlgorithm(PieceType type, String letterPair, String alg) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme(type));
-
-        boolean duplicate = readAlgorithm(type, speffz).contains(alg);
-
-        if (!duplicate) {
-            PreparedStatement stat = conn.prepareStatement("INSERT INTO Algorithms (`type`, `case`, alg) VALUES (?, ?, ?)");
-            stat.setString(1, type.name().toLowerCase());
-            stat.setString(2, speffz);
-            stat.setString(3, alg);
-            stat.execute();
-        }
-    }
-
-    public void addLpi(String letterPair, String image) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme(null)); //TODO
-
-        boolean duplicate = readLpi(speffz).contains(image);
-
-        if (!duplicate) {
-            PreparedStatement stat = conn.prepareStatement("INSERT INTO Images (`case`, image, property) VALUES (?, ?, ?)");
-            stat.setString(1, speffz);
-            stat.setString(2, image);
-            stat.setString(3, "");
-            stat.execute();
-        }
+    public CubeDb(String connString, BldPuzzle puzzle) throws SQLException {
+        super(DriverManager.getConnection(connString));
+        this.refCube = puzzle;
     }
 
     public Set<String> readAlgorithm(PieceType type, String letterPair) throws SQLException {
         String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme(type));
 
-        PreparedStatement stat = conn.prepareStatement("SELECT DISTINCT alg FROM Algorithms WHERE `type` = ? AND `case` = ?");
-        stat.setString(1, type.name().toLowerCase());
+        String bufferStd = SpeffzUtil.normalize(this.refCube.getBufferTarget(type), this.refCube.getLetteringScheme(type));
+        String bufferPos = SpeffzUtil.speffzToSticker(bufferStd, type);
+
+        PreparedStatement stat = conn.prepareStatement("SELECT DISTINCT alg FROM Algorithms WHERE `type` = ? AND `case` = ? AND buffer = ? ORDER BY score DESC");
+        stat.setString(1, type.mnemonic());
         stat.setString(2, speffz);
+        stat.setString(3, bufferPos);
 
         ResultSet search = stat.executeQuery();
 
@@ -62,17 +48,60 @@ public class CubeDb implements AlgSource {
         return temp;
     }
 
-    public Set<String> readLpi(String letterPair) throws SQLException {
-        //String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme("lpi"));
-
-        PreparedStatement stat = conn.prepareStatement("SELECT DISTINCT image FROM Images WHERE `case` = ?");
+    public Set<String> readLpi(PieceType type, String letterPair) throws SQLException {
+        PreparedStatement stat = conn.prepareStatement("SELECT DISTINCT image FROM Images WHERE `case` = ? AND `language` = ? AND ? IN (token, ?) AND score > ?");
         stat.setString(1, letterPair);
+        stat.setString(2, this.refCube.getLetterPairLanguage().toLowerCase());
+		stat.setString(3, type.mnemonic());
+		stat.setString(4, LetterPairImage.ANY.mnemonic());
+		stat.setInt(5, -1);
 
         ResultSet search = stat.executeQuery();
 
         Set<String> temp = new HashSet<>();
         while (search.next()) temp.add(search.getString("image"));
         return temp;
+    }
+
+    public boolean addAlgorithm(PieceType type, String letterPair, Set<Algorithm> algs) throws SQLException {
+        PreparedStatement stat = conn.prepareStatement("INSERT INTO Algorithms (`type`, `case`, alg, buffer, score, review) VALUES (?, ?, ?, ?, ?, ?)");
+
+        for (Algorithm alg : algs) {
+            String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme(type));
+
+            String bufferStd = SpeffzUtil.normalize(this.refCube.getBufferTarget(type), this.refCube.getLetteringScheme(type));
+            String bufferPos = SpeffzUtil.speffzToSticker(bufferStd, type);
+
+            stat.setString(1, type.mnemonic());
+            stat.setString(2, speffz);
+            stat.setString(3, alg.toFormatString());
+            stat.setString(4, bufferPos);
+            stat.setFloat(5, AlgComparator.scoreAlg(alg));
+            stat.setInt(6, 0);
+
+            stat.execute();
+        }
+
+        return true; // TODO
+    }
+
+    public boolean addLpi(PieceType type, String letterPair, Set<Algorithm> images) throws SQLException {
+    	if (type == LetterPairImage.ANY) {
+    		return false;
+		}
+
+        PreparedStatement stat = conn.prepareStatement("INSERT INTO Images (`case`, image, token, `language`) VALUES (?, ?, ?, ?)");
+
+        for (Algorithm image : images) {
+			stat.setString(1, letterPair);
+			stat.setString(2, image.toFormatString());
+			stat.setString(3, type.mnemonic());
+			stat.setString(4, this.refCube.getLetterPairLanguage().toLowerCase());
+
+			stat.execute();
+        }
+
+        return true; // TODO
     }
 
     public Map<String, Set<String>> getAllLpiWords() throws SQLException {
@@ -82,9 +111,7 @@ public class CubeDb implements AlgSource {
         while (res.next()) {
             String lpKey = res.getString("case");
 
-            Set<String> otherLps = words.get(lpKey);
-            if (otherLps == null) otherLps = new HashSet<>();
-
+            Set<String> otherLps = words.getOrDefault(lpKey, new HashSet<>());
             otherLps.add(res.getString("image"));
 
             words.put(lpKey, otherLps);
@@ -95,7 +122,7 @@ public class CubeDb implements AlgSource {
 
     public Map<String, Set<String>> getAllAlgorithms(PieceType type) throws SQLException {
         PreparedStatement stat = this.conn.prepareStatement("SELECT * FROM Algorithms WHERE `type` = ?");
-        stat.setString(1, type.name().toLowerCase());
+        stat.setString(1, type.mnemonic());
 
         ResultSet res = stat.executeQuery();
         Map<String, Set<String>> words = new HashMap<>();
@@ -103,9 +130,7 @@ public class CubeDb implements AlgSource {
         while (res.next()) {
             String lpKey = res.getString("case");
 
-            Set<String> otherLps = words.get(lpKey);
-            if (otherLps == null) otherLps = new HashSet<>();
-
+            Set<String> otherLps = words.getOrDefault(lpKey, new HashSet<>());
             otherLps.add(res.getString("alg"));
 
             words.put(lpKey, otherLps);
@@ -114,11 +139,50 @@ public class CubeDb implements AlgSource {
         return words;
     }
 
-    public void resetScore(String lpi) throws SQLException {
-        PreparedStatement stat = this.conn.prepareStatement("UPDATE Images SET score = 0 WHERE image = ?");
-        stat.setString(1, lpi);
+    protected boolean updateAlg(PieceType type, Algorithm oldAlg, Algorithm newAlg) throws SQLException {
+        return false; // TODO
+    }
 
-        stat.execute();
+    protected boolean updateLpi(Algorithm oldImage, Algorithm newImage) throws SQLException {
+        return false; // TODO
+    }
+
+    protected boolean removeAlgorithm(PieceType type, Algorithm alg) throws SQLException {
+        PreparedStatement stat = conn.prepareStatement("DELETE FROM Algorithms WHERE `type` = ? AND alg = ? AND buffer = ?");
+
+        String bufferStd = SpeffzUtil.normalize(this.refCube.getBufferTarget(type), this.refCube.getLetteringScheme(type));
+        String bufferPos = SpeffzUtil.speffzToSticker(bufferStd, type);
+
+        stat.setString(1, type.mnemonic());
+        stat.setString(2, alg.toFormatString());
+        stat.setString(3, bufferPos);
+
+        return stat.executeUpdate() > 0;
+    }
+
+    protected boolean removeLpi(Algorithm image) throws SQLException {
+        PreparedStatement stat = conn.prepareStatement("DELETE FROM Images WHERE image = ? AND `language` = ?");
+        stat.setString(1, image.toFormatString());
+        stat.setString(2, this.refCube.getLetterPairLanguage().toLowerCase());
+
+        return stat.executeUpdate() > 0;
+    }
+
+    protected boolean removeAlgorithmFor(PieceType type, String letterPair) throws SQLException {
+        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme(type));
+
+        PreparedStatement stat = conn.prepareStatement("DELETE FROM Algorithms WHERE `type` = ? AND `case` = ?");
+        stat.setString(1, type.mnemonic());
+        stat.setString(2, speffz);
+
+        return stat.executeUpdate() > 0;
+    }
+
+    protected boolean removeLpiFor(String letterPair) throws SQLException {
+        PreparedStatement stat = conn.prepareStatement("DELETE FROM Images WHERE `case` = ?");
+        stat.setString(1, letterPair);
+
+        return stat.executeUpdate() > 0;
     }
 
     public void increaseScore(String lpi) throws SQLException {
@@ -128,57 +192,60 @@ public class CubeDb implements AlgSource {
         stat.execute();
     }
 
-    public void removeAlgorithm(PieceType type, String letterPair, String alg) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme(type));
-
-        PreparedStatement stat = conn.prepareStatement("DELETE FROM Algorithms WHERE `type` = ? AND `case` = ? AND alg = ?");
-        stat.setString(1, type.name().toLowerCase());
-        stat.setString(2, speffz);
-        stat.setString(3, alg);
+    public void resetScore(String lpi) throws SQLException {
+        PreparedStatement stat = this.conn.prepareStatement("UPDATE Images SET score = 0 WHERE image = ?");
+        stat.setString(1, lpi);
 
         stat.execute();
     }
 
-    public void removeLpi(String letterPair, String image) throws SQLException {
-        String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme(null)); //TODO
-
-        PreparedStatement stat = conn.prepareStatement("DELETE FROM Images WHERE `case` = ? AND image = ?");
-        stat.setString(1, speffz);
-        stat.setString(2, image);
-
-        stat.execute();
-    }
-
-    public void updateAlgorithm(PieceType pieceType, String letterPair, String oldAlg, String newAlg) throws SQLException {
-        this.removeAlgorithm(pieceType, letterPair, oldAlg);
-        this.addAlgorithm(pieceType, letterPair, newAlg);
-    }
-
-    public void updateLpi(String letterPair, String oldImage, String newImage) throws SQLException {
-        this.removeLpi(letterPair, oldImage);
-        this.addLpi(letterPair, newImage);
-    }
-
-    public void closeConnection() throws SQLException {
-        conn.close();
-    }
-
-    public String getDatabaseConnString() throws SQLException {
-        return this.conn.getMetaData().getURL();
-    }
-
     @Override
-    public Set<Algorithm> getAlg(PieceType type, String letterPair) {
-        return this.getRawAlg(type, letterPair).stream().map(rawAlg -> type.getReader().parse(rawAlg)).collect(Collectors.toSet());
-    }
-
-    @Override
-    public Set<String> getRawAlg(PieceType type, String letterPair) {
+    public Set<String> getRawAlgorithms(PieceType type, String letterPair) {
         try {
-            return this.readAlgorithm(type, letterPair);
+            return type instanceof LetterPairImage ? this.readLpi(type, letterPair) : this.readAlgorithm(type, letterPair);
         } catch (SQLException e) {
             e.printStackTrace();
-            return null;
+            return new HashSet<>();
+        }
+    }
+
+    @Override
+    public boolean addAlgorithms(PieceType type, String letterPair, Set<Algorithm> algorithms) {
+        try {
+            return type instanceof LetterPairImage ? this.addLpi(type, letterPair, algorithms) : this.addAlgorithm(type, letterPair, algorithms);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public boolean updateAlgorithm(PieceType type, Algorithm oldAlg, Algorithm newAlg) {
+        try {
+            return type instanceof LetterPairImage ? this.updateLpi(oldAlg, newAlg) : this.updateAlg(type, oldAlg, newAlg);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public boolean deleteAlgorithm(PieceType type, Algorithm algorithm) {
+        try {
+            return type instanceof LetterPairImage ? this.removeLpi(algorithm) : this.removeAlgorithm(type, algorithm);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public boolean deleteAlgorithms(PieceType type, String letterPair) {
+        try {
+            return type instanceof LetterPairImage ? this.removeLpiFor(letterPair) : this.removeAlgorithmFor(type, letterPair);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 }

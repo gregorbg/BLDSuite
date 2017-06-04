@@ -3,8 +3,9 @@ package com.suushiemaniac.cubing.bld.analyze;
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg;
 import com.suushiemaniac.cubing.alglib.move.Move;
-import com.suushiemaniac.cubing.bld.model.AlgSource;
-import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.LetterPairImage;
+import com.suushiemaniac.cubing.bld.model.source.AlgSource;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.optim.BreakInOptim;
 import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 import com.suushiemaniac.lang.json.JSON;
@@ -28,6 +29,7 @@ public abstract class BldPuzzle implements Cloneable {
 	protected Map<PieceType, Integer[]> lastScrambledState;
 
 	protected Map<PieceType, Integer[][]> cubies;
+	protected String letterPairLanguage;
 
 	protected Map<PieceType, List<Integer>> cycles;
 	protected Map<PieceType, Integer> cycleCount;
@@ -49,6 +51,7 @@ public abstract class BldPuzzle implements Cloneable {
 
 		this.permutations = this.loadPermutations();
 		this.cubies = this.initCubies();
+		this.letterPairLanguage = System.getProperty("user.language");
 
 		this.letterSchemes = this.initSchemes();
 		this.avoidBreakIns = this.allActive();
@@ -113,7 +116,7 @@ public abstract class BldPuzzle implements Cloneable {
 
 				boolean exists = false;
 
-			    for (Algorithm alg : this.algSource.getAlg(type, letterPair)) {
+			    for (Algorithm alg : this.algSource.getAlgorithms(type, letterPair)) {
 			        exists |= filter.test(alg);
 			    }
 
@@ -140,7 +143,7 @@ public abstract class BldPuzzle implements Cloneable {
 		this.parseScramble(alg.inverse());
 		boolean solves = this.getSolutionRaw(type).equalsIgnoreCase(solutionCase.replaceAll("\\s", ""));
 
-		this.parseScramble(currentScramble);
+		this.parseScramble(currentScramble == null ? new SimpleAlg() : currentScramble);
 		return solves;
 	}
 
@@ -392,6 +395,54 @@ public abstract class BldPuzzle implements Cloneable {
 		return false;
 	}
 
+	public String getLetterPairLanguage() {
+		return this.letterPairLanguage;
+	}
+
+	public void setLetterPairLanguage(String letterPairLanguage) {
+		this.letterPairLanguage = letterPairLanguage;
+	}
+
+	public int getBuffer(PieceType type) {
+		if (type instanceof LetterPairImage) {
+			return 0;
+		} else {
+			return this.cubies.get(type)[0][0];
+		}
+	}
+
+	public String getBufferTarget(PieceType type) {
+		if (type instanceof LetterPairImage) {
+			return this.letterPairLanguage;
+		} else {
+			return this.letterSchemes.get(type)[this.getBuffer(type)];
+		}
+	}
+
+	public Integer[] getBufferPiece(PieceType type) {
+		if (type instanceof LetterPairImage) {
+			return new Integer[]{0};
+		}
+
+		Integer[] piece = this.cubies.get(type)[0];
+		return Arrays.copyOf(piece, piece.length);
+	}
+
+	public String[] getBufferPieceTargets(PieceType type) {
+		if (type instanceof LetterPairImage) {
+			return new String[]{this.letterPairLanguage};
+		}
+
+		Integer[] piece = this.getBufferPiece(type);
+		String[] targets = new String[piece.length];
+
+		for (int i = 0; i < piece.length; i++) {
+			targets[i] = this.letterSchemes.get(type)[piece[i]];
+		}
+
+		return targets;
+	}
+
 	public boolean setLetteringScheme(PieceType type, String[] newScheme) {
 		String[] oldScheme = this.letterSchemes.get(type);
 
@@ -406,8 +457,18 @@ public abstract class BldPuzzle implements Cloneable {
 	}
 
 	public String[] getLetteringScheme(PieceType type) {
-		String[] original = this.letterSchemes.get(type);
-		return Arrays.copyOf(original, original.length);
+		if (type instanceof LetterPairImage) {
+			Set<String> alphabet = new LinkedHashSet<>();
+
+			for (PieceType permType : this.getPieceTypes()) {
+			    alphabet.addAll(Arrays.asList(this.getLetteringScheme(permType)));
+			}
+
+			return alphabet.toArray(new String[alphabet.size()]);
+		} else {
+			String[] original = this.letterSchemes.get(type);
+			return Arrays.copyOf(original, original.length);
+		}
 	}
 
 	public MisOrientMethod getMisOrientMethod() {
@@ -497,42 +558,51 @@ public abstract class BldPuzzle implements Cloneable {
 				}
 			}
 
-			int orientations = type.getTargetsPerPiece();
-
-			for (int i = 1; i < orientations; i++) {
-				if (this.getMisOrientedCount(type, i) > 0) {
-					pairs.append(pairs.toString().endsWith(" ") ? "" : " ");
-
-					switch (this.getMisOrientMethod()) {
-						case SOLVE_DIRECT:
-							pairs.append("Orient ").append(i).append(": ");
-							pairs.append(String.join(" ", this.getMisOrientedPieceNames(type, i)));
-							break;
-
-						case SINGLE_TARGET:
-							List<Integer> misOrients = this.getMisOrientedPieces(type, i);
-							String[] lettering = this.getLetteringScheme(type);
-							Integer[][] cubies = this.cubies.get(type);
-
-							for (Integer piece : misOrients) {
-								int outer = ArrayUtil.deepOuterIndex(cubies, piece);
-								int inner = ArrayUtil.deepInnerIndex(cubies, piece);
-
-								pairs.append(lettering[piece]);
-								pairs.append(lettering[cubies[outer][(inner + i) % orientations]]);
-								pairs.append(" ");
-							}
-
-							break;
-
-						default:
-							pairs.append("This should not happen. Please contact the developer ;)");
-							break;
-					}
-				}
-			}
+			pairs.append(pairs.toString().endsWith(" ") ? "" : " ");
+			pairs.append(this.getRotaionSolutions(type));
 		} else {
 			return "Solved";
+		}
+
+		return pairs.toString().trim();
+	}
+
+	protected String getRotaionSolutions(PieceType type) {
+		StringBuilder pairs = new StringBuilder();
+
+		int orientations = type.getTargetsPerPiece();
+
+		for (int i = 1; i < orientations; i++) {
+			if (this.getMisOrientedCount(type, i) > 0) {
+				pairs.append(pairs.toString().endsWith(" ") ? "" : " ");
+
+				switch (this.getMisOrientMethod()) {
+					case SOLVE_DIRECT:
+						pairs.append("Orient ").append(i).append(": ");
+						pairs.append(String.join(" ", this.getMisOrientedPieceNames(type, i)));
+						break;
+
+					case SINGLE_TARGET:
+						List<Integer> misOrients = this.getMisOrientedPieces(type, i);
+						String[] lettering = this.getLetteringScheme(type);
+						Integer[][] cubies = this.cubies.get(type);
+
+						for (Integer piece : misOrients) {
+							int outer = ArrayUtil.deepOuterIndex(cubies, piece);
+							int inner = ArrayUtil.deepInnerIndex(cubies, piece);
+
+							pairs.append(lettering[piece]);
+							pairs.append(lettering[cubies[outer][(inner + i) % orientations]]);
+							pairs.append(" ");
+						}
+
+						break;
+
+					default:
+						pairs.append("This should not happen. Please contact the developer ;)");
+						break;
+				}
+			}
 		}
 
 		return pairs.toString().trim();
@@ -552,6 +622,122 @@ public abstract class BldPuzzle implements Cloneable {
 
 	public String getSolutionPairs() {
 		return this.getSolutionPairs(false);
+	}
+
+	public String getSolutionAlgorithms(PieceType type) {
+		if (this.algSource == null || !this.algSource.isReadable()) {
+			return "";
+		}
+
+		StringBuilder pairs = new StringBuilder();
+
+		List<Integer> currentCycles = this.cycles.get(type);
+
+		if (currentCycles.size() > 0 || this.getMisOrientedCount(type) > 0) {
+			for (int i = 0; i < currentCycles.size(); i+= 2) {
+				String pair = this.letterSchemes.get(type)[currentCycles.get(i)] + this.letterSchemes.get(type)[currentCycles.get(i + 1)];
+				pairs.append(this.algSource.getAlgorithms(type, pair).iterator().next().toFormatString());
+				pairs.append("\n");
+			}
+
+			pairs.append(pairs.toString().endsWith(" ") ? "" : " ");
+			pairs.append(this.getRotaionSolutions(type));
+		} else {
+			return "Solved";
+		}
+
+		return pairs.toString().trim();
+	}
+
+	public String getSolutionAlgorithms(boolean withRotation) {
+		List<String> solutionParts = new ArrayList<>();
+
+		if (withRotation) {
+			solutionParts.add("Rotations: " + (this.scrambleOrientationPremoves.algLength() > 0 ? this.scrambleOrientationPremoves.toFormatString() : "/"));
+		}
+
+		solutionParts.addAll(this.getPieceTypes().stream().map(type -> type.humanName() + ": " + getSolutionAlgorithms(type)).collect(Collectors.toList()));
+
+		return String.join("\n", solutionParts);
+	}
+
+	public String getSolutionAlgorithms() {
+		return this.getSolutionAlgorithms(false);
+	}
+
+	public String getSolutionRawAlgorithms(PieceType type) {
+		if (this.algSource == null || !this.algSource.isReadable()) {
+			return "";
+		}
+
+		StringBuilder pairs = new StringBuilder();
+
+		List<Integer> currentCycles = this.cycles.get(type);
+
+		if (currentCycles.size() > 0 || this.getMisOrientedCount(type) > 0) {
+			for (int i = 0; i < currentCycles.size(); i+= 2) {
+				String pair = this.letterSchemes.get(type)[currentCycles.get(i)] + this.letterSchemes.get(type)[currentCycles.get(i + 1)];
+				pairs.append(this.algSource.getAlgorithms(type, pair).iterator().next().toFormatString());
+				pairs.append("\n");
+			}
+
+			pairs.append(pairs.toString().endsWith(" ") ? "" : " ");
+			pairs.append(this.getRotaionSolutions(type));
+		} else {
+			return "Solved";
+		}
+
+		return pairs.toString().trim();
+	}
+
+	public String getSolutionRawAlgorithms(boolean withRotation) {
+		List<String> solutionParts = new ArrayList<>();
+
+		if (withRotation) {
+			solutionParts.add("Rotations: " + (this.scrambleOrientationPremoves.algLength() > 0 ? this.scrambleOrientationPremoves.toFormatString() : "/"));
+		}
+
+		solutionParts.addAll(this.getPieceTypes().stream().map(type -> type.humanName() + ": " + getSolutionAlgorithms(type)).collect(Collectors.toList()));
+
+		return String.join("\n", solutionParts);
+	}
+
+	public String getSolutionRawAlgorithms() {
+		return this.getSolutionAlgorithms(false);
+	}
+
+	public String getLetterPairCorrespondant(PieceType type, String letter) {
+		String[] letterScheme = this.letterSchemes.get(type);
+
+		if (letterScheme != null) {
+			int index = ArrayUtil.index(letterScheme, letter);
+
+			if (index > -1) {
+				return this.getLetterPairCorrespondant(type, index);
+			}
+		}
+
+		return "";
+	}
+
+	public String getLetterPairCorrespondant(PieceType type, int piece) {
+		Integer[][] cubies = this.cubies.get(type);
+		String[] lettering = this.getLetteringScheme(type);
+
+		if (cubies != null) {
+			int outer = ArrayUtil.deepOuterIndex(cubies, piece);
+
+			if (outer > -1) {
+				Integer[] pieceModel = cubies[outer];
+
+				List<Integer> pieces = new ArrayList<>(Arrays.asList(pieceModel));
+				pieces.remove((Integer) piece);
+
+				return String.join("", pieces.stream().map(pInt -> lettering[pInt]).collect(Collectors.toList()));
+			}
+		}
+
+		return "";
 	}
 
 	public Algorithm getRotations() {
@@ -806,6 +992,32 @@ public abstract class BldPuzzle implements Cloneable {
 		return bufferTwisted;
 	}
 
+	public Integer[] getLastPieceConfiguration(PieceType type) {
+		Integer[] conf = this.lastScrambledState.get(type);
+		return Arrays.copyOf(conf, conf.length);
+	}
+
+	public int getOrientationSide(PieceType type, String letter) {
+		String[] letterScheme = this.letterSchemes.get(type);
+
+		if (letterScheme != null) {
+			int index = ArrayUtil.index(letterScheme, letter);
+
+			if (index > -1) {
+				return this.getOrientationSide(type, index);
+			}
+		}
+
+		return -1;
+	}
+
+	public int getOrientationSide(PieceType type, int piece) {
+		int targets = type.getTargetsPerPiece() * type.getNumPieces();
+		int targetsPerSide = targets / this.getOrientationSideCount();
+
+		return piece / targetsPerSide;
+	}
+
 	public List<PieceType> getPieceTypes(boolean withOrientationModel) {
 		List<PieceType> pieceTypes = this.getPermutationPieceTypes();
 
@@ -826,6 +1038,17 @@ public abstract class BldPuzzle implements Cloneable {
 		}
 	}
 
+	public BldPuzzle clone(Algorithm scramble) {
+		try {
+			BldPuzzle clone = (BldPuzzle) super.clone();
+			clone.parseScramble(scramble);
+			return clone;
+		} catch (CloneNotSupportedException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
 	public List<PieceType> getPieceTypes() {
 		return this.getPieceTypes(false);
 	}
@@ -840,6 +1063,7 @@ public abstract class BldPuzzle implements Cloneable {
 
 	protected abstract List<PieceType> getPermutationPieceTypes();
 	protected abstract List<PieceType> getOrientationPieceTypes();
+	protected abstract int getOrientationSideCount();
 	protected abstract Map<PieceType, Integer[][]> getDefaultCubies();
 
 	protected abstract void solvePieces(PieceType type);

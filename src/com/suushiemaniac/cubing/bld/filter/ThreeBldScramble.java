@@ -10,8 +10,8 @@ import java.util.Random;
 import static com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.*;
 import static com.suushiemaniac.cubing.bld.filter.condition.IntCondition.ANY;
 import static com.suushiemaniac.cubing.bld.filter.condition.IntCondition.EXACT;
-import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.CORNER;
-import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.EDGE;
+import static com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.CORNER;
+import static com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.EDGE;
 
 public class ThreeBldScramble extends BldScramble {
     // TODO buffer preSolved

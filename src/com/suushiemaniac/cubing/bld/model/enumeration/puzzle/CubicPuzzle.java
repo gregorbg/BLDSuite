@@ -1,8 +1,9 @@
-package com.suushiemaniac.cubing.bld.model.enumeration;
+package com.suushiemaniac.cubing.bld.model.enumeration.puzzle;
 
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.analyze.*;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.*;
 
@@ -11,7 +12,7 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
+import static com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.*;
 
 public enum CubicPuzzle implements TwistyPuzzle {
 	TWO(2, TwoByTwoCubePuzzle::new, new TwoBldCube(), CORNER),

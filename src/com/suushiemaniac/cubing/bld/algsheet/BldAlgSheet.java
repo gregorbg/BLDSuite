@@ -1,8 +1,8 @@
 package com.suushiemaniac.cubing.bld.algsheet;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
-import com.suushiemaniac.cubing.bld.model.AlgSource;
-import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
+import com.suushiemaniac.cubing.bld.model.source.FileAlgSource;
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -13,15 +13,14 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
-public abstract class BldAlgSheet implements AlgSource {
+public abstract class BldAlgSheet extends FileAlgSource {
     protected Workbook workbook;
-    private File excelFile;
     private Map<PieceType, Map<String, Set<String>>> cache;
 
     public BldAlgSheet(File excelFile) {
-        this.excelFile = excelFile;
+        super(excelFile);
+
         this.cache();
     }
 
@@ -31,7 +30,7 @@ public abstract class BldAlgSheet implements AlgSource {
     }
 
     protected Workbook getWorkbook() {
-        try (FileInputStream fis = new FileInputStream(this.excelFile)) {
+        try (FileInputStream fis = new FileInputStream(this.file)) {
             return new XSSFWorkbook(fis);
         } catch (IOException e) {
             e.printStackTrace();
@@ -40,7 +39,7 @@ public abstract class BldAlgSheet implements AlgSource {
     }
 
     protected void writeWorkbook() {
-        try (FileOutputStream fos = new FileOutputStream(this.excelFile)) {
+        try (FileOutputStream fos = new FileOutputStream(this.file)) {
             this.workbook.write(fos);
         } catch (IOException e) {
             e.printStackTrace();
@@ -95,12 +94,7 @@ public abstract class BldAlgSheet implements AlgSource {
     protected abstract PieceType[] getSupportedPieceTypes();
 
     @Override
-    public final Set<Algorithm> getAlg(PieceType type, String letterPair) {
-        return this.getRawAlg(type, letterPair).stream().map(s -> type.getReader().parse(s)).collect(Collectors.toSet());
-    }
-
-    @Override
-    public Set<String> getRawAlg(PieceType type, String letterPair) {
+    public Set<String> getRawAlgorithms(PieceType type, String letterPair) {
         return this.cache.get(type).getOrDefault(letterPair, Collections.emptySet());
     }
 }

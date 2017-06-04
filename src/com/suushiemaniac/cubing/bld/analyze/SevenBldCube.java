@@ -1,13 +1,13 @@
 package com.suushiemaniac.cubing.bld.analyze;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
-import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
+import static com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.*;
 
 public class SevenBldCube extends FiveBldCube {
 	public SevenBldCube() {

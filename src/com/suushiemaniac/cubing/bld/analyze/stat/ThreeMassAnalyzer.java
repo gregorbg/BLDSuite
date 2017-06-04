@@ -12,8 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.CORNER;
-import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.EDGE;
+import static com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.CORNER;
+import static com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.EDGE;
 
 public class ThreeMassAnalyzer extends MassAnalyzer {
 	@Override

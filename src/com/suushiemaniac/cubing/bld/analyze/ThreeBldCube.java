@@ -1,7 +1,7 @@
 package com.suushiemaniac.cubing.bld.analyze;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
-import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.optim.BreakInOptim;
 import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 
@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
+import static com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.*;
 
 public class ThreeBldCube extends BldCube {
 	public ThreeBldCube() {

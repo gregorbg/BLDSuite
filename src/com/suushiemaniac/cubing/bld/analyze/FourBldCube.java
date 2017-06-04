@@ -3,12 +3,12 @@ package com.suushiemaniac.cubing.bld.analyze;
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg;
 import com.suushiemaniac.cubing.alglib.move.Move;
-import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 
 import java.util.*;
 
-import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
+import static com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.*;
 
 public class FourBldCube extends BldCube {
 	public FourBldCube() {

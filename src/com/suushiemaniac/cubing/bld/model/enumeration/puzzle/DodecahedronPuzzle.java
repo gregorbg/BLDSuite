@@ -1,16 +1,17 @@
-package com.suushiemaniac.cubing.bld.model.enumeration;
+package com.suushiemaniac.cubing.bld.model.enumeration.puzzle;
 
 import com.suushiemaniac.cubing.alglib.lang.MegaminxAlgorithmReader;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.analyze.BldPuzzle;
 import com.suushiemaniac.cubing.bld.analyze.TwoBldCube;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.CubePuzzle;
 import puzzle.MegaminxPuzzle;
 
 import java.util.function.Supplier;
 
-import static com.suushiemaniac.cubing.bld.model.enumeration.DodecahedronPieceType.*;
+import static com.suushiemaniac.cubing.bld.model.enumeration.piece.DodecahedronPieceType.*;
 
 public enum DodecahedronPuzzle implements TwistyPuzzle { //TODO correct puzzle implementations
 	KILO(2, MegaminxPuzzle::new, new TwoBldCube(), CORNER),

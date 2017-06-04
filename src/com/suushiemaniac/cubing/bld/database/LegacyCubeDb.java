@@ -3,10 +3,12 @@ package com.suushiemaniac.cubing.bld.database;
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.util.ParseUtils;
 import com.suushiemaniac.cubing.bld.analyze.FiveBldCube;
-import com.suushiemaniac.cubing.bld.model.AlgSource;
-import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
-import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.source.AlgSource;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
+import com.suushiemaniac.cubing.bld.model.source.DatabaseAlgSource;
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
+import javafx.scene.chart.PieChart;
 
 import java.io.File;
 import java.sql.*;
@@ -14,7 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
-public class LegacyCubeDb implements AlgSource {
+public class LegacyCubeDb extends DatabaseAlgSource {
     private Connection conn;
 
     public void setRefCube(FiveBldCube refCube) {
@@ -24,6 +26,8 @@ public class LegacyCubeDb implements AlgSource {
     private FiveBldCube refCube;
 
     public LegacyCubeDb(File dbFile) throws SQLException {
+    	super(null);
+
         boolean isOldH2 = dbFile.getAbsolutePath().endsWith(".h2.db");
         String pathString = dbFile.getAbsolutePath().replace(isOldH2 ? ".h2.db" : ".mv.db", "");
         String connString = "jdbc:h2:file:" + pathString;
@@ -33,17 +37,17 @@ public class LegacyCubeDb implements AlgSource {
 
         this.conn = DriverManager.getConnection(connString);
 
-        try {
-            this.createTables();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+		try {
+			this.createTables();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 
-        this.refCube = new FiveBldCube();
+		this.refCube = new FiveBldCube();
     }
 
     public LegacyCubeDb(String connString) throws SQLException {
-        this.conn = DriverManager.getConnection(connString);
+    	super(DriverManager.getConnection(connString));
 
         try {
             this.createTables();
@@ -241,17 +245,59 @@ public class LegacyCubeDb implements AlgSource {
     }
 
     @Override
-    public Set<Algorithm> getAlg(PieceType type, String letterPair) {
-        return this.getRawAlg(type, letterPair).stream().map(rawAlg -> ParseUtils.guessReaderForAlgString(rawAlg).parse(rawAlg)).collect(Collectors.toSet());
-    }
-
-    @Override
-    public Set<String> getRawAlg(PieceType type, String letterPair) {
+    public Set<String> getRawAlgorithms(PieceType type, String letterPair) {
         try {
             return this.readAlgorithm(letterPair, type);
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
         }
+    }
+
+    @Override
+    public boolean addAlgorithms(PieceType type, String letterPair, Set<Algorithm> algorithms) {
+		try {
+			for (Algorithm alg : algorithms) {
+				this.addAlgorithm(letterPair, alg.toFormatString(), type);
+			}
+
+			return true;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+    }
+
+    @Override
+    public boolean updateAlgorithm(PieceType type, Algorithm oldAlg, Algorithm newAlg) {
+		try {
+			this.updateAlgorithm("", oldAlg.toFormatString(), newAlg.toFormatString(), type); // FIXME
+			return true;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+    @Override
+    public boolean deleteAlgorithm(PieceType type, Algorithm algorithm) {
+		try {
+			this.removeAlgorithm("", algorithm.toFormatString(), type); // FIXME
+			return true;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+    }
+
+    @Override
+    public boolean deleteAlgorithms(PieceType type, String letterPair) {
+		try {
+			this.removeAlgorithm(letterPair, "", type); // FIXME
+			return true;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
     }
 }

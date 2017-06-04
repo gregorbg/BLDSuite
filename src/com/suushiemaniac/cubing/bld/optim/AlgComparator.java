@@ -15,6 +15,10 @@ public class AlgComparator implements Comparator<Algorithm> {
 		return INST;
 	}
 
+	public static float scoreAlg(Algorithm alg) {
+		return INST().score(alg);
+	}
+
 	protected AlgComparator() {}
 
 	@Override

@@ -2,14 +2,14 @@ package com.suushiemaniac.cubing.bld.analyze;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg;
-import com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType;
-import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 
 import java.util.*;
 
-import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
+import static com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.*;
 
 public abstract class BldCube extends BldPuzzle {
 	public enum CornerParityMethod {
@@ -81,7 +81,7 @@ public abstract class BldCube extends BldPuzzle {
 		return schemes;
 	}
 
-	protected Algorithm getRotationsFromOrientation(int orientationModelTop, int orientationModelFront) {
+	public Algorithm getRotationsFromOrientation(int orientationModelTop, int orientationModelFront) {
 		String neededRotations = REORIENTATIONS[orientationModelTop][orientationModelFront];
 		return CENTER.getReader().parse(neededRotations);
 	}
@@ -116,6 +116,11 @@ public abstract class BldCube extends BldPuzzle {
 	public void setCornerParityMethod(CornerParityMethod cornerParityMethod) {
 		this.cornerParityMethod = cornerParityMethod;
 		this.resolve();
+	}
+
+	@Override
+	protected int getOrientationSideCount() {
+		return 6;
 	}
 
 	// TODO MAYBE derive this dynamically in superclass?

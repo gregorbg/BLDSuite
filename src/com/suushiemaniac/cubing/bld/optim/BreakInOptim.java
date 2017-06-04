@@ -3,8 +3,8 @@ package com.suushiemaniac.cubing.bld.optim;
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.bld.analyze.BldPuzzle;
 import com.suushiemaniac.cubing.bld.analyze.FiveBldCube;
-import com.suushiemaniac.cubing.bld.model.AlgSource;
-import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.source.AlgSource;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -57,7 +57,7 @@ public class BreakInOptim {
 		Map<Algorithm, String> targetMap = new HashMap<>();
 
         for (String t : this.refCube.getLetteringScheme(type)) {
-            Set<Algorithm> sourceList = this.source.getAlg(type, target + t);
+            Set<Algorithm> sourceList = this.source.getAlgorithms(type, target + t);
             if (sourceList == null) continue;
 
 			for (Algorithm alg : sourceList) {
@@ -78,7 +78,7 @@ public class BreakInOptim {
 
     public List<Algorithm> optimizeBreakInAlgorithmsAfter(String target, PieceType type) {
 		return this.optimizeBreakInTargetsAfter(target, type).stream()
-				.flatMap(t -> this.source.getAlg(type, target + t).stream())
+				.flatMap(t -> this.source.getAlgorithms(type, target + t).stream())
 				.collect(Collectors.toList());
     }
 }

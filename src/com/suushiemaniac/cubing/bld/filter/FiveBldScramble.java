@@ -6,7 +6,7 @@ import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
 import puzzle.NoInspectionFiveByFiveCubePuzzle;
 
 import static com.suushiemaniac.cubing.bld.filter.condition.IntCondition.ANY;
-import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
+import static com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.*;
 
 public class FiveBldScramble extends BldScramble {
     public FiveBldScramble(IntCondition cornerTargets,

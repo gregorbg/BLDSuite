@@ -6,9 +6,9 @@ import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
 import puzzle.NoInspectionFourByFourCubePuzzle;
 
 import static com.suushiemaniac.cubing.bld.filter.condition.IntCondition.ANY;
-import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.CORNER;
-import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.WING;
-import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.XCENTER;
+import static com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.CORNER;
+import static com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.WING;
+import static com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.XCENTER;
 
 public class FourBldScramble extends BldScramble {
     public FourBldScramble(IntCondition cornerTargets,

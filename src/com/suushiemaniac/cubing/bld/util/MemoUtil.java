@@ -1,6 +1,7 @@
 package com.suushiemaniac.cubing.bld.util;
 
 import com.suushiemaniac.cubing.bld.database.CubeDb;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.LetterPairImage;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -14,7 +15,7 @@ public abstract class MemoUtil {
         for (String pair : pairs.split("\\s+?")) {
             if (pair.length() != 2) continue;
 
-            List<String> words = new ArrayList<>(db.readLpi(pair));
+            List<String> words = new ArrayList<>(db.readLpi(LetterPairImage.ANY, pair));
             words = words.subList(0, Math.min(lpiListSizeLimit, words.size()));
             List<String> oldMemoStrings = new ArrayList<>(treeList);
 

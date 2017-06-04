@@ -5,7 +5,7 @@ import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition;
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
 import puzzle.TwoByTwoCubePuzzle;
 
-import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.CORNER;
+import static com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.CORNER;
 
 public class TwoBldScramble extends BldScramble {
     public TwoBldScramble(IntCondition cornerTargets,

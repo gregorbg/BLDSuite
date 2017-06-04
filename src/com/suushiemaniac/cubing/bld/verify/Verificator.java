@@ -3,8 +3,8 @@ package com.suushiemaniac.cubing.bld.verify;
 import com.suushiemaniac.cubing.alglib.alg.SubGroup;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.alglib.util.ParseUtils;
-import com.suushiemaniac.cubing.bld.model.AlgSource;
-import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.source.AlgSource;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
 
 import java.util.*;
@@ -28,7 +28,7 @@ public class Verificator {
 
     public Map<String, Boolean> verifySingleCase(PieceType type, String letterPair) {
         Map<String, Boolean> solutionMap = new HashMap<>();
-        Set<String> algStringList = this.source.getRawAlg(type, letterPair);
+        Set<String> algStringList = this.source.getRawAlgorithms(type, letterPair);
         if (algStringList != null)
             for (String alg : algStringList)
                 solutionMap.put(alg, ParseUtils.isParseable(alg, this.reader));
@@ -40,7 +40,7 @@ public class Verificator {
         Map<String, List<String>> sameGroupMap = new HashMap<>();
         for (String possPair : fullLetterPairs) {
             sameGroupMap.put(possPair, new ArrayList<>());
-            Set<String> algStringList = this.source.getRawAlg(type, possPair);
+            Set<String> algStringList = this.source.getRawAlgorithms(type, possPair);
             if (algStringList != null)
                 for (String alg : algStringList)
                     if (ParseUtils.isParseable(alg, this.reader) && this.reader.parse(alg).getSubGroup().sameOrLargerSubGroup(group))
@@ -53,7 +53,7 @@ public class Verificator {
         Map<String, List<String>> unparseableMap = new HashMap<>();
         for (String possPair : fullLetterPairs) {
             unparseableMap.put(possPair, new ArrayList<>());
-            Set<String> algStringList = this.source.getRawAlg(type, possPair);
+            Set<String> algStringList = this.source.getRawAlgorithms(type, possPair);
             if (algStringList != null)
                 for (String alg : algStringList)
                     if (!ParseUtils.isParseable(alg, this.reader))

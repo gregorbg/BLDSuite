@@ -1,12 +1,14 @@
 package com.suushiemaniac.cubing.bld.util;
 
+import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.bld.database.CubeDb;
 import com.suushiemaniac.cubing.bld.database.LegacyCubeDb;
-import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 
 import java.sql.SQLException;
 
-import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.*;
+import static com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.*;
 
 public abstract class MigrationUtil {
     public static void migrateContents(LegacyCubeDb legacyDb, CubeDb db) throws SQLException {
@@ -16,7 +18,8 @@ public abstract class MigrationUtil {
         for (String lpi : allLpis) {
             for (PieceType pieceType : allPieceTypes) {
                 try {
-                    for (String alg : legacyDb.readAlgorithm(lpi, pieceType)) {
+                    for (String algString : legacyDb.readAlgorithm(lpi, pieceType)) {
+                        Algorithm alg = CubicPieceType.CENTER.getReader().parse(algString);
                         db.addAlgorithm(pieceType, lpi, alg);
                     }
                 } catch (NullPointerException e) {

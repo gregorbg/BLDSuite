@@ -1,4 +1,4 @@
-package com.suushiemaniac.cubing.bld.model.enumeration;
+package com.suushiemaniac.cubing.bld.model.enumeration.piece;
 
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
@@ -7,14 +7,14 @@ public enum CubicPieceType implements PieceType {
     CENTER(1, 6, 0, "Center", "Ce"),
     CORNER(3, 8, 378, "Corner", "C"),
     EDGE(2, 12, 440, "Edge", "E"),
-    XCENTER(1, 24, 460, "X-Center", "X"),
-    WING(1, 24, 506, "Wing", "W"),
-    TCENTER(1, 24, 460, "T-Center", "T"),
-    INNERXCENTER(1, 24, 460, "Inner X-Center", "iX"),
-    INNERWING(1, 24, 506, "Inner Wing", "iW"),
-    LEFTOBLIQUE(1, 24, 460, "Left Oblique", "LO"),
-    RIGHTOBLIQUE(1, 24, 460, "Right Oblique", "RO"),
-    INNERTCENTER(1, 24, 460, "Inner T-Center", "iT");
+    XCENTER(1, 24, 460, "X-Center", "XCe"),
+    WING(1, 24, 506, "Wing", "Wi"),
+    TCENTER(1, 24, 460, "T-Center", "TCe"),
+    INNERXCENTER(1, 24, 460, "Inner X-Center", "iXCe"),
+    INNERWING(1, 24, 506, "Inner Wing", "iWi"),
+    LEFTOBLIQUE(1, 24, 460, "Left Oblique", "LOb"),
+    RIGHTOBLIQUE(1, 24, 460, "Right Oblique", "ROb"),
+    INNERTCENTER(1, 24, 460, "Inner T-Center", "iTCe");
 
     public static final NotationReader READER = new CubicAlgorithmReader();
 

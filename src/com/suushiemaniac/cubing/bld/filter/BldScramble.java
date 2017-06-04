@@ -8,8 +8,8 @@ import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition;
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
 import com.suushiemaniac.cubing.bld.filter.thread.ScrambleConsumer;
 import com.suushiemaniac.cubing.bld.filter.thread.ScrambleProducer;
-import com.suushiemaniac.cubing.bld.model.AlgSource;
-import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.source.AlgSource;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
@@ -20,8 +20,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -295,7 +294,7 @@ public class BldScramble {
 		String[] possPairs = BruteForceUtil.genBlockString(SpeffzUtil.FULL_SPEFFZ, 2, false);
 
 		for (String pair : possPairs) {
-			matches.addAll(algSource.getAlg(type, pair).stream().filter(filter).map(alg -> pair).collect(Collectors.toList()));
+			matches.addAll(algSource.getAlgorithms(type, pair).stream().filter(filter).map(alg -> pair).collect(Collectors.toList()));
 		}
 
 		if (matches.size() > 0) {
@@ -331,12 +330,16 @@ public class BldScramble {
         return scrambles;
     }
 
-    public List<Algorithm> findScramblesThreadModel(int numScrambles) {
+    public List<Algorithm> findScramblesThreadModel(int numScrambles, IntConsumer feedbackFunction) {
 		int numThreads = Runtime.getRuntime().availableProcessors() + 1;
         BlockingQueue<Algorithm> scrambleQueue = new ArrayBlockingQueue<>(numScrambles * numThreads * numThreads);
         
         ScrambleProducer producer = new ScrambleProducer(this.generateScramblingPuzzle(), scrambleQueue);
         ScrambleConsumer consumer = new ScrambleConsumer(this.generateAnalyzingPuzzle(), this::matchingConditions, numScrambles, scrambleQueue);
+
+		if (feedbackFunction != null) {
+			consumer.registerFeedbackFunction(feedbackFunction);
+		}
 
         // TODO MAYBE have multiple threads to check conformity?
 		FutureTask<List<Algorithm>> consumerFuture = new FutureTask<>(consumer);
@@ -356,6 +359,10 @@ public class BldScramble {
 			e.printStackTrace();
 			return consumer.getAlgList();
 		}
+	}
+
+	public List<Algorithm> findScramblesThreadModel(int numScrambles) {
+		return this.findScramblesThreadModel(numScrambles, null);
 	}
 
     protected <T extends BldPuzzle> boolean matchingConditions(T inCube) {

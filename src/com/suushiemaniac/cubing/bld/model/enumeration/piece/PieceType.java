@@ -1,4 +1,4 @@
-package com.suushiemaniac.cubing.bld.model.enumeration;
+package com.suushiemaniac.cubing.bld.model.enumeration.piece;
 
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 

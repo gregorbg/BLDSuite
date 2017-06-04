@@ -2,14 +2,14 @@ package com.suushiemaniac.cubing.bld.analyze;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg;
-import com.suushiemaniac.cubing.bld.model.enumeration.PieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.optim.BreakInOptim;
 import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.suushiemaniac.cubing.bld.model.enumeration.CubicPieceType.CORNER;
+import static com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.CORNER;
 
 public class TwoBldCube extends BldCube {
 	public TwoBldCube() {
