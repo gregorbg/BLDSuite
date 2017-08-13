@@ -12,4 +12,16 @@ public class StringUtil {
             if (!toCheck.contains(aContainOblig)) return false;
         return true;
     }
+
+    public static String guessRegExpRange(String row) {
+        char init = row.charAt(0);
+
+        for (int i = 0; i < row.length(); i++) {
+            if (((char) (init + i)) != row.charAt(i)) {
+                return row;
+            }
+        }
+
+        return "[" + row.charAt(0) + "-" + row.charAt(row.length() - 1) + "]";
+    }
 }

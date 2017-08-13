@@ -13,6 +13,7 @@ import com.suushiemaniac.cubing.bld.model.source.AlgSource;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
+import com.suushiemaniac.cubing.bld.util.StringUtil;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.*;
 
@@ -62,6 +63,7 @@ public class BldScramble {
 	protected Map<PieceType, String> memoRegExp;
 	protected Map<PieceType, String> letterPairRegExp;
 	protected Map<PieceType, String> predicateRegExp;
+	protected Map<PieceType, Predicate<BldPuzzle>> statisticalPredicates;
 
 	public BldScramble(BldPuzzle analyzingPuzzle, Supplier<Puzzle> scramblingSupplier) {
 		this.analyzingPuzzle = analyzingPuzzle;
@@ -83,6 +85,7 @@ public class BldScramble {
 		this.memoRegExp = new HashMap<>();
 		this.letterPairRegExp = new HashMap<>();
 		this.predicateRegExp = new HashMap<>();
+		this.statisticalPredicates = new HashMap<>();
 	}
 
 	protected BldPuzzle getAnalyzingPuzzle() {
@@ -176,7 +179,7 @@ public class BldScramble {
 	}
 
 	protected BooleanCondition isBufferSolved(PieceType type) {
-		return this.solvedBuffers.getOrDefault(type, BooleanCondition.MAYBE());
+		return this.solvedBuffers.getOrDefault(type, MAYBE());
 	}
 
 	private void writeBufferSolved(PieceType type, BooleanCondition bufferSolved) {
@@ -292,13 +295,39 @@ public class BldScramble {
 		return this.letterPairRegExp.getOrDefault(type, REGEX_UNIV);
 	}
 
-	public void setLetterPairRegex(PieceType type, List<String> pairs) {
+	public void setLetterPairRegex(PieceType type, List<String> pairs, boolean conjunctive, boolean allowInverse) {
 		String letters = String.join("", this.analyzingPuzzle.getLetteringScheme(type));
-		String anyLP = "[" + Pattern.quote(letters) + "]{2}";
+		String row = StringUtil.guessRegExpRange(letters);
+
+		if (row.equals(letters)) {
+			row = "[" + Pattern.quote(row) + "]";
+		}
+
+		String anyLP = row + "{2}";
 		String kleeneLP = "(" + anyLP + ")*";
 
-		String desired = kleeneLP + String.join(kleeneLP, pairs) + kleeneLP;
+		if (allowInverse) {
+			pairs = pairs.stream().map(pair -> "([" + pair + "]{2})").collect(Collectors.toList());
+		}
+
+		String glue = conjunctive ? kleeneLP : "|";
+		List<String> pieces = conjunctive ? Collections.nCopies(pairs.size(), "(" + String.join("|", pairs) + ")") : pairs;
+		String joined = String.join(glue, pieces);
+
+		if (!conjunctive) {
+			joined = "(" + joined + ")";
+		}
+
+		String desired = kleeneLP + joined + kleeneLP;
 		this.letterPairRegExp.put(type, desired);
+	}
+
+	public void setLetterPairRegex(PieceType type, List<String> pairs, boolean conjunctive) {
+		this.setLetterPairRegex(type, pairs, conjunctive, false);
+	}
+
+	public void setLetterPairRegex(PieceType type, List<String> pairs) {
+		this.setLetterPairRegex(type, pairs, true);
 	}
 
 	protected String getPredicateRegex(PieceType type) {
@@ -316,6 +345,14 @@ public class BldScramble {
 		if (matches.size() > 0) {
 			this.predicateRegExp.put(type, "(" + String.join("|", matches) + ")*" + (this.parities.get(type).getPositive() ? "[A-Z]?" : ""));
 		}
+	}
+
+	protected Predicate<BldPuzzle> getStatisticalPredicate(PieceType type) {
+		return this.statisticalPredicates.getOrDefault(type, (pzl -> true));
+	}
+
+	public void setStatisticalPredicate(PieceType type, Predicate<BldPuzzle> predicate) {
+		this.statisticalPredicates.put(type, predicate);
 	}
 
     public Algorithm findScrambleOnThread() {
@@ -350,22 +387,22 @@ public class BldScramble {
 		int numThreads = Runtime.getRuntime().availableProcessors() + 1;
         BlockingQueue<Algorithm> scrambleQueue = new ArrayBlockingQueue<>(numScrambles * numThreads * numThreads);
         
-        ScrambleProducer producer = new ScrambleProducer(this.generateScramblingPuzzle(), scrambleQueue);
-        ScrambleConsumer consumer = new ScrambleConsumer(this.generateAnalyzingPuzzle(), this::matchingConditions, numScrambles, scrambleQueue);
+		for (int i = 0; i < numThreads; i++) {
+			ScrambleProducer producer = new ScrambleProducer(this.generateScramblingPuzzle(), scrambleQueue);
+			Thread genThread = new Thread(producer, "Producer " + (i + 1));
+        
+            genThread.setDaemon(true);
+            genThread.start();
+        }
+
+		ScrambleConsumer consumer = new ScrambleConsumer(this.generateAnalyzingPuzzle(), this::matchingConditions, numScrambles, scrambleQueue);
 
 		if (feedbackFunction != null) {
 			consumer.registerFeedbackFunction(feedbackFunction);
 		}
 
-        // TODO MAYBE have multiple threads to check conformity?
+		// TODO MAYBE have multiple threads to check conformity?
 		FutureTask<List<Algorithm>> consumerFuture = new FutureTask<>(consumer);
-
-		for (int i = 0; i < numThreads; i++) {
-            Thread genThread = new Thread(producer, "Producer " + (i + 1));
-        
-            genThread.setDaemon(true);
-            genThread.start();
-        }
 
         Thread consThread = new Thread(consumerFuture, "Consumer");
 		consThread.setDaemon(true);
@@ -383,7 +420,7 @@ public class BldScramble {
 		return this.findScramblesThreadModel(numScrambles, null);
 	}
 
-    protected <T extends BldPuzzle> boolean matchingConditions(T inCube) {
+    protected boolean matchingConditions(BldPuzzle inCube) {
 		for (PieceType checkType : this.getAnalyzingPuzzle().getPieceTypes()) {
 			if (!this.matchingConditions(inCube, checkType)) {
 				if (SHOW_DISCARDED) {
@@ -397,7 +434,7 @@ public class BldScramble {
 		return true;
 	}
 	
-	protected <T extends BldPuzzle> boolean matchingConditions(T inCube, PieceType checkType) {
+	protected boolean matchingConditions(BldPuzzle inCube, PieceType checkType) {
 		boolean instance = this.getAnalyzingPuzzle().getClass().isInstance(inCube);
 		return instance
 				&& this.hasParity(checkType).evaluatePositive(inCube.hasParity(checkType))
@@ -408,7 +445,8 @@ public class BldScramble {
 				&& this.getMisOriented(checkType).evaluate(inCube.getMisOrientedCount(checkType))
 				&& inCube.getSolutionRaw(checkType).matches(this.getMemoRegex(checkType))
 				&& inCube.getSolutionRaw(checkType).matches(this.getLetterPairRegex(checkType))
-				&& inCube.getSolutionRaw(checkType).matches(this.getPredicateRegex(checkType));
+				&& inCube.getSolutionRaw(checkType).matches(this.getPredicateRegex(checkType))
+				&& this.getStatisticalPredicate(checkType).test(inCube);
 	}
 
 	@Override
@@ -447,6 +485,10 @@ public class BldScramble {
     public boolean setBuffer(PieceType type, int newBuffer) {
         return this.getAnalyzingPuzzle().setBuffer(type, newBuffer);
     }
+
+    public boolean setLetteringScheme(PieceType type, String[] newScheme) {
+		return this.getAnalyzingPuzzle().setLetteringScheme(type, newScheme);
+	}
 
     protected static int getNumInStatArray(int[] stat, int pos, int offset, int scale) {
         int mem = 0;
