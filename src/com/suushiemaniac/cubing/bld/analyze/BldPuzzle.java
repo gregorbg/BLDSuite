@@ -137,14 +137,28 @@ public abstract class BldPuzzle implements Cloneable {
 		return matches;
 	}
 
-	public boolean solves(PieceType type, Algorithm alg, String solutionCase) {
+	public boolean solves(PieceType type, Algorithm alg, String solutionCase, boolean pure) {
 		Algorithm currentScramble = this.getScramble();
 
 		this.parseScramble(alg.inverse());
-		boolean solves = this.getSolutionRaw(type).equalsIgnoreCase(solutionCase.replaceAll("\\s", ""));
+		boolean solves = this.getSolutionRaw(type).equalsIgnoreCase(solutionCase.replaceAll("\\s", ""))
+				&& this.getMisOrientedCount(type) == 0;
+
+		if (pure) {
+			List<PieceType> remainingTypes = new ArrayList<>(this.getPieceTypes());
+			remainingTypes.remove(type);
+
+			for (PieceType remainingType : remainingTypes) {
+			    solves &= this.getSolutionRaw(remainingType).equals("Solved") && this.getMisOrientedCount(remainingType) == 0;
+			}
+		}
 
 		this.parseScramble(currentScramble == null ? new SimpleAlg() : currentScramble);
 		return solves;
+	}
+
+	public boolean solves(PieceType type, Algorithm alg, String solutionCase) {
+		return this.solves(type, alg, solutionCase, true);
 	}
 
 	public void parseScramble(Algorithm scramble) {
@@ -559,7 +573,7 @@ public abstract class BldPuzzle implements Cloneable {
 			}
 
 			pairs.append(pairs.toString().endsWith(" ") ? "" : " ");
-			pairs.append(this.getRotaionSolutions(type));
+			pairs.append(this.getRotationSolutions(type));
 		} else {
 			return "Solved";
 		}
@@ -567,7 +581,7 @@ public abstract class BldPuzzle implements Cloneable {
 		return pairs.toString().trim();
 	}
 
-	protected String getRotaionSolutions(PieceType type) {
+	protected String getRotationSolutions(PieceType type) {
 		StringBuilder pairs = new StringBuilder();
 
 		int orientations = type.getTargetsPerPiece();
@@ -641,7 +655,7 @@ public abstract class BldPuzzle implements Cloneable {
 			}
 
 			pairs.append(pairs.toString().endsWith(" ") ? "" : " ");
-			pairs.append(this.getRotaionSolutions(type));
+			pairs.append(this.getRotationSolutions(type));
 		} else {
 			return "Solved";
 		}
@@ -682,7 +696,7 @@ public abstract class BldPuzzle implements Cloneable {
 			}
 
 			pairs.append(pairs.toString().endsWith(" ") ? "" : " ");
-			pairs.append(this.getRotaionSolutions(type));
+			pairs.append(this.getRotationSolutions(type));
 		} else {
 			return "Solved";
 		}

@@ -1,5 +1,13 @@
 package com.suushiemaniac.cubing.bld.util;
 
+import com.suushiemaniac.cubing.alglib.alg.Algorithm;
+import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
+import com.suushiemaniac.cubing.alglib.lang.NotationReader;
+import com.suushiemaniac.cubing.bld.analyze.BldPuzzle;
+import com.suushiemaniac.cubing.bld.analyze.ThreeBldCube;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.CubicPuzzle;
+
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -25,4 +33,30 @@ public class BruteForceUtil {
     public static String[] genBlockString(String[] alphabet, int length, boolean mayRepeat) {
         return genBlockString(alphabet, length, false, mayRepeat);
     }
+
+    public static void bruteForceAlg(String lpCase, PieceType type, String[] alphabet, int prune) {
+    	int len = 1;
+
+		NotationReader reader = new CubicAlgorithmReader();
+		BldPuzzle analyze = new ThreeBldCube();
+
+    	while (len < prune) {
+			System.out.println("Trying length " + len + "…");
+			String[] moves = genBlockString(alphabet, len, true);
+
+    		for (String alg: moves) {
+				Algorithm current = reader.parse(alg);
+
+				if (analyze.solves(type, current, lpCase, false)) {
+					System.out.println(current.toFormatString());
+				}
+			}
+
+			len++;
+		}
+	}
+
+	public static void bruteForceAlg(String lpCase, PieceType type, String[] alphabet) {
+    	bruteForceAlg(lpCase, type, alphabet, 21);
+	}
 }
