@@ -64,7 +64,7 @@ public class CubeDb extends DatabaseAlgSource {
     }
 
     public boolean addAlgorithm(PieceType type, String letterPair, Set<Algorithm> algs) throws SQLException {
-        PreparedStatement stat = conn.prepareStatement("INSERT INTO Algorithms (`type`, `case`, alg, buffer, score, review) VALUES (?, ?, ?, ?, ?, ?)");
+        PreparedStatement stat = conn.prepareStatement("INSERT INTO Algorithms (`type`, `case`, alg, buffer, score, review, inserted_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())");
 
         for (Algorithm alg : algs) {
             String speffz = SpeffzUtil.normalize(letterPair, this.refCube.getLetteringScheme(type));
@@ -90,7 +90,7 @@ public class CubeDb extends DatabaseAlgSource {
     		return false;
 		}
 
-        PreparedStatement stat = conn.prepareStatement("INSERT INTO Images (`case`, image, token, `language`) VALUES (?, ?, ?, ?)");
+        PreparedStatement stat = conn.prepareStatement("INSERT INTO Images (`case`, image, token, `language`, inserted_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())");
 
         for (Algorithm image : images) {
 			stat.setString(1, letterPair);
@@ -102,22 +102,6 @@ public class CubeDb extends DatabaseAlgSource {
         }
 
         return true; // TODO
-    }
-
-    public Map<String, Set<String>> getAllLpiWords() throws SQLException {
-        ResultSet res = this.conn.createStatement().executeQuery("SELECT * FROM Images");
-        Map<String, Set<String>> words = new HashMap<>();
-
-        while (res.next()) {
-            String lpKey = res.getString("case");
-
-            Set<String> otherLps = words.getOrDefault(lpKey, new HashSet<>());
-            otherLps.add(res.getString("image"));
-
-            words.put(lpKey, otherLps);
-        }
-
-        return words;
     }
 
     public Map<String, Set<String>> getAllAlgorithms(PieceType type) throws SQLException {
@@ -139,12 +123,42 @@ public class CubeDb extends DatabaseAlgSource {
         return words;
     }
 
-    protected boolean updateAlg(PieceType type, Algorithm oldAlg, Algorithm newAlg) throws SQLException {
-        return false; // TODO
+    public Map<String, Set<String>> getAllLpiWords() throws SQLException {
+        ResultSet res = this.conn.createStatement().executeQuery("SELECT * FROM Images");
+        Map<String, Set<String>> words = new HashMap<>();
+
+        while (res.next()) {
+            String lpKey = res.getString("case");
+
+            Set<String> otherLps = words.getOrDefault(lpKey, new HashSet<>());
+            otherLps.add(res.getString("image"));
+
+            words.put(lpKey, otherLps);
+        }
+
+        return words;
     }
 
-    protected boolean updateLpi(Algorithm oldImage, Algorithm newImage) throws SQLException {
-        return false; // TODO
+    protected boolean updateAlg(PieceType type, Algorithm oldAlg, Algorithm newAlg) throws SQLException {
+        PreparedStatement stat = conn.prepareStatement("UPDATE Algorithms SET alg = ?, score = ?, updated_at = NOW() WHERE `type` = ? AND alg = ?");
+
+        stat.setString(1, newAlg.toFormatString());
+        stat.setFloat(2, AlgComparator.scoreAlg(newAlg));
+        stat.setString(3, type.mnemonic());
+        stat.setString(4, oldAlg.toFormatString());
+
+        return stat.executeUpdate() > 0;
+    }
+
+    protected boolean updateLpi(PieceType type, Algorithm oldImage, Algorithm newImage) throws SQLException {
+		PreparedStatement stat = conn.prepareStatement("UPDATE Images SET image = ?, updated_at = NOW() WHERE image = ? AND `token` = ? AND `language` = ?");
+
+		stat.setString(1, newImage.toFormatString());
+		stat.setString(2, oldImage.toFormatString());
+		stat.setString(3, type.mnemonic());
+		stat.setString(4, this.refCube.getLetterPairLanguage().toLowerCase());
+
+		return stat.executeUpdate() > 0;
     }
 
     protected boolean removeAlgorithm(PieceType type, Algorithm alg) throws SQLException {
@@ -222,7 +236,7 @@ public class CubeDb extends DatabaseAlgSource {
     @Override
     public boolean updateAlgorithm(PieceType type, Algorithm oldAlg, Algorithm newAlg) {
         try {
-            return type instanceof LetterPairImage ? this.updateLpi(oldAlg, newAlg) : this.updateAlg(type, oldAlg, newAlg);
+            return type instanceof LetterPairImage ? this.updateLpi(type, oldAlg, newAlg) : this.updateAlg(type, oldAlg, newAlg);
         } catch (SQLException e) {
             e.printStackTrace();
             return false;

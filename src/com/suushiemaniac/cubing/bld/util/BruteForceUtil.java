@@ -6,7 +6,6 @@ import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.analyze.BldPuzzle;
 import com.suushiemaniac.cubing.bld.analyze.ThreeBldCube;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
-import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.CubicPuzzle;
 
 import java.util.ArrayList;
 import java.util.Collections;
