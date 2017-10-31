@@ -1,6 +1,7 @@
 package com.suushiemaniac.cubing.bld.algsheet;
 
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.LetterPairImage;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 import org.apache.poi.ss.usermodel.Cell;
@@ -88,7 +89,7 @@ public class GregorBldExcel extends BldAlgSheet {
 
     @Override
     protected PieceType[] getSupportedPieceTypes() {
-        return new CubicPieceType[]{CORNER, EDGE, WING, XCENTER, TCENTER};
+        return new PieceType[]{CORNER, EDGE, WING, XCENTER, TCENTER, LetterPairImage.NOUN, LetterPairImage.ADJECTIVE, LetterPairImage.VERB};
     }
 
     @Override

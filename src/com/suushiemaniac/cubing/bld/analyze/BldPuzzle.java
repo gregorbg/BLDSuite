@@ -679,47 +679,6 @@ public abstract class BldPuzzle implements Cloneable {
 		return this.getSolutionAlgorithms(false);
 	}
 
-	public String getSolutionRawAlgorithms(PieceType type) {
-		if (this.algSource == null || !this.algSource.isReadable()) {
-			return "";
-		}
-
-		StringBuilder pairs = new StringBuilder();
-
-		List<Integer> currentCycles = this.cycles.get(type);
-
-		if (currentCycles.size() > 0 || this.getMisOrientedCount(type) > 0) {
-			for (int i = 0; i < currentCycles.size(); i+= 2) {
-				String pair = this.letterSchemes.get(type)[currentCycles.get(i)] + this.letterSchemes.get(type)[currentCycles.get(i + 1)];
-				pairs.append(this.algSource.getAlgorithms(type, pair).iterator().next().toFormatString());
-				pairs.append("\n");
-			}
-
-			pairs.append(pairs.toString().endsWith(" ") ? "" : " ");
-			pairs.append(this.getRotationSolutions(type));
-		} else {
-			return "Solved";
-		}
-
-		return pairs.toString().trim();
-	}
-
-	public String getSolutionRawAlgorithms(boolean withRotation) {
-		List<String> solutionParts = new ArrayList<>();
-
-		if (withRotation) {
-			solutionParts.add("Rotations: " + (this.scrambleOrientationPremoves.algLength() > 0 ? this.scrambleOrientationPremoves.toFormatString() : "/"));
-		}
-
-		solutionParts.addAll(this.getPieceTypes().stream().map(type -> type.humanName() + ": " + getSolutionAlgorithms(type)).collect(Collectors.toList()));
-
-		return String.join("\n", solutionParts);
-	}
-
-	public String getSolutionRawAlgorithms() {
-		return this.getSolutionAlgorithms(false);
-	}
-
 	public String getLetterPairCorrespondant(PieceType type, String letter) {
 		String[] letterScheme = this.letterSchemes.get(type);
 
