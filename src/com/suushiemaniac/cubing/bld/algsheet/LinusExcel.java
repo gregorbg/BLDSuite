@@ -7,25 +7,26 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 
 import java.io.File;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-public class GregorMemoExcel extends BldAlgSheet {
-	protected static final int BETWEEN_ROW_SPACING = 3;
-	protected static final int BETWEEN_COL_SPACING = 1;
+public class LinusExcel extends BldAlgSheet {
+	public static final int BLOCK_HEADER_SIZE = 2;
 
-	public GregorMemoExcel(File excelFile) {
+	public LinusExcel(File excelFile) {
 		super(excelFile);
 	}
 
-	public GregorMemoExcel(File excelFile, boolean fullCache) {
+	public LinusExcel(File excelFile, boolean fullCache) {
 		super(excelFile, fullCache);
 	}
 
 	private int getSheetNum(PieceType pieceType) {
-		if (pieceType instanceof LetterPairImage) {
-			return 0;
+		if (pieceType == LetterPairImage.NOUN) {
+			return 5;
 		}
 
 		return -1;
@@ -48,19 +49,18 @@ public class GregorMemoExcel extends BldAlgSheet {
 			return null;
 		}
 
-		int blockColumn = lpOneIndex / 4;
-		int blockRow = lpOneIndex % 4;
+		int blockCol = lpOneIndex / 12;
+		int blockRow = lpOneIndex % 12;
 
-		//noinspection SuspiciousMethodCalls
-		int column = Arrays.asList(LetterPairImage.NOUN, LetterPairImage.ADJECTIVE, LetterPairImage.VERB).indexOf(pieceType);
-		int row = lpTwoIndex + 1;
+		int innerBlockCol = lpTwoIndex / 12;
+		int innerBlockRow = lpTwoIndex % 12;
 
-		// overall header line + vertical block size * blockRow + line inside block segment
-		int excelRowIndex = 1 + (BETWEEN_ROW_SPACING + 25) * blockRow + row;
+		// vertical block size * blockRow + block header space + line inside block segment
+		int excelRowIndex = (BLOCK_HEADER_SIZE + 12) * blockRow + BLOCK_HEADER_SIZE + innerBlockRow;
 		Row excelSheetRow = sheet.getRow(excelRowIndex);
 
 		// horizontal block size * blockColumn + sidebar + col inside block segment
-		int excelColIndex = (BETWEEN_COL_SPACING + 5) * blockColumn + 2 + column;
+		int excelColIndex = 5 * blockCol + 1 + 2 * innerBlockCol + 1;
 		return excelSheetRow.getCell(excelColIndex);
 	}
 
@@ -71,20 +71,17 @@ public class GregorMemoExcel extends BldAlgSheet {
 
 	@Override
 	protected PieceType[] getSupportedPieceTypes() {
-		return new PieceType[]{LetterPairImage.NOUN, LetterPairImage.ADJECTIVE, LetterPairImage.VERB};
+		return new PieceType[]{LetterPairImage.NOUN};
 	}
 
 	@Override
 	public Set<String> getRawAlgorithms(PieceType type, String letterPair) {
 		if (type == LetterPairImage.ANY) {
-			return Stream.of(LetterPairImage.NOUN, LetterPairImage.ADJECTIVE, LetterPairImage.VERB)
-					.flatMap(subType -> this.getRawAlgorithms(subType, letterPair).stream())
-					.collect(Collectors.toSet());
+			return this.getRawAlgorithms(LetterPairImage.NOUN, letterPair);
 		}
 
 		return super.getRawAlgorithms(type, letterPair).stream()
-				.map(algStr -> algStr.replace("ENNVAU", "NV"))
-				.flatMap(algStr -> Arrays.stream(algStr.split(" / ")))
+				.flatMap(algStr -> Arrays.stream(algStr.split("/")))
 				.collect(Collectors.toSet());
 	}
 }

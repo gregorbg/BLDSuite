@@ -23,6 +23,10 @@ public class GregorBldExcel extends BldAlgSheet {
         super(excelFile);
     }
 
+	public GregorBldExcel(File excelFile, boolean fullCache) {
+		super(excelFile, fullCache);
+	}
+
     private int getSheetNum(PieceType pieceType) {
         if (pieceType instanceof CubicPieceType) {
             CubicPieceType[] sheetOrderTypes = new CubicPieceType[]{CORNER, EDGE, WING, XCENTER, TCENTER};

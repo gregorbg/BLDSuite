@@ -4,12 +4,10 @@ import com.suushiemaniac.cubing.bld.model.enumeration.piece.LetterPairImage;
 import com.suushiemaniac.cubing.bld.model.source.AlgSource;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public abstract class MemoUtil {
-    public static List<String> genMemoTree(String pairs, AlgSource source, int lpiListSizeLimit) throws SQLException {
+    public static List<String> genMemoTree(String pairs, AlgSource source) throws SQLException {
         List<String> treeList = new ArrayList<>(Collections.singletonList(""));
 
         for (String pair : pairs.split("(?<=\\G.{2})")) {
@@ -23,7 +21,6 @@ public abstract class MemoUtil {
                 treeList.removeAll(oldMemoStrings);
             } else if (pair.length() == 2) {
                 List<String> words = new ArrayList<>(source.getRawAlgorithms(LetterPairImage.NOUN, pair));
-                words = words.subList(0, Math.min(lpiListSizeLimit, words.size()));
                 List<String> oldMemoStrings = new ArrayList<>(treeList);
 
                 for (String oldMemo : oldMemoStrings) {
@@ -37,9 +34,5 @@ public abstract class MemoUtil {
         }
 
         return treeList;
-    }
-
-    public static List<String> genMemoTree(String pairs, AlgSource source) throws SQLException {
-        return genMemoTree(pairs, source, Integer.MAX_VALUE);
     }
 }
