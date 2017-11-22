@@ -99,6 +99,11 @@ public class ThreeBldCube extends BldCube {
 				.distinct()
 				.collect(Collectors.toList());
 
+		List<Integer> expected = new ArrayList<>(super.getBreakInPermutationsAfter(piece, type));
+		expected.removeAll(breakInPerms);
+
+		breakInPerms.addAll(expected);
+
 		return breakInPerms;
 	}
 

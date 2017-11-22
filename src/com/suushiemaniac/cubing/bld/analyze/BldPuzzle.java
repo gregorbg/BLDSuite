@@ -2,7 +2,9 @@ package com.suushiemaniac.cubing.bld.analyze;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg;
+import com.suushiemaniac.cubing.alglib.move.ImageLetterMove;
 import com.suushiemaniac.cubing.alglib.move.Move;
+import com.suushiemaniac.cubing.alglib.move.plane.ImageLetterPlane;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.LetterPairImage;
 import com.suushiemaniac.cubing.bld.model.source.AlgSource;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
@@ -649,8 +651,22 @@ public abstract class BldPuzzle implements Cloneable {
 
 		if (currentCycles.size() > 0 || this.getMisOrientedCount(type) > 0) {
 			for (int i = 0; i < currentCycles.size(); i+= 2) {
+				if (i + 1 >= currentCycles.size()) {
+					continue;
+				}
+
 				String pair = this.letterSchemes.get(type)[currentCycles.get(i)] + this.letterSchemes.get(type)[currentCycles.get(i + 1)];
-				pairs.append(this.algSource.getAlgorithms(type, pair).iterator().next().toFormatString());
+
+				Set<Algorithm> caseAlgs = this.algSource.getAlgorithms(type, pair);
+				Algorithm thisAlg = new SimpleAlg(new ImageLetterMove(new ImageLetterPlane('L')), new ImageLetterMove(new ImageLetterPlane('O')), new ImageLetterMove(new ImageLetterPlane('L')));
+
+				if (caseAlgs.size() > 0) {
+					List<Algorithm> listAlgs = new ArrayList<>(caseAlgs);
+					Collections.shuffle(listAlgs);
+					thisAlg = listAlgs.get(0);
+				}
+
+				pairs.append(thisAlg.toFormatString());
 				pairs.append("\n");
 			}
 
@@ -670,13 +686,64 @@ public abstract class BldPuzzle implements Cloneable {
 			solutionParts.add("Rotations: " + (this.scrambleOrientationPremoves.algLength() > 0 ? this.scrambleOrientationPremoves.toFormatString() : "/"));
 		}
 
-		solutionParts.addAll(this.getPieceTypes().stream().map(type -> type.humanName() + ": " + getSolutionAlgorithms(type)).collect(Collectors.toList()));
+		solutionParts.addAll(this.getPieceTypes().stream().map(type -> type.humanName() + ":\n" + getSolutionAlgorithms(type)).collect(Collectors.toList()));
 
 		return String.join("\n", solutionParts);
 	}
 
 	public String getSolutionAlgorithms() {
 		return this.getSolutionAlgorithms(false);
+	}
+
+	public String getRawSolutionAlgorithm(PieceType type) {
+		if (this.algSource == null || !this.algSource.isReadable()) {
+			return "";
+		}
+
+		Algorithm finalAlg = new SimpleAlg();
+
+		List<Integer> currentCycles = this.cycles.get(type);
+
+		if (currentCycles.size() > 0 || this.getMisOrientedCount(type) > 0) {
+			for (int i = 0; i < currentCycles.size(); i+= 2) {
+				if (i + 1 >= currentCycles.size()) {
+					continue;
+				}
+
+				String pair = this.letterSchemes.get(type)[currentCycles.get(i)] + this.letterSchemes.get(type)[currentCycles.get(i + 1)];
+
+				Set<Algorithm> caseAlgs = this.algSource.getAlgorithms(type, pair);
+				Algorithm thisAlg = new SimpleAlg(new ImageLetterMove(new ImageLetterPlane('L')), new ImageLetterMove(new ImageLetterPlane('O')), new ImageLetterMove(new ImageLetterPlane('L')));
+
+				if (caseAlgs.size() > 0) {
+					List<Algorithm> listAlgs = new ArrayList<>(caseAlgs);
+					Collections.shuffle(listAlgs);
+					thisAlg = listAlgs.get(0);
+				}
+
+				finalAlg = finalAlg.merge(thisAlg);
+			}
+		} else {
+			return "Solved";
+		}
+
+		return finalAlg.toFormatString().trim();
+	}
+
+	public String getRawSolutionAlgorithm(boolean withRotation) {
+		List<String> solutionParts = new ArrayList<>();
+
+		if (withRotation) {
+			solutionParts.add("Rotations: " + (this.scrambleOrientationPremoves.algLength() > 0 ? this.scrambleOrientationPremoves.toFormatString() : "/"));
+		}
+
+		solutionParts.addAll(this.getPieceTypes().stream().map(type -> type.humanName() + ": " + getRawSolutionAlgorithm(type)).collect(Collectors.toList()));
+
+		return String.join("\n", solutionParts);
+	}
+
+	public String getRawSolutionAlgorithm() {
+		return this.getRawSolutionAlgorithm(false);
 	}
 
 	public String getLetterPairCorrespondant(PieceType type, String letter) {
