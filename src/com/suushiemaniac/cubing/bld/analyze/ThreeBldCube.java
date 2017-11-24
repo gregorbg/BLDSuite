@@ -124,6 +124,11 @@ public class ThreeBldCube extends BldCube {
 				.filter(i -> i > -1)
 				.collect(Collectors.toList());
 
+		List<Integer> expected = new ArrayList<>(Arrays.asList(ArrayUtil.autobox(ArrayUtil.fill(type.getTargetsPerPiece()))));
+		expected.removeAll(breakInOrients);
+
+		breakInOrients.addAll(expected);
+
 		return breakInOrients.get(0); //TODO why discard everything else here and simply take [0] ??
 	}
 }

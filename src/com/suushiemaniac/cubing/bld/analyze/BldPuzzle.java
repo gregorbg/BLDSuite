@@ -1079,14 +1079,9 @@ public abstract class BldPuzzle implements Cloneable {
 	}
 
 	public BldPuzzle clone(Algorithm scramble) {
-		try {
-			BldPuzzle clone = (BldPuzzle) super.clone();
-			clone.parseScramble(scramble);
-			return clone;
-		} catch (CloneNotSupportedException e) {
-			e.printStackTrace();
-			return null;
-		}
+		BldPuzzle clone = this.clone();
+		clone.parseScramble(scramble);
+		return clone;
 	}
 
 	public List<PieceType> getPieceTypes() {

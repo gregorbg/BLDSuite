@@ -3,6 +3,7 @@ package com.suushiemaniac.cubing.bld.verify;
 import com.suushiemaniac.cubing.alglib.alg.SubGroup;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.alglib.util.ParseUtils;
+import com.suushiemaniac.cubing.bld.analyze.BldPuzzle;
 import com.suushiemaniac.cubing.bld.model.source.AlgSource;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
@@ -14,10 +15,12 @@ public class Verificator {
 
     private NotationReader reader;
     private AlgSource source;
+    private BldPuzzle model;
 
-    public Verificator(NotationReader reader, AlgSource source) {
+    public Verificator(NotationReader reader, AlgSource source, BldPuzzle model) {
         this.reader = reader;
         this.source = source;
+        this.model = model;
     }
 
     public Map<String, Map<String, Boolean>> verifyAll(PieceType type) {
@@ -31,8 +34,8 @@ public class Verificator {
         Set<String> algStringList = this.source.getRawAlgorithms(type, letterPair);
         if (algStringList != null)
             for (String alg : algStringList)
-                solutionMap.put(alg, ParseUtils.isParseable(alg, this.reader));
-                        //&& FiveBldCube.solves(type, this.reader.parse(alg).plain().toFormatString(), letterPair));
+                solutionMap.put(alg, ParseUtils.isParseable(alg, this.reader)
+                        && this.model.solves(type, this.reader.parse(alg), letterPair, true));
         return solutionMap;
     }
 
