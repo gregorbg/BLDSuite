@@ -16,7 +16,7 @@ public enum CubicPieceType implements PieceType {
     RIGHTOBLIQUE(1, 24, 460, "Right Oblique", "ROb"),
     INNERTCENTER(1, 24, 460, "Inner T-Center", "iTCe");
 
-    public static final NotationReader READER = new CubicAlgorithmReader();
+    private static final NotationReader READER = new CubicAlgorithmReader();
 
     public static String[] nameArray() {
         String[] names = new String[values().length];

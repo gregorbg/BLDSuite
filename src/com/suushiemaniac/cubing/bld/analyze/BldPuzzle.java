@@ -6,58 +6,74 @@ import com.suushiemaniac.cubing.alglib.move.ImageLetterMove;
 import com.suushiemaniac.cubing.alglib.move.Move;
 import com.suushiemaniac.cubing.alglib.move.plane.ImageLetterPlane;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.LetterPairImage;
-import com.suushiemaniac.cubing.bld.model.source.AlgSource;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
+import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.TwistyPuzzle;
+import com.suushiemaniac.cubing.bld.model.source.AlgSource;
 import com.suushiemaniac.cubing.bld.optim.BreakInOptim;
 import com.suushiemaniac.cubing.bld.util.ArrayUtil;
+import com.suushiemaniac.cubing.bld.util.ClosureUtil;
+import com.suushiemaniac.cubing.bld.util.MapUtil;
+import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 import com.suushiemaniac.lang.json.JSON;
 
 import java.net.URL;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public abstract class BldPuzzle implements Cloneable {
-	public enum MisOrientMethod {
-		SOLVE_DIRECT, SINGLE_TARGET
-	}
-
-    protected Algorithm scramble;
+	protected Algorithm scramble;
 	protected Algorithm scrambleOrientationPremoves;
 
-    protected Map<Move, Map<PieceType, Integer[]>> permutations;
+	protected Map<Move, Map<PieceType, Integer[]>> permutations;
 
 	protected Map<PieceType, Integer[]> state;
 	protected Map<PieceType, Integer[]> lastScrambledState;
 
 	protected Map<PieceType, Integer[][]> cubies;
+
 	protected String letterPairLanguage;
+	protected Map<PieceType, String[]> letterSchemes;
 
 	protected Map<PieceType, List<Integer>> cycles;
 	protected Map<PieceType, Integer> cycleCount;
+
+	protected Map<PieceType, Integer> mainBuffers;
+	protected Map<PieceType, Queue<Integer>> backupBuffers;
+	protected Map<PieceType, Map<Integer, Integer>> bufferFloats;
+
 	protected Map<PieceType, Boolean[]> solvedPieces;
 	protected Map<PieceType, Boolean[]> preSolvedPieces;
 	protected Map<PieceType, Boolean[][]> misOrientedPieces;
+
 	protected Map<PieceType, Boolean> parities;
 
-	protected Map<PieceType, String[]> letterSchemes;
 	protected Map<PieceType, Boolean> avoidBreakIns;
 	protected Map<PieceType, Boolean> optimizeBreakIns;
+
+	protected TwistyPuzzle model;
 
 	protected AlgSource algSource;
 	protected BreakInOptim optim;
 	protected MisOrientMethod misOrientMethod;
 
-	public BldPuzzle() {
-		this.scrambleOrientationPremoves = new SimpleAlg();
-
+	public BldPuzzle(TwistyPuzzle model) {
+		this.model = model;
 		this.permutations = this.loadPermutations();
+
 		this.cubies = this.initCubies();
+
+		this.scrambleOrientationPremoves = new SimpleAlg();
 		this.letterPairLanguage = System.getProperty("user.language");
 
-		this.letterSchemes = this.initSchemes();
-		this.avoidBreakIns = this.allActive();
-		this.optimizeBreakIns = this.allActive();
+		this.letterSchemes = MapUtil.constantValueMap(this.getPieceTypes(), ClosureUtil.constant(SpeffzUtil.FULL_SPEFFZ));
+		this.avoidBreakIns = MapUtil.constantValueMap(this.getPieceTypes(), ClosureUtil.constant(true));
+		this.optimizeBreakIns = MapUtil.constantValueMap(this.getPieceTypes(), ClosureUtil.constant(true));
+
+		this.mainBuffers = this.readCurrentBuffers();
+		this.backupBuffers = MapUtil.constantValueMap(this.getPieceTypes(), LinkedList::new);
 
 		this.algSource = null;
 		this.misOrientMethod = MisOrientMethod.SOLVE_DIRECT;
@@ -65,14 +81,17 @@ public abstract class BldPuzzle implements Cloneable {
 		this.resetPuzzle();
 	}
 
-	public BldPuzzle(Algorithm scramble) {
-		this();
+	public BldPuzzle(TwistyPuzzle model, Algorithm scramble) {
+		this(model);
+
 		this.parseScramble(scramble);
 	}
 
 	private Map<Move, Map<PieceType, Integer[]>> loadPermutations() {
-		String filename = "permutations/" + getClass().getSimpleName() + ".json";
-		URL fileURL = getClass().getResource(filename);
+		URL fileURL = null;
+
+		String filename = "permutations/" + this.getModel().toString() + ".json";
+		fileURL = this.getClass().getResource(filename);
 
 		JSON json = JSON.fromURL(fileURL);
 		Map<Move, Map<PieceType, Integer[]>> permutations = new HashMap<>();
@@ -82,8 +101,7 @@ public abstract class BldPuzzle implements Cloneable {
 			JSON moveJson = json.get(key);
 
 			for (PieceType type : this.getPieceTypes(true)) {
-				List<Object> permutationList = moveJson.get(type.name()).nativeList();
-				//noinspection SuspiciousToArrayCall
+				List<Integer> permutationList = moveJson.get(type.name()).nativeList(JSON::intValue);
 				Integer[] permutationArray = permutationList.toArray(new Integer[permutationList.size()]);
 
 				Move move = type.getReader().parse(key).firstMove();
@@ -112,15 +130,12 @@ public abstract class BldPuzzle implements Cloneable {
 			return true;
 		} else {
 			for (String letterPair : rawSolution.split("(?<=\\G[A-Z]{2})")) {
-			    if (letterPair.length() < 2) {
-			    	continue;
+				if (letterPair.length() < 2) {
+					continue;
 				}
 
-				boolean exists = false;
-
-			    for (Algorithm alg : this.algSource.getAlgorithms(type, letterPair)) {
-			        exists |= filter.test(alg);
-			    }
+				boolean exists = this.algSource.getAlgorithms(type, letterPair).stream()
+						.anyMatch(filter);
 
 				matches &= exists;
 			}
@@ -130,19 +145,15 @@ public abstract class BldPuzzle implements Cloneable {
 	}
 
 	public boolean matchesExecution(Predicate<Algorithm> filter) {
-		boolean matches = true;
-
-		for (PieceType type : this.getPieceTypes()) {
-		    matches &= this.matchesExecution(type, filter);
-		}
-
-		return matches;
+		return this.getPieceTypes().stream()
+				.allMatch(type -> this.matchesExecution(type, filter));
 	}
 
 	public boolean solves(PieceType type, Algorithm alg, String solutionCase, boolean pure) {
 		Algorithm currentScramble = this.getScramble();
 
 		this.parseScramble(alg.inverse());
+
 		boolean solves = this.getSolutionRaw(type).equalsIgnoreCase(solutionCase.replaceAll("\\s", ""))
 				&& this.getMisOrientedCount(type) == 0;
 
@@ -151,11 +162,12 @@ public abstract class BldPuzzle implements Cloneable {
 			remainingTypes.remove(type);
 
 			for (PieceType remainingType : remainingTypes) {
-			    solves &= this.getSolutionRaw(remainingType).equals("Solved") && this.getMisOrientedCount(remainingType) == 0;
+				solves &= this.getSolutionRaw(remainingType).equals("Solved") && this.getMisOrientedCount(remainingType) == 0;
 			}
 		}
 
 		this.parseScramble(currentScramble == null ? new SimpleAlg() : currentScramble);
+
 		return solves;
 	}
 
@@ -184,36 +196,13 @@ public abstract class BldPuzzle implements Cloneable {
 		}
 	}
 
-	protected Map<PieceType, List<Integer>> emptyCycles() {
-		Map<PieceType, List<Integer>> cycles = new HashMap<>();
-
-		for (PieceType type : this.getPieceTypes()) {
-			cycles.put(type, new ArrayList<>());
-		}
-
-		return cycles;
-	}
-
-	protected Map<PieceType, Integer> emptyCycleCount() {
-		Map<PieceType, Integer> cycleCount = new HashMap<>();
-
-		for (PieceType type : this.getPieceTypes()) {
-			cycleCount.put(type, 0);
-		}
-
-		return cycleCount;
-	}
-
 	protected Map<PieceType, Boolean[]> emptySolvedPieces() {
 		Map<PieceType, Boolean[]> solvedPieces = new HashMap<>();
 
 		for (PieceType type : this.getPieceTypes()) {
-			int numPieces = type.getNumPieces();
-			Boolean[] nonSolved = new Boolean[numPieces];
-
-			for (int i = 0; i < numPieces; i++) {
-				nonSolved[i] = false;
-			}
+			Boolean[] nonSolved = IntStream.range(0, type.getNumPieces())
+					.mapToObj(i -> false)
+					.toArray(Boolean[]::new);
 
 			solvedPieces.put(type, nonSolved);
 		}
@@ -242,55 +231,47 @@ public abstract class BldPuzzle implements Cloneable {
 		return orientedPieces;
 	}
 
-	protected Map<PieceType, Boolean> noParities() {
-		Map<PieceType, Boolean> parities = new HashMap<>();
-
-		for (PieceType type : this.getPieceTypes()) {
-			parities.put(type, false);
-		}
-
-		return parities;
-	}
-
-	protected Map<PieceType, Boolean> allActive() {
-		Map<PieceType, Boolean> optimize = new HashMap<>();
-
-		for (PieceType type : this.getPieceTypes()) {
-			optimize.put(type, true);
-		}
-
-		return optimize;
+	protected Map<PieceType, Integer> readCurrentBuffers() {
+		return this.getPieceTypes()
+				.stream()
+				.collect(Collectors.toMap(Function.identity(), this::getBuffer, (a, b) -> b));
 	}
 
 	protected void scramblePuzzle(Algorithm scramble) {
 		scramble = this.getSolvingOrientationPremoves().merge(scramble);
 
-		scramble.stream().filter(move -> this.permutations.keySet().contains(move)).forEach(this::permute);
+		scramble.stream()
+				.filter(move -> this.permutations.keySet().contains(move))
+				.forEach(this::permute);
 	}
 
 	protected void permute(Move permutation) {
 		for (PieceType type : this.getPieceTypes(true)) {
 			Integer[] current = this.state.get(type);
-
 			Integer[] perm = this.permutations.get(permutation).get(type);
-			Integer[] exchanges = new Integer[perm.length];
-			ArrayUtil.fillWith(exchanges, -1);
 
-			for (int i = 0; i < exchanges.length; i++) {
-				if (perm[i] != -1) {
-					exchanges[perm[i]] = current[i];
-				}
+			this.applyPermutations(current, perm);
+		}
+	}
+
+	protected void applyPermutations(Integer[] current, Integer[] perm) {
+		Integer[] exchanges = new Integer[perm.length];
+		ArrayUtil.fillWith(exchanges, -1);
+
+		for (int i = 0; i < exchanges.length; i++) {
+			if (perm[i] != -1) {
+				exchanges[perm[i]] = current[i];
 			}
+		}
 
-			for (int i = 0; i < exchanges.length; i++) {
-				if (exchanges[i] != -1) {
-					current[i] = exchanges[i];
-				}
+		for (int i = 0; i < exchanges.length; i++) {
+			if (exchanges[i] != -1) {
+				current[i] = exchanges[i];
 			}
 		}
 	}
 
-    protected void solvePuzzle() {
+	protected void solvePuzzle() {
 		this.getOrientationPieceTypes().forEach(this::saveState);
 
 		this.reorientPuzzle();
@@ -302,27 +283,6 @@ public abstract class BldPuzzle implements Cloneable {
 		this.scrambleOrientationPremoves = this.getReorientationMoves();
 
 		this.scrambleOrientationPremoves.forEach(this::permute);
-	}
-
-	protected void saveState(PieceType type) {
-		Integer[] current = this.state.get(type);
-		Integer[] saved = new Integer[current.length];
-
-		System.arraycopy(current, 0, saved, 0, current.length);
-
-		this.lastScrambledState.put(type, saved);
-	}
-
-	protected void resetPuzzle() {
-		this.state = this.initState();
-		this.lastScrambledState = this.initState();
-
-		this.cycles = this.emptyCycles();
-		this.cycleCount = this.emptyCycleCount();
-		this.solvedPieces = this.emptySolvedPieces();
-		this.preSolvedPieces = this.emptySolvedPieces();
-		this.misOrientedPieces = this.orientedPieces();
-		this.parities = this.noParities();
 	}
 
 	protected Map<PieceType, Integer[]> initState() {
@@ -348,8 +308,38 @@ public abstract class BldPuzzle implements Cloneable {
 		return cubies;
 	}
 
+	protected void saveState(PieceType type) {
+		Integer[] current = this.state.get(type);
+		Integer[] saved = new Integer[current.length];
+
+		System.arraycopy(current, 0, saved, 0, current.length);
+
+		this.lastScrambledState.put(type, saved);
+	}
+
+	protected void resetPuzzle() {
+		this.state = this.initState();
+		this.lastScrambledState = this.initState();
+
+		this.cycles = MapUtil.constantValueMap(this.getPieceTypes(), ArrayList::new);
+		this.cycleCount = MapUtil.constantValueMap(this.getPieceTypes(), ClosureUtil.constant(0));
+
+		this.solvedPieces = this.emptySolvedPieces();
+		this.preSolvedPieces = this.emptySolvedPieces();
+		this.misOrientedPieces = this.orientedPieces();
+
+		this.parities = MapUtil.constantValueMap(this.getPieceTypes(), ClosureUtil.constant(false));
+
+		this.mainBuffers.forEach(this::cycleCubiesForBuffer);
+		this.bufferFloats = MapUtil.constantValueMap(this.getPieceTypes(), HashMap::new);
+	}
+
 	protected void increaseCycleCount(PieceType type) {
 		this.cycleCount.put(type, this.cycleCount.get(type) + 1);
+	}
+
+	protected int pieceToPosition(PieceType type, int piece) {
+		return ArrayUtil.deepOuterIndex(this.cubies.get(type), piece);
 	}
 
 	protected int getLastTarget(PieceType type) {
@@ -375,7 +365,7 @@ public abstract class BldPuzzle implements Cloneable {
 		this.optimizeBreakIns.put(type, optimize);
 	}
 
-	public boolean setBuffer(PieceType type, int newBuffer) {
+	protected boolean cycleCubiesForBuffer(PieceType type, int newBuffer) {
 		Integer[][] cubies = this.cubies.get(type);
 
 		if (cubies != null) {
@@ -388,10 +378,20 @@ public abstract class BldPuzzle implements Cloneable {
 					for (int i = 0; i < outer; i++) ArrayUtil.cycleLeft(cubies);
 					for (int i = 0; i < inner; i++) ArrayUtil.cycleLeft(cubies[0]);
 
-					this.resolve();
 					return true;
 				}
 			}
+		}
+
+		return false;
+	}
+
+	public boolean setBuffer(PieceType type, int newBuffer) {
+		if (this.cycleCubiesForBuffer(type, newBuffer)) {
+			this.mainBuffers.put(type, newBuffer);
+			this.resolve();
+
+			return true;
 		}
 
 		return false;
@@ -409,6 +409,43 @@ public abstract class BldPuzzle implements Cloneable {
 		}
 
 		return false;
+	}
+
+	public boolean registerFloatingBuffer(PieceType type, int newBuffer) {
+		Queue<Integer> floatingBuffers = this.backupBuffers.get(type);
+
+		if (!floatingBuffers.contains(newBuffer) && this.mainBuffers.get(type) != newBuffer) {
+			floatingBuffers.add(newBuffer);
+			this.resolve();
+
+			return true;
+		}
+
+		return false;
+	}
+
+	public boolean registerFloatingBuffer(PieceType type, String newBuffer) {
+		String[] letterScheme = this.letterSchemes.get(type);
+
+		if (letterScheme != null) {
+			int index = ArrayUtil.index(letterScheme, newBuffer);
+
+			if (index > -1) {
+				return this.registerFloatingBuffer(type, index);
+			}
+		}
+
+		return false;
+	}
+
+	public void dropFloatingBuffers(PieceType type) {
+		this.backupBuffers.get(type).clear();
+
+		this.resolve();
+	}
+
+	public void dropFloatingBuffers() {
+		this.getPieceTypes().forEach(this::dropFloatingBuffers);
 	}
 
 	public String getLetterPairLanguage() {
@@ -450,13 +487,10 @@ public abstract class BldPuzzle implements Cloneable {
 		}
 
 		Integer[] piece = this.getBufferPiece(type);
-		String[] targets = new String[piece.length];
 
-		for (int i = 0; i < piece.length; i++) {
-			targets[i] = this.letterSchemes.get(type)[piece[i]];
-		}
-
-		return targets;
+		return Arrays.stream(piece)
+				.map(integer -> this.letterSchemes.get(type)[integer])
+				.toArray(String[]::new);
 	}
 
 	public boolean setLetteringScheme(PieceType type, String[] newScheme) {
@@ -477,7 +511,7 @@ public abstract class BldPuzzle implements Cloneable {
 			Set<String> alphabet = new LinkedHashSet<>();
 
 			for (PieceType permType : this.getPieceTypes()) {
-			    alphabet.addAll(Arrays.asList(this.getLetteringScheme(permType)));
+				alphabet.addAll(Arrays.asList(this.getLetteringScheme(permType)));
 			}
 
 			return alphabet.toArray(new String[alphabet.size()]);
@@ -529,19 +563,29 @@ public abstract class BldPuzzle implements Cloneable {
 	}
 
 	public String getSolutionRaw(PieceType type) {
-		StringBuilder pairs = new StringBuilder();
-
 		List<Integer> currentCycles = this.cycles.get(type);
+		Map<Integer, Integer> bufferFloats = this.bufferFloats.get(type);
+
+		String[] letters = this.letterSchemes.get(type);
 
 		if (currentCycles.size() > 0) {
-			for (Integer currentCycle : currentCycles) {
-				pairs.append(this.letterSchemes.get(type)[currentCycle]);
+			StringBuilder solutionRaw = new StringBuilder();
+
+			for (int i = 0; i < currentCycles.size(); i++) {
+				if (bufferFloats.containsKey(i)) {
+					String bufferLetter = letters[bufferFloats.get(i)];
+					String position = SpeffzUtil.speffzToSticker(SpeffzUtil.normalize(bufferLetter, letters), type);
+
+					solutionRaw.append("(").append(position).append(")");
+				}
+
+				solutionRaw.append(letters[currentCycles.get(i)]);
 			}
+
+			return solutionRaw.toString().trim();
 		} else {
 			return "Solved";
 		}
-
-		return pairs.toString().trim();
 	}
 
 	public String getSolutionRaw(boolean withRotation) {
@@ -551,7 +595,9 @@ public abstract class BldPuzzle implements Cloneable {
 			solutionParts.add("Rotations: " + (this.scrambleOrientationPremoves.algLength() > 0 ? this.scrambleOrientationPremoves.toFormatString() : "/"));
 		}
 
-		solutionParts.addAll(this.getPieceTypes().stream().map((type) -> type.humanName() + ": " + getSolutionRaw(type)).collect(Collectors.toList()));
+		solutionParts.addAll(this.getExecutionOrderPieceTypes().stream()
+				.map((type) -> type.humanName() + ": " + getSolutionRaw(type))
+				.collect(Collectors.toList()));
 
 		return String.join("\n", solutionParts);
 	}
@@ -564,10 +610,22 @@ public abstract class BldPuzzle implements Cloneable {
 		StringBuilder pairs = new StringBuilder();
 
 		List<Integer> currentCycles = this.cycles.get(type);
+		String[] letters = this.letterSchemes.get(type);
+
+		Map<Integer, Integer> bufferFloats = this.bufferFloats.get(type);
 
 		if (currentCycles.size() > 0 || this.getMisOrientedCount(type) > 0) {
 			for (int i = 0; i < currentCycles.size(); i++) {
-				pairs.append(this.letterSchemes.get(type)[currentCycles.get(i)]);
+				if (bufferFloats.containsKey(i)) {
+					String bufferLetter = letters[bufferFloats.get(i)];
+					String position = SpeffzUtil.speffzToSticker(SpeffzUtil.normalize(bufferLetter, letters), type);
+
+					pairs.append("(float ")
+							.append(position)
+							.append(") ");
+				}
+
+				pairs.append(letters[currentCycles.get(i)]);
 
 				if (i % 2 == 1) {
 					pairs.append(" ");
@@ -631,7 +689,9 @@ public abstract class BldPuzzle implements Cloneable {
 			solutionParts.add("Rotations: " + (this.scrambleOrientationPremoves.algLength() > 0 ? this.scrambleOrientationPremoves.toFormatString() : "/"));
 		}
 
-		solutionParts.addAll(this.getPieceTypes().stream().map(type -> type.humanName() + ": " + getSolutionPairs(type)).collect(Collectors.toList()));
+		solutionParts.addAll(this.getExecutionOrderPieceTypes().stream()
+				.map(type -> type.humanName() + ": " + getSolutionPairs(type))
+				.collect(Collectors.toList()));
 
 		return String.join("\n", solutionParts);
 	}
@@ -649,8 +709,8 @@ public abstract class BldPuzzle implements Cloneable {
 
 		List<Integer> currentCycles = this.cycles.get(type);
 
-		if (currentCycles.size() > 0 || this.getMisOrientedCount(type) > 0) {
-			for (int i = 0; i < currentCycles.size(); i+= 2) {
+		if (currentCycles.size() > 0 || this.getMisOrientedCount(type) > 0) { // TODO alg sources buffer support
+			for (int i = 0; i < currentCycles.size(); i += 2) {
 				if (i + 1 >= currentCycles.size()) {
 					continue;
 				}
@@ -686,7 +746,9 @@ public abstract class BldPuzzle implements Cloneable {
 			solutionParts.add("Rotations: " + (this.scrambleOrientationPremoves.algLength() > 0 ? this.scrambleOrientationPremoves.toFormatString() : "/"));
 		}
 
-		solutionParts.addAll(this.getPieceTypes().stream().map(type -> type.humanName() + ":\n" + getSolutionAlgorithms(type)).collect(Collectors.toList()));
+		solutionParts.addAll(this.getExecutionOrderPieceTypes().stream()
+				.map(type -> type.humanName() + ":\n" + getSolutionAlgorithms(type))
+				.collect(Collectors.toList()));
 
 		return String.join("\n", solutionParts);
 	}
@@ -704,8 +766,8 @@ public abstract class BldPuzzle implements Cloneable {
 
 		List<Integer> currentCycles = this.cycles.get(type);
 
-		if (currentCycles.size() > 0 || this.getMisOrientedCount(type) > 0) {
-			for (int i = 0; i < currentCycles.size(); i+= 2) {
+		if (currentCycles.size() > 0 || this.getMisOrientedCount(type) > 0) { // TODO alg sources buffer support
+			for (int i = 0; i < currentCycles.size(); i += 2) {
 				if (i + 1 >= currentCycles.size()) {
 					continue;
 				}
@@ -737,7 +799,9 @@ public abstract class BldPuzzle implements Cloneable {
 			solutionParts.add("Rotations: " + (this.scrambleOrientationPremoves.algLength() > 0 ? this.scrambleOrientationPremoves.toFormatString() : "/"));
 		}
 
-		solutionParts.addAll(this.getPieceTypes().stream().map(type -> type.humanName() + ": " + getRawSolutionAlgorithm(type)).collect(Collectors.toList()));
+		solutionParts.addAll(this.getExecutionOrderPieceTypes().stream()
+				.map(type -> type.humanName() + ": " + getRawSolutionAlgorithm(type))
+				.collect(Collectors.toList()));
 
 		return String.join("\n", solutionParts);
 	}
@@ -771,7 +835,7 @@ public abstract class BldPuzzle implements Cloneable {
 				Integer[] pieceModel = cubies[outer];
 
 				List<Integer> pieces = new ArrayList<>(Arrays.asList(pieceModel));
-				pieces.remove((Integer) piece);
+				pieces.remove(piece);
 
 				return String.join("", pieces.stream().map(pInt -> lettering[pInt]).collect(Collectors.toList()));
 			}
@@ -785,11 +849,16 @@ public abstract class BldPuzzle implements Cloneable {
 	}
 
 	public String getStatistics(PieceType type) {
-		return type.humanName() + ": " + this.getStatLength(type) + "@" + this.getBreakInCount(type) + " w/ " + this.getPreSolvedCount(type) + "-" + this.getMisOrientedCount(type) + " > " + this.hasParity(type);
+		return type.humanName() + ": " + this.getStatLength(type) + "@" + this.getBreakInCount(type) + " w/ " + this.getPreSolvedCount(type) + "-" + this.getMisOrientedCount(type) + "\\" + this.getBufferFloatNum(type) + " > " + this.hasParity(type);
 	}
 
 	public String getStatistics() {
-		List<String> statisticsParts = this.getPieceTypes().stream().map(this::getStatistics).collect(Collectors.toList());
+		List<PieceType> types = this.getExecutionOrderPieceTypes();
+		Collections.reverse(types);
+
+		List<String> statisticsParts = types.stream()
+				.map(this::getStatistics)
+				.collect(Collectors.toList());
 
 		return String.join("\n", statisticsParts);
 	}
@@ -803,13 +872,8 @@ public abstract class BldPuzzle implements Cloneable {
 	}
 
 	public boolean isSingleCycle() {
-		boolean singleCycle = true;
-
-		for (PieceType type : this.getPieceTypes()) {
-		    singleCycle &= this.isSingleCycle(type);
-		}
-
-		return singleCycle;
+		return this.getPieceTypes().stream()
+				.allMatch(this::isSingleCycle);
 	}
 
 	public boolean isSingleCycle(PieceType type) {
@@ -817,89 +881,58 @@ public abstract class BldPuzzle implements Cloneable {
 	}
 
 	public int getPreSolvedCount(PieceType type) {
-		int count = 0;
 		Boolean[] solvedFlags = this.preSolvedPieces.get(type);
 
-		for (int i = 1; i < solvedFlags.length; i++) {
-			if (solvedFlags[i]) {
-				count++;
-			}
-		}
-
-		return count;
+		return (int) IntStream.range(1, solvedFlags.length)
+				.filter(i -> solvedFlags[i])
+				.count();
 	}
 
 	public int getMisOrientedCount() {
-		int count = 0;
-
-		for (PieceType type : this.getPieceTypes()) {
-		    count += this.getMisOrientedCount(type);
-		}
-
-		return count;
+		return this.getPieceTypes().stream()
+				.mapToInt(this::getMisOrientedCount)
+				.sum();
 	}
 
 	public int getMisOrientedCount(int orientation) {
-		int count = 0;
-
-		for (PieceType type : this.getPieceTypes()) {
-			count += this.getMisOrientedCount(type, orientation);
-		}
-
-		return count;
+		return this.getPieceTypes().stream()
+				.mapToInt(type -> this.getMisOrientedCount(type, orientation))
+				.sum();
 	}
 
 	public int getMisOrientedCount(PieceType type) {
-		int count = 0;
-
-		for (int i = 0; i < type.getTargetsPerPiece(); i++) {
-			count += this.getMisOrientedCount(type, i);
-		}
-
-		return count;
+		return IntStream.range(0, type.getTargetsPerPiece())
+				.map(i -> this.getMisOrientedCount(type, i))
+				.sum();
 	}
 
 	public int getMisOrientedCount(PieceType type, int orientation) {
 		orientation %= type.getTargetsPerPiece();
 
 		Boolean[] orientations = this.misOrientedPieces.get(type)[orientation];
-		int count = 0;
 
-		for (int i = 1; i < orientations.length; i++) {
-			if (orientations[i]) {
-				count++;
-			}
-		}
-
-		return count;
+		return (int) IntStream.range(1, orientations.length)
+				.filter(i -> orientations[i])
+				.count();
 	}
 
 	protected List<Integer> getMisOrientedPieces(PieceType type, int orientation) {
 		Boolean[] orientations = this.misOrientedPieces.get(type)[orientation];
 		Integer[][] cubies = this.cubies.get(type);
 
-		List<Integer> misOrientedPieces = new ArrayList<>();
-
-		for (int i = 1; i < orientations.length; i++) {
-			if (orientations[i]) {
-				misOrientedPieces.add(cubies[i][orientation]);
-			}
-		}
-
-		return misOrientedPieces;
+		return IntStream.range(1, orientations.length)
+				.filter(i -> orientations[i])
+				.mapToObj(i -> cubies[i][orientation])
+				.collect(Collectors.toList());
 	}
 
 	protected List<String> getMisOrientedPieceNames(PieceType type, int orientation) {
 		String[] lettering = this.letterSchemes.get(type);
 		List<Integer> pieces = this.getMisOrientedPieces(type, orientation);
 
-		List<String> pieceNames = new ArrayList<>();
-
-		for (Integer piece : pieces) {
-		    pieceNames.add(lettering[piece]);
-		}
-
-		return pieceNames;
+		return pieces.stream()
+				.map(piece -> lettering[piece])
+				.collect(Collectors.toList());
 	}
 
 	public boolean hasParity(PieceType type) {
@@ -907,29 +940,48 @@ public abstract class BldPuzzle implements Cloneable {
 	}
 
 	public boolean hasParity() {
-		boolean hasParity = false;
+		return this.getPieceTypes().stream()
+				.anyMatch(this::hasParity);
+	}
 
-		for (PieceType type : this.getPieceTypes()) {
-		    hasParity |= this.hasParity(type);
-		}
+	public int getBufferFloatNum(PieceType type) {
+		return this.bufferFloats.get(type).size();
+	}
 
-		return hasParity;
+	public int getBufferFloatNum() {
+		return this.getPieceTypes().stream()
+				.mapToInt(this::getBufferFloatNum)
+				.sum();
+	}
+
+	public boolean hasBufferFloat(PieceType type) {
+		return this.getBufferFloatNum(type) > 0;
+	}
+
+	public boolean hasBufferFloat() {
+		return this.getPieceTypes().stream()
+				.anyMatch(this::hasBufferFloat);
 	}
 
 	public String getNoahtation(PieceType type) {
-		StringBuilder misOriented = new StringBuilder();
-
-		for (int i = 0; i < this.getMisOrientedCount(type); i++) {
-			misOriented.append("'");
-		}
+		String misOriented = String.join("", Collections.nCopies(this.getMisOrientedCount(type), "'"));
 
 		return type.mnemonic() + ": " + this.getStatLength(type) + misOriented;
 	}
 
 	public String getNoahtation() {
-		List<String> noahtationParts = this.getPieceTypes().stream().map(this::getNoahtation).collect(Collectors.toList());
+		List<PieceType> types = this.getExecutionOrderPieceTypes();
+		Collections.reverse(types);
+
+		List<String> noahtationParts = types.stream()
+				.map(this::getNoahtation)
+				.collect(Collectors.toList());
 
 		return String.join(" / ", noahtationParts);
+	}
+
+	protected Queue<Integer> getBackupBuffers(PieceType type) {
+		return new LinkedList<>(this.backupBuffers.get(type));
 	}
 
 	public String getStatString(PieceType type, boolean indent) {
@@ -942,6 +994,14 @@ public abstract class BldPuzzle implements Cloneable {
 
 		statString.append(this.isBufferSolved(type) ? "*" : (indent ? " " : ""));
 		statString.append(this.isBufferSolvedAndMisOriented(type) ? "*" : (indent ? " " : ""));
+
+		int numFloats = this.getBufferFloatNum(type);
+		int floatsMax = this.getBackupBuffers(type).size();
+		statString.append(String.join("", Collections.nCopies(numFloats, "\\")));
+
+		if (indent) {
+			statString.append(String.join("", Collections.nCopies(floatsMax - numFloats, " ")));
+		}
 
 		int maxTargets = ((type.getNumPiecesNoBuffer() / 2) * 3) + (type.getNumPiecesNoBuffer() % 2);
 		int lenDiff = Integer.toString(maxTargets).length() - Integer.toString(targets).length();
@@ -992,7 +1052,12 @@ public abstract class BldPuzzle implements Cloneable {
 	}
 
 	public String getStatString(boolean indent) {
-		List<String> statStringParts = this.getPieceTypes().stream().map(type -> getStatString(type, indent)).collect(Collectors.toList());
+		List<PieceType> types = this.getExecutionOrderPieceTypes();
+		Collections.reverse(types);
+
+		List<String> statStringParts = types.stream()
+				.map(type -> getStatString(type, indent))
+				.collect(Collectors.toList());
 
 		return String.join(" | ", statStringParts);
 	}
@@ -1071,7 +1136,7 @@ public abstract class BldPuzzle implements Cloneable {
 	@Override
 	public BldPuzzle clone() {
 		try {
-			return (BldPuzzle) super.clone();
+			return (BldPuzzle) super.clone(); // TODO deep clone
 		} catch (CloneNotSupportedException e) {
 			e.printStackTrace();
 			return null;
@@ -1088,23 +1153,27 @@ public abstract class BldPuzzle implements Cloneable {
 		return this.getPieceTypes(false);
 	}
 
-	protected int getPiecePermutations(PieceType type) {
-		return type.getNumPieces();
-	}
-
-	protected int getPieceOrientations(PieceType type) {
-		return type.getTargetsPerPiece();
+	public TwistyPuzzle getModel() { // FIXME protect else circular shortcutting is possible
+		return this.model;
 	}
 
 	protected abstract List<PieceType> getPermutationPieceTypes();
+
 	protected abstract List<PieceType> getOrientationPieceTypes();
+
+	protected abstract List<PieceType> getExecutionOrderPieceTypes();
+
 	protected abstract int getOrientationSideCount();
+
 	protected abstract Map<PieceType, Integer[][]> getDefaultCubies();
 
 	protected abstract void solvePieces(PieceType type);
 
 	protected abstract Algorithm getReorientationMoves();
+
 	protected abstract Algorithm getSolvingOrientationPremoves();
 
-	protected abstract Map<PieceType, String[]> initSchemes();
+	public enum MisOrientMethod {
+		SOLVE_DIRECT, SINGLE_TARGET
+	}
 }

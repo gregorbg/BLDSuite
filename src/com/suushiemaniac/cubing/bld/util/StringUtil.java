@@ -1,5 +1,8 @@
 package com.suushiemaniac.cubing.bld.util;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class StringUtil {
     public static boolean containsOneOf(String toCheck, String[] containPoss) {
         for (String aContainPoss : containPoss)
@@ -23,5 +26,24 @@ public class StringUtil {
         }
 
         return "[" + row.charAt(0) + "-" + row.charAt(row.length() - 1) + "]";
+    }
+
+    public static String reverse(String in) {
+        return new StringBuilder(in).reverse().toString();
+    }
+
+    public static int charCount(String in, char c) {
+        return (int) in.chars().filter(v -> v == c).count();
+    }
+
+    public static boolean contentEquals(String thisString, String thatString) {
+        if (thisString.length() != thatString.length()) {
+            return false;
+        }
+
+        List<String> thisParts = Arrays.asList(thisString.split(""));
+        List<String> thatParts = Arrays.asList(thatString.split(""));
+
+        return thisParts.containsAll(thatParts) && thatParts.containsAll(thisParts);
     }
 }

@@ -4,7 +4,6 @@ import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 
 import java.net.URI;
-import java.sql.SQLException;
 import java.util.Set;
 
 public interface AlgSource {

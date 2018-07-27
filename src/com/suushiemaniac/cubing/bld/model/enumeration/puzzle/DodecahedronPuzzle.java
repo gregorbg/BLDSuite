@@ -3,7 +3,6 @@ package com.suushiemaniac.cubing.bld.model.enumeration.puzzle;
 import com.suushiemaniac.cubing.alglib.lang.MegaminxAlgorithmReader;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.analyze.BldPuzzle;
-import com.suushiemaniac.cubing.bld.analyze.TwoBldCube;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.CubePuzzle;
@@ -14,10 +13,10 @@ import java.util.function.Supplier;
 import static com.suushiemaniac.cubing.bld.model.enumeration.piece.DodecahedronPieceType.*;
 
 public enum DodecahedronPuzzle implements TwistyPuzzle { //TODO correct puzzle implementations
-	KILO(2, MegaminxPuzzle::new, new TwoBldCube(), CORNER),
-	MEGA(2, () -> new CubePuzzle(2), new TwoBldCube(), CORNER, CENTER, EDGE),
-	MASTERKILO(2, () -> new CubePuzzle(2), new TwoBldCube(), CORNER, CENTER, EDGE),
-	GIGA(2, () -> new CubePuzzle(2), new TwoBldCube(), CORNER, CENTER, EDGE);
+	KILO(2, MegaminxPuzzle::new, null, CORNER),
+	MEGA(2, () -> new CubePuzzle(2), null, CORNER, CENTER, EDGE),
+	MASTERKILO(2, () -> new CubePuzzle(2), null, CORNER, CENTER, EDGE),
+	GIGA(2, () -> new CubePuzzle(2), null, CORNER, CENTER, EDGE);
 
 	public static DodecahedronPuzzle fromSize(int size) {
 		for (DodecahedronPuzzle puzzle : values()) {
@@ -49,12 +48,7 @@ public enum DodecahedronPuzzle implements TwistyPuzzle { //TODO correct puzzle i
 	}
 
 	@Override
-	public Puzzle getScramblingPuzzle() {
-		return this.scramblingPuzzleGen.get();
-	}
-
-	@Override
-	public Supplier<Puzzle> generateScramblingPuzzle() {
+	public Supplier<Puzzle> supplyScramblingPuzzle() {
 		return this.scramblingPuzzleGen;
 	}
 

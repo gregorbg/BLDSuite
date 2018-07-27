@@ -4,6 +4,7 @@ import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class SpeffzUtil {
@@ -57,4 +58,12 @@ public class SpeffzUtil {
 				return null;
         }
     }
+
+    public static boolean stickerEquals(String thisSticker, String thatSticker) {
+		if (thisSticker.length() == 0 || thatSticker.length() == 0) {
+			return false;
+		}
+
+    	return StringUtil.contentEquals(thisSticker, thatSticker) && thisSticker.charAt(0) == thatSticker.charAt(0);
+	}
 }

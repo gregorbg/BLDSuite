@@ -17,6 +17,10 @@ public class IntCondition {
         return new IntCondition(min, max);
     }
 
+    public static IntCondition BETWEEN(int min, int max) {
+        return IntCondition.INTERVAL(min, max);
+    }
+
     public static IntCondition MINIMUM(int min) {
         return new IntCondition(min, Integer.MAX_VALUE);
     }

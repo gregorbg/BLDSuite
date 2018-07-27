@@ -2,7 +2,7 @@ package com.suushiemaniac.cubing.bld.optim;
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.bld.analyze.BldPuzzle;
-import com.suushiemaniac.cubing.bld.analyze.FiveBldCube;
+import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.CubicPuzzle;
 import com.suushiemaniac.cubing.bld.model.source.AlgSource;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 
@@ -39,11 +39,11 @@ public class BreakInOptim {
 	}
 
     public BreakInOptim(AlgSource source, boolean fullCache) {
-    	this(source, new FiveBldCube(), fullCache);
+    	this(source, CubicPuzzle.FIVE.getAnalyzingPuzzle(), fullCache);
 	}
 
     public BreakInOptim(AlgSource source) {
-    	this(source, new FiveBldCube(), true);
+    	this(source, CubicPuzzle.FIVE.getAnalyzingPuzzle(), true);
 	}
 
     public List<String> optimizeBreakInTargetsAfter(String target, PieceType type) {
