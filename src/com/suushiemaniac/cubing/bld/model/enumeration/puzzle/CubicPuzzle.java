@@ -4,7 +4,6 @@ import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.analyze.*;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
-import com.suushiemaniac.cubing.bld.util.ClosureUtil;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.*;
 

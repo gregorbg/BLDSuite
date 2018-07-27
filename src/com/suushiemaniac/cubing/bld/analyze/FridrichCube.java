@@ -4,7 +4,6 @@ import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg;
 import com.suushiemaniac.cubing.alglib.move.Move;
 import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.CubicPuzzle;
-import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
 
 import java.util.List;
 import java.util.Set;

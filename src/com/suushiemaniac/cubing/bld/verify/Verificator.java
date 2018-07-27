@@ -15,7 +15,6 @@ import com.suushiemaniac.cubing.bld.analyze.BldPuzzle;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.model.source.AlgSource;
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
-import com.suushiemaniac.cubing.bld.util.ClosureUtil;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -23,7 +22,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class Verificator {
-	protected static String[] fullLetterPairs = BruteForceUtil.genBlockString(BruteForceUtil.ALPHABET, 2, false);
+	protected static List<List<String>> fullLetterPairs = BruteForceUtil.INSTANCE.permute(BruteForceUtil.INSTANCE.getALPHABET(), 2, false, false);
 
 	private NotationReader reader;
 	private AlgSource source;
@@ -36,7 +35,8 @@ public class Verificator {
 	}
 
 	public Map<String, Map<String, Boolean>> verifyAll(PieceType type) {
-		return Arrays.stream(fullLetterPairs)
+		return fullLetterPairs.stream()
+				.map(l -> String.join("", l))
 				.collect(Collectors.toMap(
 						Function.identity(),
 						possPair -> this.verifySingleCase(type, possPair),
@@ -178,7 +178,8 @@ public class Verificator {
 	public Map<String, List<String>> findMatchingSubGroup(PieceType type, SubGroup group) {
 		Map<String, List<String>> sameGroupMap = new HashMap<>();
 
-		for (String possPair : fullLetterPairs) {
+		for (List<String> possPairList : fullLetterPairs) {
+			String possPair = String.join("", possPairList);
 			sameGroupMap.put(possPair, new ArrayList<>());
 
 			Set<String> algStringList = this.source.getRawAlgorithms(type, possPair);
@@ -198,7 +199,8 @@ public class Verificator {
 	public Map<String, Set<String>> checkParseable(PieceType type) {
 		Map<String, Set<String>> unparseableMap = new HashMap<>();
 
-		for (String possPair : fullLetterPairs) {
+		for (List<String> possPairList : fullLetterPairs) {
+			String possPair = String.join("", possPairList);
 			Set<String> algStringList = this.source.getRawAlgorithms(type, possPair);
 
 			if (algStringList != null) {

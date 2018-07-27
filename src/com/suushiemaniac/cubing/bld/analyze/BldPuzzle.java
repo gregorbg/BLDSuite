@@ -10,10 +10,7 @@ import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.TwistyPuzzle;
 import com.suushiemaniac.cubing.bld.model.source.AlgSource;
 import com.suushiemaniac.cubing.bld.optim.BreakInOptim;
-import com.suushiemaniac.cubing.bld.util.ArrayUtil;
-import com.suushiemaniac.cubing.bld.util.ClosureUtil;
 import com.suushiemaniac.cubing.bld.util.MapUtil;
-import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 import com.suushiemaniac.lang.json.JSON;
 
 import java.net.URL;
@@ -68,12 +65,12 @@ public abstract class BldPuzzle implements Cloneable {
 		this.scrambleOrientationPremoves = new SimpleAlg();
 		this.letterPairLanguage = System.getProperty("user.language");
 
-		this.letterSchemes = MapUtil.constantValueMap(this.getPieceTypes(), ClosureUtil.constant(SpeffzUtil.FULL_SPEFFZ));
-		this.avoidBreakIns = MapUtil.constantValueMap(this.getPieceTypes(), ClosureUtil.constant(true));
-		this.optimizeBreakIns = MapUtil.constantValueMap(this.getPieceTypes(), ClosureUtil.constant(true));
+		this.letterSchemes = MapUtil.INSTANCE.constantValueMap(this.getPieceTypes(), ClosureUtil.constantKt(SpeffzUtil.FULL_SPEFFZ));
+		this.avoidBreakIns = MapUtil.INSTANCE.constantValueMap(this.getPieceTypes(), ClosureUtil.constantKt(true));
+		this.optimizeBreakIns = MapUtil.INSTANCE.constantValueMap(this.getPieceTypes(), ClosureUtil.constantKt(true));
 
 		this.mainBuffers = this.readCurrentBuffers();
-		this.backupBuffers = MapUtil.constantValueMap(this.getPieceTypes(), LinkedList::new);
+		this.backupBuffers = MapUtil.INSTANCE.constantValueMap(this.getPieceTypes(), LinkedList::new);
 
 		this.algSource = null;
 		this.misOrientMethod = MisOrientMethod.SOLVE_DIRECT;
@@ -88,10 +85,8 @@ public abstract class BldPuzzle implements Cloneable {
 	}
 
 	private Map<Move, Map<PieceType, Integer[]>> loadPermutations() {
-		URL fileURL = null;
-
 		String filename = "permutations/" + this.getModel().toString() + ".json";
-		fileURL = this.getClass().getResource(filename);
+		URL fileURL = this.getClass().getResource(filename);
 
 		JSON json = JSON.fromURL(fileURL);
 		Map<Move, Map<PieceType, Integer[]>> permutations = new HashMap<>();
@@ -321,17 +316,17 @@ public abstract class BldPuzzle implements Cloneable {
 		this.state = this.initState();
 		this.lastScrambledState = this.initState();
 
-		this.cycles = MapUtil.constantValueMap(this.getPieceTypes(), ArrayList::new);
-		this.cycleCount = MapUtil.constantValueMap(this.getPieceTypes(), ClosureUtil.constant(0));
+		this.cycles = MapUtil.INSTANCE.constantValueMap(this.getPieceTypes(), ArrayList::new);
+		this.cycleCount = MapUtil.INSTANCE.constantValueMap(this.getPieceTypes(), ClosureUtil.constantKt(0));
 
 		this.solvedPieces = this.emptySolvedPieces();
 		this.preSolvedPieces = this.emptySolvedPieces();
 		this.misOrientedPieces = this.orientedPieces();
 
-		this.parities = MapUtil.constantValueMap(this.getPieceTypes(), ClosureUtil.constant(false));
+		this.parities = MapUtil.INSTANCE.constantValueMap(this.getPieceTypes(), ClosureUtil.constantKt(false));
 
 		this.mainBuffers.forEach(this::cycleCubiesForBuffer);
-		this.bufferFloats = MapUtil.constantValueMap(this.getPieceTypes(), HashMap::new);
+		this.bufferFloats = MapUtil.INSTANCE.constantValueMap(this.getPieceTypes(), HashMap::new);
 	}
 
 	protected void increaseCycleCount(PieceType type) {

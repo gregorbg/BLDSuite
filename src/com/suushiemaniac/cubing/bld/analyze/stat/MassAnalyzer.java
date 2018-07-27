@@ -124,7 +124,7 @@ public class MassAnalyzer {
 					String[] cornerPairs = this.analyze.getSolutionPairs(type).replaceAll(singleLetter ? "\\s+?" : "$.", "").split(singleLetter ? "" : "\\s+?");
 
 					for (String pair : cornerPairs) {
-						pieceTypeMap.computeIfAbsent(type, ClosureUtil.always(CountingMap::new)).increment(pair);
+						pieceTypeMap.computeIfAbsent(type, pt -> new CountingMap<>()).increment(pair);
 					}
 				}
 			}
@@ -167,11 +167,11 @@ public class MassAnalyzer {
 	}
 
     protected static void numericMapPrint(Map<Integer, Integer> toPrint) {
-		MapUtil.sortedMapPrint(toPrint);
-		System.out.println("Average: " + MapUtil.freqMapAverage(toPrint));
+		MapUtil.INSTANCE.sortedMapPrint(toPrint);
+		System.out.println("Average: " + MapUtil.INSTANCE.freqMapAverage(toPrint));
     }
 
     protected static void stringMapPrint(Map<String, Integer> toPrint) {
-    	MapUtil.sortedMapPrint(toPrint);
+    	MapUtil.INSTANCE.sortedMapPrint(toPrint);
     }
 }

@@ -6,9 +6,6 @@ import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition;
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.model.source.AlgSource;
-import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
-import com.suushiemaniac.cubing.bld.util.ClosureUtil;
-import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 import com.suushiemaniac.cubing.bld.util.StringUtil;
 
 import java.util.Collections;
@@ -63,7 +60,7 @@ public class ConditionsBundle {
 		this.predicateRegExp = REGEX_UNIV;
 		this.letterPairRegExp = REGEX_UNIV;
 
-		this.statisticalPredicate = ClosureUtil.predicatize(ClosureUtil.always(true));
+		this.statisticalPredicate = bldPuzzle -> true;
 	}
 
 	public PieceType getPieceType() {
@@ -263,7 +260,7 @@ public class ConditionsBundle {
 
 	public void setLetterPairRegex(String[] letteringScheme, List<String> pairs, boolean conjunctive, boolean allowInverse) {
 		String letters = String.join("", letteringScheme);
-		String row = StringUtil.guessRegExpRange(letters);
+		String row = StringUtil.INSTANCE.guessRegExpRange(letters);
 
 		if (row.equals(letters)) {
 			row = "[" + Pattern.quote(row) + "]";
