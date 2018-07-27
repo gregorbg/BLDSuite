@@ -5,7 +5,6 @@ import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.analyze.BldPuzzle;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.util.ClosureUtil;
-import com.suushiemaniac.cubing.bld.util.CountingMap;
 import com.suushiemaniac.cubing.bld.util.MapUtil;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 
@@ -19,31 +18,31 @@ public class MassAnalyzer {
 	}
 
 	public void analyzeProperties(List<Algorithm> scrambles) {
-		CountingMap<PieceType> parityCounts = new CountingMap<>();
+		Map<PieceType, Integer> parityCounts = new HashMap<>();
 
-		CountingMap<PieceType> solvedBufferCounts = new CountingMap<>();
+		Map<PieceType, Integer> solvedBufferCounts = new HashMap<>();
 
-		Map<PieceType, CountingMap<Integer>> targets = new HashMap<>();
-		Map<PieceType, CountingMap<Integer>> breakIns = new HashMap<>();
-		Map<PieceType, CountingMap<Integer>> preSolved = new HashMap<>();
-		Map<PieceType, CountingMap<Integer>> misOriented = new HashMap<>();
+		Map<PieceType, Map<Integer, Integer>> targets = new HashMap<>();
+		Map<PieceType, Map<Integer, Integer>> breakIns = new HashMap<>();
+		Map<PieceType, Map<Integer, Integer>> preSolved = new HashMap<>();
+		Map<PieceType, Map<Integer, Integer>> misOriented = new HashMap<>();
 
 		for (Algorithm scramble : scrambles) {
 			this.analyze.parseScramble(scramble);
 
 			for (PieceType type : this.analyze.getPieceTypes()) {
 				if (this.analyze.hasParity(type)) {
-					parityCounts.increment(type);
+					MapUtil.INSTANCE.increment(parityCounts, type);
 				}
 
 				if (this.analyze.isBufferSolved(type)) {
-					solvedBufferCounts.increment(type);
+					MapUtil.INSTANCE.increment(solvedBufferCounts, type);
 				}
 
-				targets.computeIfAbsent(type, ClosureUtil.always(CountingMap::new)).increment(this.analyze.getStatLength(type));
-				breakIns.computeIfAbsent(type, ClosureUtil.always(CountingMap::new)).increment(this.analyze.getBreakInCount(type));
-				preSolved.computeIfAbsent(type, ClosureUtil.always(CountingMap::new)).increment(this.analyze.getPreSolvedCount(type));
-				misOriented.computeIfAbsent(type, ClosureUtil.always(CountingMap::new)).increment(this.analyze.getMisOrientedCount(type));
+				MapUtil.INSTANCE.increment(targets.computeIfAbsent(type, pt -> new HashMap<>()), this.analyze.getStatLength(type));
+				MapUtil.INSTANCE.increment(breakIns.computeIfAbsent(type, pt -> new HashMap<>()), this.analyze.getBreakInCount(type));
+				MapUtil.INSTANCE.increment(preSolved.computeIfAbsent(type, pt -> new HashMap<>()), this.analyze.getPreSolvedCount(type));
+				MapUtil.INSTANCE.increment(misOriented.computeIfAbsent(type, pt -> new HashMap<>()), this.analyze.getMisOrientedCount(type));
 			}
 		}
 
@@ -83,18 +82,18 @@ public class MassAnalyzer {
 	}
 
 	public void analyzeScrambleDist(List<Algorithm> scrambles) {
-		Map<PieceType, CountingMap<String>> pieceTypeMap = new HashMap<>();
+		Map<PieceType, Map<String, Integer>> pieceTypeMap = new HashMap<>();
 
-		CountingMap<String> overall = new CountingMap<>();
+		Map<String, Integer> overall = new HashMap<>();
 
 		for (Algorithm scramble : scrambles) {
 			this.analyze.parseScramble(scramble);
 
 			for (PieceType type : this.analyze.getPieceTypes()) {
-				pieceTypeMap.computeIfAbsent(type, ClosureUtil.always(CountingMap::new)).increment(this.analyze.getStatString(type));
+				MapUtil.INSTANCE.increment(pieceTypeMap.computeIfAbsent(type, pieceType -> new HashMap<>()), this.analyze.getStatString(type));
 			}
 
-			overall.increment(this.analyze.getStatString());
+			MapUtil.INSTANCE.increment(overall, this.analyze.getStatString());
 		}
 
 		for (PieceType type : this.analyze.getPieceTypes()) {
@@ -114,7 +113,7 @@ public class MassAnalyzer {
 	}
 
 	public void analyzeLetterPairs(List<Algorithm> scrambles, boolean singleLetter) {
-		Map<PieceType, CountingMap<String>> pieceTypeMap = new HashMap<>();
+		Map<PieceType, Map<String, Integer>> pieceTypeMap = new HashMap<>();
 
 		for (Algorithm scramble : scrambles) {
 			this.analyze.parseScramble(scramble);
@@ -124,7 +123,7 @@ public class MassAnalyzer {
 					String[] cornerPairs = this.analyze.getSolutionPairs(type).replaceAll(singleLetter ? "\\s+?" : "$.", "").split(singleLetter ? "" : "\\s+?");
 
 					for (String pair : cornerPairs) {
-						pieceTypeMap.computeIfAbsent(type, pt -> new CountingMap<>()).increment(pair);
+						MapUtil.INSTANCE.increment(pieceTypeMap.computeIfAbsent(type, pt -> new HashMap<>()), pair);
 					}
 				}
 			}
@@ -167,11 +166,11 @@ public class MassAnalyzer {
 	}
 
     protected static void numericMapPrint(Map<Integer, Integer> toPrint) {
-		MapUtil.INSTANCE.sortedMapPrint(toPrint);
-		System.out.println("Average: " + MapUtil.INSTANCE.freqMapAverage(toPrint));
+		MapUtil.INSTANCE.sortedPrint(toPrint);
+		System.out.println("Average: " + MapUtil.INSTANCE.freqAverage(toPrint));
     }
 
     protected static void stringMapPrint(Map<String, Integer> toPrint) {
-    	MapUtil.INSTANCE.sortedMapPrint(toPrint);
+    	MapUtil.INSTANCE.sortedPrint(toPrint);
     }
 }

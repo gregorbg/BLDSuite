@@ -10,7 +10,10 @@ import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.TwistyPuzzle;
 import com.suushiemaniac.cubing.bld.model.source.AlgSource;
 import com.suushiemaniac.cubing.bld.optim.BreakInOptim;
+import com.suushiemaniac.cubing.bld.util.ArrayUtil;
+import com.suushiemaniac.cubing.bld.util.ClosureUtil;
 import com.suushiemaniac.cubing.bld.util.MapUtil;
+import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 import com.suushiemaniac.lang.json.JSON;
 
 import java.net.URL;
@@ -65,12 +68,12 @@ public abstract class BldPuzzle implements Cloneable {
 		this.scrambleOrientationPremoves = new SimpleAlg();
 		this.letterPairLanguage = System.getProperty("user.language");
 
-		this.letterSchemes = MapUtil.INSTANCE.constantValueMap(this.getPieceTypes(), ClosureUtil.constantKt(SpeffzUtil.FULL_SPEFFZ));
-		this.avoidBreakIns = MapUtil.INSTANCE.constantValueMap(this.getPieceTypes(), ClosureUtil.constantKt(true));
-		this.optimizeBreakIns = MapUtil.INSTANCE.constantValueMap(this.getPieceTypes(), ClosureUtil.constantKt(true));
+		this.letterSchemes = MapUtil.INSTANCE.constantlyTo(this.getPieceTypes(), ClosureUtil.INSTANCE.constant(SpeffzUtil.INSTANCE.getFULL_SPEFFZ()));
+		this.avoidBreakIns = MapUtil.INSTANCE.constantlyTo(this.getPieceTypes(), ClosureUtil.INSTANCE.constant(true));
+		this.optimizeBreakIns = MapUtil.INSTANCE.constantlyTo(this.getPieceTypes(), ClosureUtil.INSTANCE.constant(true));
 
 		this.mainBuffers = this.readCurrentBuffers();
-		this.backupBuffers = MapUtil.INSTANCE.constantValueMap(this.getPieceTypes(), LinkedList::new);
+		this.backupBuffers = MapUtil.INSTANCE.constantlyTo(this.getPieceTypes(), LinkedList::new);
 
 		this.algSource = null;
 		this.misOrientMethod = MisOrientMethod.SOLVE_DIRECT;
@@ -251,7 +254,7 @@ public abstract class BldPuzzle implements Cloneable {
 
 	protected void applyPermutations(Integer[] current, Integer[] perm) {
 		Integer[] exchanges = new Integer[perm.length];
-		ArrayUtil.fillWith(exchanges, -1);
+		ArrayUtil.INSTANCE.fillWith(exchanges, -1);
 
 		for (int i = 0; i < exchanges.length; i++) {
 			if (perm[i] != -1) {
@@ -286,7 +289,7 @@ public abstract class BldPuzzle implements Cloneable {
 		for (PieceType type : this.getPieceTypes(true)) {
 			int stateLength = type.getNumPieces() * type.getTargetsPerPiece();
 
-			state.put(type, ArrayUtil.autobox(ArrayUtil.fill(stateLength)));
+			state.put(type, ArrayUtil.INSTANCE.filledArray(stateLength));
 		}
 
 		return state;
@@ -316,17 +319,17 @@ public abstract class BldPuzzle implements Cloneable {
 		this.state = this.initState();
 		this.lastScrambledState = this.initState();
 
-		this.cycles = MapUtil.INSTANCE.constantValueMap(this.getPieceTypes(), ArrayList::new);
-		this.cycleCount = MapUtil.INSTANCE.constantValueMap(this.getPieceTypes(), ClosureUtil.constantKt(0));
+		this.cycles = MapUtil.INSTANCE.constantlyTo(this.getPieceTypes(), ArrayList::new);
+		this.cycleCount = MapUtil.INSTANCE.constantlyTo(this.getPieceTypes(), ClosureUtil.INSTANCE.constant(0));
 
 		this.solvedPieces = this.emptySolvedPieces();
 		this.preSolvedPieces = this.emptySolvedPieces();
 		this.misOrientedPieces = this.orientedPieces();
 
-		this.parities = MapUtil.INSTANCE.constantValueMap(this.getPieceTypes(), ClosureUtil.constantKt(false));
+		this.parities = MapUtil.INSTANCE.constantlyTo(this.getPieceTypes(), ClosureUtil.INSTANCE.constant(false));
 
 		this.mainBuffers.forEach(this::cycleCubiesForBuffer);
-		this.bufferFloats = MapUtil.INSTANCE.constantValueMap(this.getPieceTypes(), HashMap::new);
+		this.bufferFloats = MapUtil.INSTANCE.constantlyTo(this.getPieceTypes(), HashMap::new);
 	}
 
 	protected void increaseCycleCount(PieceType type) {
@@ -334,7 +337,7 @@ public abstract class BldPuzzle implements Cloneable {
 	}
 
 	protected int pieceToPosition(PieceType type, int piece) {
-		return ArrayUtil.deepOuterIndex(this.cubies.get(type), piece);
+		return ArrayUtil.INSTANCE.deepOuterIndex(this.cubies.get(type), piece);
 	}
 
 	protected int getLastTarget(PieceType type) {
@@ -345,7 +348,7 @@ public abstract class BldPuzzle implements Cloneable {
 
 	protected List<Integer> getBreakInPermutationsAfter(int piece, PieceType type) {
 		int targetCount = type.getNumPieces();
-		return Arrays.asList(ArrayUtil.autobox(ArrayUtil.fill(targetCount))).subList(1, targetCount);
+		return Arrays.asList(ArrayUtil.INSTANCE.filledArray(targetCount)).subList(1, targetCount);
 	}
 
 	protected int getBreakInOrientationsAfter(int piece, PieceType type) {
@@ -364,14 +367,14 @@ public abstract class BldPuzzle implements Cloneable {
 		Integer[][] cubies = this.cubies.get(type);
 
 		if (cubies != null) {
-			int outer = ArrayUtil.deepOuterIndex(cubies, newBuffer);
+			int outer = ArrayUtil.INSTANCE.deepOuterIndex(cubies, newBuffer);
 
 			if (outer > -1) {
-				int inner = ArrayUtil.deepInnerIndex(cubies, newBuffer);
+				int inner = ArrayUtil.INSTANCE.deepInnerIndex(cubies, newBuffer);
 
 				if (inner > -1) {
-					for (int i = 0; i < outer; i++) ArrayUtil.cycleLeft(cubies);
-					for (int i = 0; i < inner; i++) ArrayUtil.cycleLeft(cubies[0]);
+					for (int i = 0; i < outer; i++) ArrayUtil.INSTANCE.cycleLeft(cubies);
+					for (int i = 0; i < inner; i++) ArrayUtil.INSTANCE.cycleLeft(cubies[0]);
 
 					return true;
 				}
@@ -396,7 +399,7 @@ public abstract class BldPuzzle implements Cloneable {
 		String[] letterScheme = this.letterSchemes.get(type);
 
 		if (letterScheme != null) {
-			int index = ArrayUtil.index(letterScheme, newBuffer);
+			int index = ArrayUtil.INSTANCE.index(letterScheme, newBuffer);
 
 			if (index > -1) {
 				return this.setBuffer(type, index);
@@ -423,7 +426,7 @@ public abstract class BldPuzzle implements Cloneable {
 		String[] letterScheme = this.letterSchemes.get(type);
 
 		if (letterScheme != null) {
-			int index = ArrayUtil.index(letterScheme, newBuffer);
+			int index = ArrayUtil.INSTANCE.index(letterScheme, newBuffer);
 
 			if (index > -1) {
 				return this.registerFloatingBuffer(type, index);
@@ -569,7 +572,7 @@ public abstract class BldPuzzle implements Cloneable {
 			for (int i = 0; i < currentCycles.size(); i++) {
 				if (bufferFloats.containsKey(i)) {
 					String bufferLetter = letters[bufferFloats.get(i)];
-					String position = SpeffzUtil.speffzToSticker(SpeffzUtil.normalize(bufferLetter, letters), type);
+					String position = SpeffzUtil.INSTANCE.speffzToSticker(SpeffzUtil.INSTANCE.normalize(bufferLetter, letters), type);
 
 					solutionRaw.append("(").append(position).append(")");
 				}
@@ -613,7 +616,7 @@ public abstract class BldPuzzle implements Cloneable {
 			for (int i = 0; i < currentCycles.size(); i++) {
 				if (bufferFloats.containsKey(i)) {
 					String bufferLetter = letters[bufferFloats.get(i)];
-					String position = SpeffzUtil.speffzToSticker(SpeffzUtil.normalize(bufferLetter, letters), type);
+					String position = SpeffzUtil.INSTANCE.speffzToSticker(SpeffzUtil.INSTANCE.normalize(bufferLetter, letters), type);
 
 					pairs.append("(float ")
 							.append(position)
@@ -657,8 +660,8 @@ public abstract class BldPuzzle implements Cloneable {
 						Integer[][] cubies = this.cubies.get(type);
 
 						for (Integer piece : misOrients) {
-							int outer = ArrayUtil.deepOuterIndex(cubies, piece);
-							int inner = ArrayUtil.deepInnerIndex(cubies, piece);
+							int outer = ArrayUtil.INSTANCE.deepOuterIndex(cubies, piece);
+							int inner = ArrayUtil.INSTANCE.deepInnerIndex(cubies, piece);
 
 							pairs.append(lettering[piece]);
 							pairs.append(lettering[cubies[outer][(inner + i) % orientations]]);
@@ -809,7 +812,7 @@ public abstract class BldPuzzle implements Cloneable {
 		String[] letterScheme = this.letterSchemes.get(type);
 
 		if (letterScheme != null) {
-			int index = ArrayUtil.index(letterScheme, letter);
+			int index = ArrayUtil.INSTANCE.index(letterScheme, letter);
 
 			if (index > -1) {
 				return this.getLetterPairCorrespondant(type, index);
@@ -824,7 +827,7 @@ public abstract class BldPuzzle implements Cloneable {
 		String[] lettering = this.getLetteringScheme(type);
 
 		if (cubies != null) {
-			int outer = ArrayUtil.deepOuterIndex(cubies, piece);
+			int outer = ArrayUtil.INSTANCE.deepOuterIndex(cubies, piece);
 
 			if (outer > -1) {
 				Integer[] pieceModel = cubies[outer];
@@ -1101,7 +1104,7 @@ public abstract class BldPuzzle implements Cloneable {
 		String[] letterScheme = this.letterSchemes.get(type);
 
 		if (letterScheme != null) {
-			int index = ArrayUtil.index(letterScheme, letter);
+			int index = ArrayUtil.INSTANCE.index(letterScheme, letter);
 
 			if (index > -1) {
 				return this.getOrientationSide(type, index);

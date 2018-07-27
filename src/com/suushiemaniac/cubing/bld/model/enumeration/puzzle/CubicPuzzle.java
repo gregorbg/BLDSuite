@@ -4,6 +4,7 @@ import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 import com.suushiemaniac.cubing.bld.analyze.*;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
+import com.suushiemaniac.cubing.bld.util.ClosureUtil;
 import net.gnehzr.tnoodle.scrambles.Puzzle;
 import puzzle.*;
 
@@ -67,7 +68,7 @@ public enum CubicPuzzle implements TwistyPuzzle {
 	}
 
 	CubicPuzzle(int size, Function<Integer, Puzzle> scramblingPuzzleGen, PieceType... types) {
-		this(size, ClosureUtil.curry(scramblingPuzzleGen, size), types);
+		this(size, () -> scramblingPuzzleGen.apply(size), types);
 	}
 
 	CubicPuzzle(Supplier<Puzzle> scramblingPuzzleGen, CubicPuzzle parent) {

@@ -4,6 +4,8 @@ import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
 
 import com.suushiemaniac.cubing.bld.util.StringUtil.contentSetEquals
+import com.suushiemaniac.cubing.bld.util.StringUtil.toCharStrings
+import com.suushiemaniac.cubing.bld.util.ArrayUtil.applyIndex
 
 object SpeffzUtil {
     val FULL_SPEFFZ = arrayOf("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X")
@@ -14,16 +16,12 @@ object SpeffzUtil {
     val WING_MAPPING = arrayOf("UBr", "URf", "UFl", "ULb", "LUf", "LFd", "LDb", "LBu", "FUr", "FRd", "FDl", "FLu", "RUb", "RBd", "RDf", "RFu", "BUl", "BLd", "BDr", "BRu", "DFr", "DRb", "DBl", "DLf")
     val T_CENTER_MAPPING = arrayOf("Ub", "Ur", "Uf", "Ul", "Lu", "Lf", "Ld", "Lb", "Fu", "Fr", "Fd", "Fl", "Ru", "Rb", "Rd", "Rf", "Bu", "Bl", "Bd", "Br", "Df", "Dr", "Db", "Dl")
 
-    fun fullSpeffz(): Array<String> {
-        return FULL_SPEFFZ
-    }
-
     fun speffzToSticker(speffz: String, type: PieceType): String {
-        return ArrayUtil.mutualIndex(speffz, FULL_SPEFFZ, getMapping(type))
+        return FULL_SPEFFZ.applyIndex(speffz, getMapping(type))
     }
 
     fun stickerToSpeffz(sticker: String, type: PieceType): String {
-        return ArrayUtil.mutualIndex(sticker, getMapping(type), FULL_SPEFFZ)
+        return getMapping(type).applyIndex(sticker, FULL_SPEFFZ)
     }
 
     fun normalize(denormLetters: String, denormScheme: Array<String>): String {
@@ -35,11 +33,11 @@ object SpeffzUtil {
     }
 
     fun mapLetters(letters: String, originScheme: Array<String>, targetScheme: Array<String>): String {
-        return letters.map { letter -> ArrayUtil.mutualIndex(letter, originScheme, targetScheme) }.joinToString("")
+        return letters.toCharStrings().joinToString("") { originScheme.applyIndex(it, targetScheme) }
     }
 
-    fun getMapping(type: PieceType): Array<String>? {
-        if (type !is CubicPieceType) return null
+    fun getMapping(type: PieceType): Array<String> {
+        if (type !is CubicPieceType) return arrayOf()
 
         return when (type) {
             CubicPieceType.CORNER -> CORNER_MAPPING
@@ -47,7 +45,7 @@ object SpeffzUtil {
             CubicPieceType.XCENTER -> X_CENTER_MAPPING
             CubicPieceType.WING -> WING_MAPPING
             CubicPieceType.TCENTER -> T_CENTER_MAPPING
-            else -> null
+            else -> arrayOf()
         }
     }
 

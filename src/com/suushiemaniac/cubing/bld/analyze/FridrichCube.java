@@ -4,6 +4,7 @@ import com.suushiemaniac.cubing.alglib.alg.Algorithm;
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg;
 import com.suushiemaniac.cubing.alglib.move.Move;
 import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.CubicPuzzle;
+import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
 
 import java.util.List;
 import java.util.Set;
@@ -55,7 +56,7 @@ public class FridrichCube extends BldCube {
 
 		while (iter < 6) {
 			System.out.println("Trying length " + iter + "…");
-			List<List<Move>> currentPerm = BruteForceUtil.permute(moveSet, iter, false, true);
+			List<List<Move>> currentPerm = BruteForceUtil.INSTANCE.permute(moveSet, iter, false, true);
 
 			for (List<Move> algorithm : currentPerm) {
 				Algorithm tempScramble = new SimpleAlg(algorithm);

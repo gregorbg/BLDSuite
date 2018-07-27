@@ -6,6 +6,8 @@ import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition;
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.model.source.AlgSource;
+import com.suushiemaniac.cubing.bld.util.BruteForceUtil;
+import com.suushiemaniac.cubing.bld.util.SpeffzUtil;
 import com.suushiemaniac.cubing.bld.util.StringUtil;
 
 import java.util.Collections;
@@ -300,7 +302,7 @@ public class ConditionsBundle {
 
 	public void setPredicateRegex(AlgSource algSource, Predicate<Algorithm> filter) {
 		SortedSet<String> matches = new TreeSet<>();
-		String[] possPairs = BruteForceUtil.genBlockString(SpeffzUtil.FULL_SPEFFZ, 2, false);
+		List<String> possPairs = BruteForceUtil.INSTANCE.permuteStr(SpeffzUtil.INSTANCE.getFULL_SPEFFZ(), 2, false, false);
 
 		for (String pair : possPairs) {
 			matches.addAll(algSource.getAlgorithms(this.type, pair).stream()

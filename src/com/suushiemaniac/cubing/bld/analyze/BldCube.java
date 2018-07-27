@@ -7,6 +7,7 @@ import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType;
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType;
 import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.CubicPuzzle;
 import com.suushiemaniac.cubing.bld.optim.BreakInOptim;
+import com.suushiemaniac.cubing.bld.util.ArrayUtil;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -161,7 +162,7 @@ public class BldCube extends BldPuzzle {
 					"y", "y2", "y'", ""
 			};
 
-			int xPosition = ArrayUtil.index(this.state.get(CORNER), X);
+			int xPosition = ArrayUtil.INSTANCE.index(this.state.get(CORNER), X);
 
 			if (xPosition > -1) {
 				String neededRotation = reorientation[xPosition];
@@ -276,7 +277,7 @@ public class BldCube extends BldPuzzle {
 		swaps.put(Q, E);
 
 		for (Map.Entry<Integer, Integer> swap : swaps.entrySet()) {
-			ArrayUtil.swap(state, ArrayUtil.index(state, swap.getKey()), ArrayUtil.index(state, swap.getValue()));
+			ArrayUtil.INSTANCE.swap(state, ArrayUtil.INSTANCE.index(state, swap.getKey()), ArrayUtil.INSTANCE.index(state, swap.getValue()));
 		}
 	}
 
@@ -312,9 +313,9 @@ public class BldCube extends BldPuzzle {
 		String lastTarget = this.letterSchemes.get(type)[piece];
 		List<String> bestTargets = this.optim.optimizeBreakInTargetsAfter(lastTarget, type);
 		List<Integer> breakInPerms = bestTargets.stream()
-				.map(t -> ArrayUtil.index(this.letterSchemes.get(type), t))
+				.map(t -> ArrayUtil.INSTANCE.index(this.letterSchemes.get(type), t))
 				.filter(i -> i > -1)
-				.map(i -> ArrayUtil.deepOuterIndex(this.cubies.get(type), i))
+				.map(i -> ArrayUtil.INSTANCE.deepOuterIndex(this.cubies.get(type), i))
 				.filter(i -> i > -1)
 				.distinct()
 				.collect(Collectors.toList());
@@ -338,13 +339,13 @@ public class BldCube extends BldPuzzle {
 		String lastTarget = this.letterSchemes.get(type)[piece];
 		List<String> bestTargets = this.optim.optimizeBreakInTargetsAfter(lastTarget, type);
 		List<Integer> breakInOrients = bestTargets.stream()
-				.map(t -> ArrayUtil.index(this.letterSchemes.get(type), t))
+				.map(t -> ArrayUtil.INSTANCE.index(this.letterSchemes.get(type), t))
 				.filter(i -> i > -1)
-				.map(i -> ArrayUtil.deepInnerIndex(this.cubies.get(type), i))
+				.map(i -> ArrayUtil.INSTANCE.deepInnerIndex(this.cubies.get(type), i))
 				.filter(i -> i > -1)
 				.collect(Collectors.toList());
 
-		List<Integer> expected = new ArrayList<>(Arrays.asList(ArrayUtil.autobox(ArrayUtil.fill(type.getTargetsPerPiece()))));
+		List<Integer> expected = new ArrayList<>(Arrays.asList(ArrayUtil.INSTANCE.filledArray(type.getTargetsPerPiece())));
 		expected.removeAll(breakInOrients);
 
 		breakInOrients.addAll(expected);
@@ -457,7 +458,7 @@ public class BldCube extends BldPuzzle {
 		}
 
 		if (!isSolved && solvedPieces[0] && currentCycleLength % 2 == 0) {
-			int unsolvedCount = ArrayUtil.count(solvedPieces, false);
+			int unsolvedCount = ArrayUtil.INSTANCE.countOf(solvedPieces, false);
 
 			if (unsolvedCount > 2) {
 				Map<Integer, Integer> bufferFloats = this.bufferFloats.get(type);
@@ -468,7 +469,7 @@ public class BldCube extends BldPuzzle {
 
 				do {
 					nextBufferFloat = floatingBuffers.poll();
-					floatPosition = ArrayUtil.deepOuterIndex(ref, nextBufferFloat);
+					floatPosition = ArrayUtil.INSTANCE.deepOuterIndex(ref, nextBufferFloat);
 				} while (nextBufferFloat != null
 						&& (solvedPieces[floatPosition] || bufferFloats.containsValue(nextBufferFloat)));
 
@@ -476,10 +477,10 @@ public class BldCube extends BldPuzzle {
 					this.cycleCubiesForBuffer(type, nextBufferFloat);
 
 					for (int i = 0; i < floatPosition; i++) {
-						ArrayUtil.cycleLeft(solvedPieces);
+						ArrayUtil.INSTANCE.cycleLeft(solvedPieces);
 
 						for (int j = 0; j < type.getTargetsPerPiece(); j++) {
-							ArrayUtil.cycleLeft(misOrientations[j]);
+							ArrayUtil.INSTANCE.cycleLeft(misOrientations[j]);
 						}
 					}
 

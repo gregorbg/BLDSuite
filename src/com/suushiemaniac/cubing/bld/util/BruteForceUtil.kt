@@ -38,6 +38,10 @@ object BruteForceUtil {
         return this.toList().permute(length, inclusive, mayRepeat)
     }
 
+    fun Array<String>.permuteStr(length: Int, inlusive: Boolean = false, mayRepeat: Boolean = false): List<String> {
+        return this.permute(length, inlusive, mayRepeat).map { it.joinToString("") }
+    }
+
     fun bruteForceAlg(lpCase: String, type: PieceType, alphabet: Array<String>, prune: Int = 21) {
         val reader = CubicAlgorithmReader()
         val analyze = CubicPuzzle.THREE_BLD.analyzingPuzzle

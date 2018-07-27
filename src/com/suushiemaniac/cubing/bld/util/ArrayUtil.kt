@@ -1,8 +1,12 @@
 package com.suushiemaniac.cubing.bld.util
 
 object ArrayUtil {
-    fun <S, T> T.mutualIndex(source: Array<T>, dest: Array<S>): S {
-        return dest[source.indexOf(this)]
+    fun <S, T> Array<T>.applyIndex(element: T, dest: Array<S>): S {
+        return dest[this.indexOf(element)]
+    }
+
+    fun <T> Array<T>.index(element: T): Int {
+        return this.indexOf(element) // FIXME remove when migration fully done
     }
 
     fun <T> Array<T>.swap(from: Int, to: Int) {
@@ -35,8 +39,16 @@ object ArrayUtil {
         return -1
     }
 
-    fun fill(length: Int): Array<Int> {
-        return (0 until length).toList().toTypedArray()
+    fun Int.filledArray(): Array<Int> {
+        return (0 until this).toList().toTypedArray()
+    }
+
+    fun <T> Array<T>.fillWith(element: T): Array<T> {
+        for (i in this.indices) {
+            this[i] = element
+        }
+
+        return this
     }
 
     fun <T> Array<T>.countOf(element: T): Int {
