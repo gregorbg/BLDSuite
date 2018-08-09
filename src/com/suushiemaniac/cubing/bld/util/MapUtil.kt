@@ -7,9 +7,9 @@ object MapUtil {
         }
     }
 
-    fun <T : Number> Map<Int, T>.freqAverage(): Double {
-        val criteriaHit = this.values.map { it.toInt() }.sum()
-        val sum = this.entries.sumByDouble { it.key * it.value.toDouble() }
+    fun <T : Number> Map<T, Int>.freqAverage(): Double {
+        val criteriaHit = this.values.sum()
+        val sum = this.entries.sumByDouble { it.key.toDouble() * it.value }
 
         return sum / criteriaHit
     }

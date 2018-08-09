@@ -11,7 +11,6 @@ import com.suushiemaniac.cubing.bld.util.MapUtil.freqAverage
 class MassAnalyzer(var analyze: BldPuzzle) {
     fun analyzeProperties(scrambles: List<Algorithm>) {
         val parityCounts = mutableMapOf<PieceType, Int>()
-
         val solvedBufferCounts = mutableMapOf<PieceType, Int>()
 
         val targets = mutableMapOf<PieceType, MutableMap<Int, Int>>()
