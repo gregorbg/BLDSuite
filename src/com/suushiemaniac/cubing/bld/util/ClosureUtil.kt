@@ -2,11 +2,11 @@ package com.suushiemaniac.cubing.bld.util
 
 object ClosureUtil {
     fun <T, U, R> curry(unBound: (T, U) -> R, arg: T): (U) -> R {
-        return { fnArg -> unBound(arg, fnArg) }
+        return { unBound(arg, it) }
     }
 
     fun <T, U, R> curryRight(unBound: (T, U) -> R, arg: U): (T) -> R {
-        return { fnArg -> unBound(fnArg, arg) }
+        return { unBound(it, arg) }
     }
 
     fun <T, R> curry(unBound: (T) -> R, arg: T): () -> R {
@@ -22,17 +22,17 @@ object ClosureUtil {
     }
 
     fun <T, R> always(value: R): (T) -> R {
-        return { _ -> value }
+        return { value }
     }
 
     fun <T, R> always(value: () -> R): (T) -> R {
-        return { _ -> value() }
+        return { value() }
     }
 
     fun <T, R> tryCatch(throwing: (T) -> R): (T) -> R {
-        return { t ->
+        return {
             try {
-                throwing(t)
+                throwing(it)
             } catch (e: Exception) {
                 throw RuntimeException(e)
             }

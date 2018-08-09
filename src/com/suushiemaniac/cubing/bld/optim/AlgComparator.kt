@@ -2,9 +2,9 @@ package com.suushiemaniac.cubing.bld.optim
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
 
-class AlgComparator protected constructor() : Comparator<Algorithm> {
+class AlgComparator private constructor() : Comparator<Algorithm> {
     override fun compare(alg: Algorithm, otherAlg: Algorithm): Int {
-        return java.lang.Float.compare(this.score(otherAlg), this.score(alg))
+        return this.score(alg).compareTo(this.score(otherAlg))
     }
 
     fun score(alg: Algorithm): Float {

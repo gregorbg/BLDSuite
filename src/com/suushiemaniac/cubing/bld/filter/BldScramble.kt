@@ -15,8 +15,6 @@ import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.runBlocking
 import net.gnehzr.tnoodle.scrambles.Puzzle
 
-import java.util.*
-
 class BldScramble(var analyzingPuzzle: BldPuzzle, var conditions: List<ConditionsBundle>) {
     protected var scramblingSupplier: () -> Puzzle = analyzingPuzzle.model.supplyScramblingPuzzle()
 
@@ -32,13 +30,14 @@ class BldScramble(var analyzingPuzzle: BldPuzzle, var conditions: List<Condition
     }
 
     fun findScrambleOnThread(): Algorithm {
-        val testCube = this.analyzingPuzzle
+        val testCube = this.analyzingPuzzle.clone()
         val tNoodle = this.generateScramblingPuzzle()
         val reader = CubicAlgorithmReader()
 
         do {
             val scrString = tNoodle.generateScramble()
             val scramble = reader.parse(scrString)
+
             testCube.parseScramble(scramble)
         } while (!this.matchingConditions(testCube))
 
@@ -46,17 +45,7 @@ class BldScramble(var analyzingPuzzle: BldPuzzle, var conditions: List<Condition
     }
 
     fun findScramblesOnThread(num: Int): List<Algorithm> {
-        val scrambles = ArrayList<Algorithm>()
-
-        for (i in 0 until num) {
-            if (i % (num / Math.min(100, num)) == 0) {
-                println(i)
-            }
-
-            scrambles.add(this.findScrambleOnThread())
-        }
-
-        return scrambles
+        return List(num) { this.findScrambleOnThread() }
     }
 
     fun findScramblesThreadModel(numScrambles: Int, feedbackFunction: (Int) -> Unit = {}): List<Algorithm> {
@@ -110,14 +99,14 @@ class BldScramble(var analyzingPuzzle: BldPuzzle, var conditions: List<Condition
     }
 
     companion object {
-        protected var SHOW_DISCARDED = false
+        private var SHOW_DISCARDED = false
 
         fun setShowDiscarded(showDiscarded: Boolean) {
             BldScramble.SHOW_DISCARDED = showDiscarded
         }
 
         fun cloneFrom(refCube: BldPuzzle, isStrict: Boolean): BldScramble {
-            val conditions = ArrayList<ConditionsBundle>()
+            val conditions = mutableListOf<ConditionsBundle>()
 
             for (type in refCube.pieceTypes) {
                 val condition = ConditionsBundle(type)
@@ -137,24 +126,22 @@ class BldScramble(var analyzingPuzzle: BldPuzzle, var conditions: List<Condition
         }
 
         fun fromStatString(statString: String, refCube: BldPuzzle, isStrict: Boolean): BldScramble {
-            val conditions = ArrayList<ConditionsBundle>()
+            val conditions = mutableListOf<ConditionsBundle>()
 
             for (pieceStatString in statString.split("\\|".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
-                val statPattern = "([A-Za-z]+?):(_?)(0|[1-9][0-9]*)(\\*?)(#*)(~*)(\\+*)".toPattern()
-                val statMatcher = statPattern.matcher(pieceStatString.replace("\\s".toRegex(), ""))
-
-                if (statMatcher.find()) {
-                    val mnemonic = statMatcher.group(1)
+                "([A-Za-z]+?):(_?)(0|[1-9][0-9]*)(\\*?)(#*)(~*)(\\+*)".toRegex()
+                        .matchEntire(pieceStatString.replace("\\s".toRegex(), ""))?.let {
+                    val mnemonic = it.groupValues[1]
                     val type = findTypeByMnemonic(refCube, mnemonic)
 
                     val condition = ConditionsBundle(type!!)
 
-                    val targets = Integer.parseInt(statMatcher.group(3))
-                    val breakIns = statMatcher.group(5).length
-                    val hasParity = statMatcher.group(2).isNotEmpty()
-                    val preSolved = statMatcher.group(7).length
-                    val misOriented = statMatcher.group(6).length
-                    val bufferSolved = statMatcher.group(4).isNotEmpty()
+                    val targets = it.groupValues[3].toInt()
+                    val breakIns = it.groupValues[5].length
+                    val hasParity = it.groupValues[2].isNotEmpty()
+                    val preSolved = it.groupValues[7].length
+                    val misOriented = it.groupValues[6].length
+                    val bufferSolved = it.groupValues[4].isNotEmpty()
 
                     condition.targets = if (isStrict) EXACT(targets) else MAX(targets)
                     condition.breakIns = if (isStrict) EXACT(breakIns) else MAX(breakIns)

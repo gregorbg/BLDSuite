@@ -8,7 +8,7 @@ import com.suushiemaniac.cubing.bld.util.MapUtil.increment
 import com.suushiemaniac.cubing.bld.util.MapUtil.sortedPrint
 import com.suushiemaniac.cubing.bld.util.MapUtil.freqAverage
 
-class MassAnalyzer(protected var analyze: BldPuzzle) {
+class MassAnalyzer(var analyze: BldPuzzle) {
     fun analyzeProperties(scrambles: List<Algorithm>) {
         val parityCounts = mutableMapOf<PieceType, Int>()
 
@@ -31,10 +31,10 @@ class MassAnalyzer(protected var analyze: BldPuzzle) {
                     solvedBufferCounts.increment(type)
                 }
 
-                targets.computeIfAbsent(type) { mutableMapOf() }.increment(this.analyze.getStatLength(type))
-                breakIns.computeIfAbsent(type) { mutableMapOf() }.increment(this.analyze.getBreakInCount(type))
-                preSolved.computeIfAbsent(type) { mutableMapOf() }.increment(this.analyze.getPreSolvedCount(type))
-                misOriented.computeIfAbsent(type) { mutableMapOf() }.increment(this.analyze.getMisOrientedCount(type))
+                targets.getOrPut(type) { mutableMapOf() }.increment(this.analyze.getStatLength(type))
+                breakIns.getOrPut(type) { mutableMapOf() }.increment(this.analyze.getBreakInCount(type))
+                preSolved.getOrPut(type) { mutableMapOf() }.increment(this.analyze.getPreSolvedCount(type))
+                misOriented.getOrPut(type) { mutableMapOf() }.increment(this.analyze.getMisOrientedCount(type))
             }
         }
 
@@ -45,31 +45,31 @@ class MassAnalyzer(protected var analyze: BldPuzzle) {
         for (type in this.analyze.pieceTypes) {
             println()
             println("Parity: " + parityCounts[type])
-            println("Average: " + parityCounts[type]!! / numCubes.toFloat())
+            println("Average: " + parityCounts.getValue(type) / numCubes.toFloat())
 
             println()
             println("Buffer preSolved: " + solvedBufferCounts[type])
-            println("Average: " + solvedBufferCounts[type]!! / numCubes.toFloat())
+            println("Average: " + solvedBufferCounts.getValue(type) / numCubes.toFloat())
 
             println()
             println(type.humanName + " targets")
-            targets[type]?.sortedPrint()
-            println("Average: " + targets[type]?.freqAverage())
+            targets.getValue(type).sortedPrint()
+            println("Average: " + targets.getValue(type).freqAverage())
 
             println()
             println(type.humanName + " break-ins")
-            breakIns[type]?.sortedPrint()
-            println("Average: " + breakIns[type]?.freqAverage())
+            breakIns.getValue(type).sortedPrint()
+            println("Average: " + breakIns.getValue(type).freqAverage())
 
             println()
             println(type.humanName + " pre-solved")
-            preSolved[type]?.sortedPrint()
-            println("Average: " + preSolved[type]?.freqAverage())
+            preSolved.getValue(type).sortedPrint()
+            println("Average: " + preSolved.getValue(type).freqAverage())
 
             println()
             println(type.humanName + " mis-oriented")
-            misOriented[type]?.sortedPrint()
-            println("Average: " + misOriented[type]?.freqAverage())
+            misOriented.getValue(type).sortedPrint()
+            println("Average: " + misOriented.getValue(type).freqAverage())
         }
     }
 
@@ -86,17 +86,17 @@ class MassAnalyzer(protected var analyze: BldPuzzle) {
             this.analyze.parseScramble(scramble)
 
             for (type in this.analyze.pieceTypes) {
-                pieceTypeMap.computeIfAbsent(type) { mutableMapOf() }.increment(this.analyze.getStatString(type))
+                pieceTypeMap.getOrPut(type) { mutableMapOf() }.increment(this.analyze.getStatString(type))
             }
 
             overall.increment(this.analyze.statString)
         }
 
-        for (type in this.analyze.pieceTypes) {
+        for ((type, subMap) in pieceTypeMap.entries) {
             println()
             println(type.humanName)
 
-            pieceTypeMap[type]?.sortedPrint()
+            subMap.sortedPrint()
         }
 
         println()
@@ -116,52 +116,35 @@ class MassAnalyzer(protected var analyze: BldPuzzle) {
 
             for (type in this.analyze.pieceTypes) {
                 if (this.analyze.getStatLength(type) > 0) {
-                    val cornerPairs = this.analyze.getSolutionPairs(type)
+                    val solutionPairs = this.analyze.getSolutionPairs(type)
                             .replace((if (singleLetter) "\\s+?" else "$.").toRegex(), "")
                             .split((if (singleLetter) "" else "\\s+?").toRegex())
                             .dropLastWhile { it.isEmpty() }
-                            .toTypedArray()
 
-                    for (pair in cornerPairs) {
-                        pieceTypeMap.computeIfAbsent(type) { mutableMapOf() }.increment(pair)
+                    for (pair in solutionPairs) {
+                        pieceTypeMap.getOrPut(type) { mutableMapOf() }.increment(pair)
                     }
                 }
             }
         }
 
-        for (type in this.analyze.pieceTypes) {
+        for ((type, subMap) in pieceTypeMap.entries) {
             println()
             println(type.humanName)
 
-            pieceTypeMap[type]?.sortedPrint()
+            subMap.sortedPrint()
         }
     }
 
-    fun analyzeLetterPairs(numCubes: Int, singleLetter: Boolean) {
+    fun analyzeLetterPairs(numCubes: Int, singleLetter: Boolean = false) {
         this.analyzeLetterPairs(this.generateRandom(numCubes), singleLetter)
-    }
-
-    fun analyzeLetterPairs(numCubes: Int) {
-        this.analyzeLetterPairs(numCubes, false)
     }
 
     fun generateRandom(numCubes: Int): List<Algorithm> {
         val tNoodle = this.analyze.model.scramblingPuzzle
         val reader = this.analyze.model.reader
 
-        val scrambles = ArrayList<Algorithm>()
-
-        for (i in 0 until numCubes) {
-            if (i % (numCubes / Math.min(100, numCubes)) == 0) {
-                println("Cube $i")
-            }
-
-            val rawScramble = tNoodle.generateScramble()
-            val scramble = reader.parse(rawScramble)
-
-            scrambles.add(scramble)
-        }
-
-        return scrambles
+        return List<String>(numCubes) { tNoodle.generateScramble() }
+                .map { reader.parse(it) }
     }
 }

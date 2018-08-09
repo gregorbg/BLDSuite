@@ -48,10 +48,10 @@ object BruteForceUtil {
 
         for (len in 1 until prune) {
             println("Trying length $len…")
-            val moves = alphabet.asList().permute(len, true)
+            val moves = alphabet.permuteStr(len, true)
 
             for (alg in moves) {
-                val current = reader.parse(alg.joinToString(""))
+                val current = reader.parse(alg)
 
                 if (analyze.solves(type, current, lpCase, false)) {
                     println(current.toFormatString())

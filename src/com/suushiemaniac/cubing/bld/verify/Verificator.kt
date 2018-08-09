@@ -15,12 +15,12 @@ import com.suushiemaniac.cubing.bld.analyze.BldPuzzle
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
 import com.suushiemaniac.cubing.bld.model.source.AlgSource
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil
-import com.suushiemaniac.cubing.bld.util.BruteForceUtil.permute
+import com.suushiemaniac.cubing.bld.util.BruteForceUtil.permuteStr
+import com.suushiemaniac.cubing.bld.util.MapUtil.denullify
 
 class Verificator(val reader: NotationReader, val source: AlgSource, val model: BldPuzzle) {
     fun verifyAll(type: PieceType): Map<String, Map<String, Boolean>> {
         return FULL_LETTER_PAIRS
-                .map { it.joinToString("") }
                 .map { it to this.verifySingleCase(type, it) }
                 .toMap()
     }
@@ -31,26 +31,19 @@ class Verificator(val reader: NotationReader, val source: AlgSource, val model: 
                 .toMap()
     }
 
-    fun attemptFixFor(type: PieceType, letterPair: String): Map<String, String> {
+    fun attemptFixFor(type: PieceType, letterPair: String): Map<String, Algorithm> {
         return this.source.getRawAlgorithms(type, letterPair)
                 .filter { ParseUtils.isParseable(it, this.reader) }
                 .filter { !this.model.solves(type, this.reader.parse(it), letterPair, true) }
                 .map { it to this.fixAlgorithm(it, type, letterPair) }
-                .toMap()
+                .toMap().denullify()
     }
 
-    fun fixAlgorithm(rawAlg: String, type: PieceType, letterPair: String): String {
+    fun fixAlgorithm(rawAlg: String, type: PieceType, letterPair: String): Algorithm? {
         val alg = this.reader.parse(rawAlg)
 
-        val reparations = this.computePossibleReparations(alg)
-
-        for (repairedAlg in reparations) {
-            if (this.model.solves(type, repairedAlg, letterPair, true)) {
-                return repairedAlg.toFormatString()
-            }
-        }
-
-        return rawAlg
+        return this.computePossibleReparations(alg)
+                .firstOrNull { this.model.solves(type, it, letterPair, true) }
     }
 
     protected fun computePossibleReparations(alg: Algorithm): List<Algorithm> {
@@ -64,7 +57,7 @@ class Verificator(val reader: NotationReader, val source: AlgSource, val model: 
 
                     for (preReparation in reparations) {
                         for (alt in alternatives) {
-                            val nextReparation = ArrayList(preReparation)
+                            val nextReparation = preReparation.toMutableList()
                             nextReparation.add(alt)
 
                             currentReparations.add(nextReparation)
@@ -121,47 +114,28 @@ class Verificator(val reader: NotationReader, val source: AlgSource, val model: 
     fun computePossibleAlternatives(original: Move): List<Move> {
         return if (original is CubicMove)
             CubicModifier.values()
-                //.filter(it != move.getModifier())
+                .filter { it != original.modifier }
                 .map { CubicMove( original.plane, it, original.depth) }
         else emptyList()
     }
 
     fun findMatchingSubGroup(type: PieceType, group: SubGroup): Map<String, List<String>> {
-        val sameGroupMap = mutableMapOf<String, MutableList<String>>()
-
-        for (possPairList in FULL_LETTER_PAIRS) {
-            val possPair = possPairList.joinToString("")
-            val accu = mutableListOf<String>()
-
-            val algStringList = this.source.getRawAlgorithms(type, possPair)
-
-            for (alg in algStringList) {
-                if (ParseUtils.isParseable(alg, this.reader) && this.reader.parse(alg).subGroup.sameOrLargerSubGroup(group)) {
-                    accu.add(alg)
-                }
-            }
-
-            sameGroupMap[possPair] = accu
-        }
-
-        return sameGroupMap
+        return FULL_LETTER_PAIRS.map {
+            it to this.source.getRawAlgorithms(type, it)
+                    .filter { alg -> ParseUtils.isParseable(alg, this.reader) }
+                    .filter { alg -> this.reader.parse(alg).subGroup.sameOrLargerSubGroup(group) }
+        }.toMap()
     }
 
     fun checkParseable(type: PieceType): Map<String, Set<String>> {
-        val unparseableMap = mutableMapOf<String, Set<String>>()
-
-        for (possPairList in FULL_LETTER_PAIRS) {
-            val possPair = possPairList.joinToString("")
-            val algStringList = this.source.getRawAlgorithms(type, possPair)
-
-            val unparseable = algStringList.filter { !ParseUtils.isParseable(it, this.reader) }
-            unparseableMap[possPair] = unparseable.toSet()
-        }
-
-        return unparseableMap
+        return FULL_LETTER_PAIRS.map {
+            it to this.source.getRawAlgorithms(type, it)
+                    .filter { alg -> !ParseUtils.isParseable(alg, this.reader) }
+                    .toSet()
+        }.toMap()
     }
 
     companion object {
-        var FULL_LETTER_PAIRS = BruteForceUtil.ALPHABET.permute(2, false, false)
+        val FULL_LETTER_PAIRS = BruteForceUtil.ALPHABET.permuteStr(2, false, false)
     }
 }

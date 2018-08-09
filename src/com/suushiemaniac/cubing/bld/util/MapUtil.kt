@@ -7,9 +7,9 @@ object MapUtil {
         }
     }
 
-    fun <T : Number> Map<Int, T>.freqAverage(): Float {
+    fun <T : Number> Map<Int, T>.freqAverage(): Double {
         val criteriaHit = this.values.map { it.toInt() }.sum()
-        val sum = this.entries.fold(0f) {acc, entry -> acc + (entry.key * entry.value.toFloat()) }
+        val sum = this.entries.sumByDouble { it.key * it.value.toDouble() }
 
         return sum / criteriaHit
     }
@@ -20,5 +20,11 @@ object MapUtil {
 
     fun <K> MutableMap<K, Int>.increment(key: K) {
         this[key] = this.getOrDefault(key, 0) + 1
+    }
+
+    fun <K, V> Map<K, V?>.denullify(): Map<K, V> {
+        return this.mapNotNull { (key, nullableVal) ->
+            nullableVal?.let { key to it }
+        }.toMap()
     }
 }

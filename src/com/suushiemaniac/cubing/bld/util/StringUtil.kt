@@ -32,6 +32,6 @@ object StringUtil {
     fun String.contentSetEquals(that: String): Boolean {
         return this.length == that.length
                 && this.containsAll(that.toCharStrings())
-                && that.containsAny(this.toCharStrings())
+                && that.containsAll(this.toCharStrings())
     }
 }

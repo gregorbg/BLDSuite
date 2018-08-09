@@ -5,12 +5,12 @@ import com.suushiemaniac.cubing.bld.model.source.AlgSource
 
 object MemoUtil {
     fun genMemoTree(pairs: String, source: AlgSource): List<String> {
-        val treeList = ArrayList(listOf(""))
-        val posHistory = ArrayList<LetterPairImage>()
+        val treeList = mutableListOf("")
+        val posHistory = mutableListOf<LetterPairImage>()
 
         for (pair in pairs.split("(?<=\\G.{2})".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
             if (pair.length == 1) {
-                val oldMemoStrings = ArrayList(treeList)
+                val oldMemoStrings = treeList.toMutableList()
 
                 for (oldMemo in oldMemoStrings) {
                     treeList.add(oldMemo + (if (oldMemo.isNotEmpty()) " // " else "") + "Parity: " + pair)
@@ -20,8 +20,8 @@ object MemoUtil {
             } else if (pair.length == 2) {
                 val partOfSpeech = MemoUtil.classifyNextPOS(posHistory)
 
-                val words = ArrayList(source.getRawAlgorithms(partOfSpeech, pair))
-                val oldMemoStrings = ArrayList(treeList)
+                val words = source.getRawAlgorithms(partOfSpeech, pair)
+                val oldMemoStrings = treeList.toMutableList()
 
                 for (oldMemo in oldMemoStrings) {
                     for (word in words) {
