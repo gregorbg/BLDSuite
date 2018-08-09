@@ -44,10 +44,6 @@ public enum CubicPieceType implements PieceType {
         return this.numPieces;
     }
 
-    public int getNumPiecesNoBuffer() {
-        return this.numPieces - 1;
-    }
-
     public int getNumAlgs() {
         return this.numAlgs;
     }

@@ -3,19 +3,21 @@ package com.suushiemaniac.cubing.bld.model.enumeration.piece;
 import com.suushiemaniac.cubing.alglib.lang.NotationReader;
 
 public interface PieceType {
-    int getTargetsPerPiece();
+	int getTargetsPerPiece();
 
-    int getNumPieces();
+	int getNumPieces();
 
-    int getNumPiecesNoBuffer();
+	default int getNumPiecesNoBuffer() {
+		return this.getNumPieces() - 1;
+	}
 
-    int getNumAlgs();
+	int getNumAlgs();
 
-    String name();
+	String name();
 
-    String humanName();
+	String humanName();
 
 	String mnemonic();
 
-    NotationReader getReader();
+	NotationReader getReader();
 }
