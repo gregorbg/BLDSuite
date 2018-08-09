@@ -33,11 +33,6 @@ public enum LetterPairImage implements PieceType {
 	}
 
 	@Override
-	public int getNumPiecesNoBuffer() {
-		return 25; // TODO 26 here as well??
-	}
-
-	@Override
 	public int getNumAlgs() {
 		return 1;
 	}
