@@ -20,12 +20,12 @@ abstract class BldPuzzleTrans(var model: TwistyPuzzle) : Cloneable {
     var scrambleOrientationPremoves = SimpleAlg()
     var letterPairLanguage = System.getProperty("user.language")
 
-    var letterSchemes = foo
-    var avoidBreakIns = bar
-    var optimizeBreakIns = baz
+    var letterSchemes: Nothing = TODO()
+    var avoidBreakIns: Nothing = TODO()
+    var optimizeBreakIns: Nothing = TODO()
 
     var mainBuffers = this.readCurrentBuffers()
-    var backupBuffers = foo
+    var backupBuffers: Nothing = TODO()
 
     var algSource = null
     var misOrientMethod = MisOrientMethod.SOLVE_DIRECT
@@ -43,7 +43,7 @@ abstract class BldPuzzleTrans(var model: TwistyPuzzle) : Cloneable {
             val moveJson = json.get(key)
 
             for (type in this.getPieceTypes(true)) {
-                val permutationList = moveJson.get(type.name()).nativeList { it.intValue() }
+                val permutationList = moveJson.get(type.name).nativeList(JSON::intValue)
                 val permutationArray = permutationList.toTypedArray()
 
                 typeMap[type] = permutationArray
@@ -80,6 +80,22 @@ abstract class BldPuzzleTrans(var model: TwistyPuzzle) : Cloneable {
         }
 
         return pieceTypes
+    }
+
+    fun readCurrentBuffers(): Map<PieceType, Int> {
+        return TODO()
+    }
+
+    fun resetPuzzle() {
+        TODO()
+    }
+
+    fun scramblePuzzle(scramble: Algorithm) {
+        TODO()
+    }
+
+    fun solvePuzzle() {
+        TODO()
     }
 
     protected abstract fun getPermutationPieceTypes(): List<PieceType>

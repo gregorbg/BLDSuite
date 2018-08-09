@@ -135,11 +135,9 @@ class Verificator(val reader: NotationReader, val source: AlgSource, val model: 
 
             val algStringList = this.source.getRawAlgorithms(type, possPair)
 
-            if (algStringList != null) {
-                for (alg in algStringList) {
-                    if (ParseUtils.isParseable(alg, this.reader) && this.reader.parse(alg).subGroup.sameOrLargerSubGroup(group)) {
-                        accu.add(alg)
-                    }
+            for (alg in algStringList) {
+                if (ParseUtils.isParseable(alg, this.reader) && this.reader.parse(alg).subGroup.sameOrLargerSubGroup(group)) {
+                    accu.add(alg)
                 }
             }
 
@@ -156,10 +154,8 @@ class Verificator(val reader: NotationReader, val source: AlgSource, val model: 
             val possPair = possPairList.joinToString("")
             val algStringList = this.source.getRawAlgorithms(type, possPair)
 
-            if (algStringList != null) {
-                val unparseable = algStringList.filter { !ParseUtils.isParseable(it, this.reader) }
-                unparseableMap[possPair] = unparseable.toSet()
-            }
+            val unparseable = algStringList.filter { !ParseUtils.isParseable(it, this.reader) }
+            unparseableMap[possPair] = unparseable.toSet()
         }
 
         return unparseableMap

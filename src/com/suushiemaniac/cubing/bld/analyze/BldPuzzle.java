@@ -99,7 +99,7 @@ public abstract class BldPuzzle implements Cloneable {
 			JSON moveJson = json.get(key);
 
 			for (PieceType type : this.getPieceTypes(true)) {
-				List<Integer> permutationList = moveJson.get(type.name()).nativeList(JSON::intValue);
+				List<Integer> permutationList = moveJson.get(type.getName()).nativeList(JSON::intValue);
 				Integer[] permutationArray = permutationList.toArray(new Integer[permutationList.size()]);
 
 				Move move = type.getReader().parse(key).firstMove();
@@ -594,7 +594,7 @@ public abstract class BldPuzzle implements Cloneable {
 		}
 
 		solutionParts.addAll(this.getExecutionOrderPieceTypes().stream()
-				.map((type) -> type.humanName() + ": " + getSolutionRaw(type))
+				.map((type) -> type.getHumanName() + ": " + getSolutionRaw(type))
 				.collect(Collectors.toList()));
 
 		return String.join("\n", solutionParts);
@@ -688,7 +688,7 @@ public abstract class BldPuzzle implements Cloneable {
 		}
 
 		solutionParts.addAll(this.getExecutionOrderPieceTypes().stream()
-				.map(type -> type.humanName() + ": " + getSolutionPairs(type))
+				.map(type -> type.getHumanName() + ": " + getSolutionPairs(type))
 				.collect(Collectors.toList()));
 
 		return String.join("\n", solutionParts);
@@ -745,7 +745,7 @@ public abstract class BldPuzzle implements Cloneable {
 		}
 
 		solutionParts.addAll(this.getExecutionOrderPieceTypes().stream()
-				.map(type -> type.humanName() + ":\n" + getSolutionAlgorithms(type))
+				.map(type -> type.getHumanName() + ":\n" + getSolutionAlgorithms(type))
 				.collect(Collectors.toList()));
 
 		return String.join("\n", solutionParts);
@@ -798,7 +798,7 @@ public abstract class BldPuzzle implements Cloneable {
 		}
 
 		solutionParts.addAll(this.getExecutionOrderPieceTypes().stream()
-				.map(type -> type.humanName() + ": " + getRawSolutionAlgorithm(type))
+				.map(type -> type.getHumanName() + ": " + getRawSolutionAlgorithm(type))
 				.collect(Collectors.toList()));
 
 		return String.join("\n", solutionParts);
@@ -847,7 +847,7 @@ public abstract class BldPuzzle implements Cloneable {
 	}
 
 	public String getStatistics(PieceType type) {
-		return type.humanName() + ": " + this.getStatLength(type) + "@" + this.getBreakInCount(type) + " w/ " + this.getPreSolvedCount(type) + "-" + this.getMisOrientedCount(type) + "\\" + this.getBufferFloatNum(type) + " > " + this.hasParity(type);
+		return type.getHumanName() + ": " + this.getStatLength(type) + "@" + this.getBreakInCount(type) + " w/ " + this.getPreSolvedCount(type) + "-" + this.getMisOrientedCount(type) + "\\" + this.getBufferFloatNum(type) + " > " + this.hasParity(type);
 	}
 
 	public String getStatistics() {
@@ -964,7 +964,7 @@ public abstract class BldPuzzle implements Cloneable {
 	public String getNoahtation(PieceType type) {
 		String misOriented = String.join("", Collections.nCopies(this.getMisOrientedCount(type), "'"));
 
-		return type.mnemonic() + ": " + this.getStatLength(type) + misOriented;
+		return type.getMnemonic() + ": " + this.getStatLength(type) + misOriented;
 	}
 
 	public String getNoahtation() {
@@ -983,7 +983,7 @@ public abstract class BldPuzzle implements Cloneable {
 	}
 
 	public String getStatString(PieceType type, boolean indent) {
-		StringBuilder statString = new StringBuilder(type.mnemonic() + ": ");
+		StringBuilder statString = new StringBuilder(type.getMnemonic() + ": ");
 
 		statString.append(this.hasParity(type) ? "_" : (indent ? " " : ""));
 

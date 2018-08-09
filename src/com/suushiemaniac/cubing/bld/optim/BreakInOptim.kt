@@ -34,7 +34,7 @@ class BreakInOptim(val source: AlgSource, val refCube: BldPuzzle = CubicPuzzle.F
         val targetMap = mutableMapOf<Algorithm, String>()
 
         for (t in this.refCube.getLetteringScheme(type)) {
-            val sourceList = this.source.getAlgorithms(type, target + t) ?: continue
+            val sourceList = this.source.getAlgorithms(type, target + t)
 
             for (alg in sourceList) {
                 algList += alg
