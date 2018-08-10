@@ -12,38 +12,41 @@ import com.suushiemaniac.cubing.alglib.move.Move
 import com.suushiemaniac.cubing.alglib.move.modifier.CubicModifier
 import com.suushiemaniac.cubing.alglib.util.ParseUtils
 import com.suushiemaniac.cubing.bld.analyze.BldPuzzle
+import com.suushiemaniac.cubing.bld.model.cycle.PieceCycle
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
 import com.suushiemaniac.cubing.bld.model.source.AlgSource
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil.permuteStr
 import com.suushiemaniac.cubing.bld.util.MapUtil.denullify
+import com.suushiemaniac.cubing.bld.util.SpeffzUtil.toSpeffz
+import com.suushiemaniac.cubing.bld.util.SpeffzUtil.toThreeCycle
 
 class Verificator(val reader: NotationReader, val source: AlgSource, val model: BldPuzzle) {
     fun verifyAll(type: PieceType): Map<String, Map<String, Boolean>> {
         return FULL_LETTER_PAIRS
-                .map { it to this.verifySingleCase(type, it) }
+                .map { it to this.verifySingleCase(type, it.toThreeCycle()) } // FIXME
                 .toMap()
     }
 
-    fun verifySingleCase(type: PieceType, letterPair: String): Map<String, Boolean> {
+    fun verifySingleCase(type: PieceType, letterPair: PieceCycle): Map<String, Boolean> {
         return this.source.getRawAlgorithms(type, letterPair)
-                .map { it to (ParseUtils.isParseable(it, this.reader) && this.model.solves(type, this.reader.parse(it), letterPair, true)) }
+                .map { it to (ParseUtils.isParseable(it, this.reader) && this.model.solves(type, this.reader.parse(it), letterPair.toSpeffz(), true)) }
                 .toMap()
     }
 
-    fun attemptFixFor(type: PieceType, letterPair: String): Map<String, Algorithm> {
+    fun attemptFixFor(type: PieceType, letterPair: PieceCycle): Map<String, Algorithm> {
         return this.source.getRawAlgorithms(type, letterPair)
                 .filter { ParseUtils.isParseable(it, this.reader) }
-                .filter { !this.model.solves(type, this.reader.parse(it), letterPair, true) }
+                .filter { !this.model.solves(type, this.reader.parse(it), letterPair.toSpeffz(), true) }
                 .map { it to this.fixAlgorithm(it, type, letterPair) }
                 .toMap().denullify()
     }
 
-    fun fixAlgorithm(rawAlg: String, type: PieceType, letterPair: String): Algorithm? {
+    fun fixAlgorithm(rawAlg: String, type: PieceType, letterPair: PieceCycle): Algorithm? {
         val alg = this.reader.parse(rawAlg)
 
         return this.computePossibleReparations(alg)
-                .firstOrNull { this.model.solves(type, it, letterPair, true) }
+                .firstOrNull { this.model.solves(type, it, letterPair.toSpeffz(), true) }
     }
 
     protected fun computePossibleReparations(alg: Algorithm): List<Algorithm> {
@@ -121,7 +124,7 @@ class Verificator(val reader: NotationReader, val source: AlgSource, val model: 
 
     fun findMatchingSubGroup(type: PieceType, group: SubGroup): Map<String, List<String>> {
         return FULL_LETTER_PAIRS.map {
-            it to this.source.getRawAlgorithms(type, it)
+            it to this.source.getRawAlgorithms(type, it.toThreeCycle()) // FIXME
                     .filter { alg -> ParseUtils.isParseable(alg, this.reader) }
                     .filter { alg -> this.reader.parse(alg).subGroup.sameOrLargerSubGroup(group) }
         }.toMap()
@@ -129,7 +132,7 @@ class Verificator(val reader: NotationReader, val source: AlgSource, val model: 
 
     fun checkParseable(type: PieceType): Map<String, Set<String>> {
         return FULL_LETTER_PAIRS.map {
-            it to this.source.getRawAlgorithms(type, it)
+            it to this.source.getRawAlgorithms(type, it.toThreeCycle()) // FIXME
                     .filter { alg -> !ParseUtils.isParseable(alg, this.reader) }
                     .toSet()
         }.toMap()

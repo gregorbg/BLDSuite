@@ -1,26 +1,29 @@
 package com.suushiemaniac.cubing.bld.util
 
+import com.suushiemaniac.cubing.bld.model.cycle.ParityCycle
+import com.suushiemaniac.cubing.bld.model.cycle.PieceCycle
+import com.suushiemaniac.cubing.bld.model.cycle.ThreeCycle
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.LetterPairImage
 import com.suushiemaniac.cubing.bld.model.source.AlgSource
 
 object MemoUtil {
-    fun genMemoTree(pairs: String, source: AlgSource): List<String> {
+    fun genMemoTree(cycles: List<PieceCycle>, source: AlgSource): List<String> {
         val treeList = mutableListOf("")
         val posHistory = mutableListOf<LetterPairImage>()
 
-        for (pair in pairs.split("(?<=\\G.{2})".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
-            if (pair.length == 1) {
+        for (cycle in cycles) {
+            if (cycle is ParityCycle) {
                 val oldMemoStrings = treeList.toMutableList()
 
                 for (oldMemo in oldMemoStrings) {
-                    treeList.add(oldMemo + (if (oldMemo.isNotEmpty()) " // " else "") + "Parity: " + pair)
+                    treeList.add(oldMemo + (if (oldMemo.isNotEmpty()) " // " else "") + "Parity: " + cycle.target)
                 }
 
                 treeList.removeAll(oldMemoStrings)
-            } else if (pair.length == 2) {
+            } else if (cycle is ThreeCycle) {
                 val partOfSpeech = MemoUtil.classifyNextPOS(posHistory)
 
-                val words = source.getRawAlgorithms(partOfSpeech, pair)
+                val words = source.getRawAlgorithms(partOfSpeech, cycle)
                 val oldMemoStrings = treeList.toMutableList()
 
                 for (oldMemo in oldMemoStrings) {

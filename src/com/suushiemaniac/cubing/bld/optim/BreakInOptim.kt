@@ -2,20 +2,21 @@ package com.suushiemaniac.cubing.bld.optim
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
 import com.suushiemaniac.cubing.bld.analyze.BldPuzzle
+import com.suushiemaniac.cubing.bld.model.cycle.ThreeCycle
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
 import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.CubicPuzzle
 import com.suushiemaniac.cubing.bld.model.source.AlgSource
 
 class BreakInOptim(val source: AlgSource, val refCube: BldPuzzle = CubicPuzzle.FIVE.analyzingPuzzle, fullCache: Boolean = true) {
-    val cache: MutableMap<PieceType, MutableMap<String, List<String>>> = mutableMapOf()
+    val cache: MutableMap<PieceType, MutableMap<Int, List<Int>>> = mutableMapOf()
 
     init {
         for (type in refCube.getPieceTypes()) {
-            val typeMap = mutableMapOf<String, List<String>>()
+            val typeMap = mutableMapOf<Int, List<Int>>()
 
             if (fullCache) {
-                for (letter in refCube.getLetteringScheme(type)) {
-                    typeMap[letter] = this.optimizeBreakInTargetsAfter(letter, type)
+                for (target in refCube.getLetteringScheme(type).indices) {
+                    typeMap[target] = this.optimizeBreakInTargetsAfter(target, type)
                 }
             }
 
@@ -23,13 +24,14 @@ class BreakInOptim(val source: AlgSource, val refCube: BldPuzzle = CubicPuzzle.F
         }
     }
 
-    fun optimizeBreakInTargetsAfter(target: String, type: PieceType): List<String> {
+    fun optimizeBreakInTargetsAfter(target: Int, type: PieceType): List<Int> {
         return this.cache.getOrPut(type) { mutableMapOf() }.getOrPut(target) {
             val algList = mutableListOf<Algorithm>()
-            val targetMap = mutableMapOf<Algorithm, String>()
+            val targetMap = mutableMapOf<Algorithm, Int>()
 
-            for (t in this.refCube.getLetteringScheme(type)) {
-                val sourceList = this.source.getAlgorithms(type, target + t)
+            for (t in this.refCube.getLetteringScheme(type).indices) { // FIXME improve int iteration
+                val case = ThreeCycle(0, target, t) // FIXME buffer
+                val sourceList = this.source.getAlgorithms(type, case)
 
                 for (alg in sourceList) {
                     algList += alg
@@ -42,8 +44,8 @@ class BreakInOptim(val source: AlgSource, val refCube: BldPuzzle = CubicPuzzle.F
         }
     }
 
-    fun optimizeBreakInAlgorithmsAfter(target: String, type: PieceType): List<Algorithm> {
+    fun optimizeBreakInAlgorithmsAfter(target: Int, type: PieceType): List<Algorithm> {
         return this.optimizeBreakInTargetsAfter(target, type)
-                .flatMap { this.source.getAlgorithms(type, target + it) }
+                .flatMap { this.source.getAlgorithms(type, ThreeCycle(0, target, it)) } // FIXME buffer
     }
 }

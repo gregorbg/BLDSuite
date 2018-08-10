@@ -235,11 +235,8 @@ open class BldCube : BldPuzzle {
         if (this.optim == null)
             this.optim = BreakInOptim(this.algSource!!, this, false)
 
-        val lastTarget = this.letterSchemes.getValue(type)[piece]
-        val bestTargets = this.optim!!.optimizeBreakInTargetsAfter(lastTarget, type)
+        val bestTargets = this.optim!!.optimizeBreakInTargetsAfter(piece, type)
         val breakInPerms = bestTargets
-                .map { this.letterSchemes.getValue(type).indexOf(it) }
-                .filter { it > -1 }
                 .map { this.cubies.getValue(type).deepOuterIndex(it) }
                 .filter { it > -1 }
                 .distinct().toMutableList()
@@ -259,11 +256,8 @@ open class BldCube : BldPuzzle {
         if (this.optim == null)
             this.optim = BreakInOptim(this.algSource!!, this, false)
 
-        val lastTarget = this.letterSchemes.getValue(type)[piece]
-        val bestTargets = this.optim!!.optimizeBreakInTargetsAfter(lastTarget, type)
+        val bestTargets = this.optim!!.optimizeBreakInTargetsAfter(piece, type)
         val breakInOrients = bestTargets
-                .map { this.letterSchemes.getValue(type).indexOf(it) }
-                .filter { it > -1 }
                 .map { this.cubies.getValue(type).deepInnerIndex(it) }
                 .filter { it > -1 }
                 .toMutableList()
@@ -437,7 +431,7 @@ open class BldCube : BldPuzzle {
             while (pieceIndex < type.numPiecesNoBuffer && !pieceCycled) {
                 val piece = breakInPerms[pieceIndex]
 
-                // First unsolved piece is selected
+                // First unsolved pieces is selected
                 if (!solvedPieces[piece]) {
                     val baseIndex = piece / divBase
                     val parts = type.targetsPerPiece
@@ -455,13 +449,13 @@ open class BldCube : BldPuzzle {
                     for (targetFaces in 0 until parts) {
                         val extIndex = (piece + bestOrient + targetFaces) % modBase
 
-                        // Buffer is placed in a temp piece
+                        // Buffer is placed in a temp pieces
                         tempPiece[targetFaces] = state[ref[0][targetFaces % modBase]]
 
-                        // Buffer is replaced with piece
+                        // Buffer is replaced with pieces
                         state[ref[0][targetFaces % modBase]] = state[ref[baseIndex][extIndex]]
 
-                        // Piece is replaced with temp piece
+                        // Piece is replaced with temp pieces
                         state[ref[baseIndex][extIndex]] = tempPiece[targetFaces]
                     }
 
@@ -514,7 +508,7 @@ open class BldCube : BldPuzzle {
                         for (targetFaces in 0 until pieceTargets) {
                             val currentTarget = (pieceIndex + targetFaces) % modBase
 
-                            // Buffer piece is replaced with piece
+                            // Buffer pieces is replaced with pieces
                             state[ref[0][targetFaces]] = state[ref[permutation][currentTarget]]
 
                             // Piece is solved
@@ -531,7 +525,7 @@ open class BldCube : BldPuzzle {
                 }
                 permutation++
             }
-        }// If the buffer is not preSolved, swap it to the position where the piece belongs
+        }// If the buffer is not preSolved, swap it to the position where the pieces belongs
     }
 
     protected fun getPieceOrientations(type: PieceType): Int {

@@ -4,11 +4,13 @@ import com.suushiemaniac.cubing.alglib.alg.Algorithm
 import com.suushiemaniac.cubing.bld.analyze.BldPuzzle
 import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition
+import com.suushiemaniac.cubing.bld.model.cycle.ThreeCycle
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
 import com.suushiemaniac.cubing.bld.model.source.AlgSource
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil.permuteStr
 import com.suushiemaniac.cubing.bld.util.StringUtil.guessRegExpRange
+import com.suushiemaniac.cubing.bld.util.StringUtil.toCharStrings
 
 class ConditionsBundle(val pieceType: PieceType) {
     var targets: IntCondition = IntCondition.ANY()
@@ -174,7 +176,10 @@ class ConditionsBundle(val pieceType: PieceType) {
         val possPairs = SpeffzUtil.FULL_SPEFFZ.permuteStr(2, false, false)
 
         for (pair in possPairs) {
-            matches.addAll(algSource.getAlgorithms(this.pieceType, pair)
+            val targetIndices = pair.toCharStrings().map { SpeffzUtil.FULL_SPEFFZ.indexOf(it) }
+            val case = ThreeCycle(0, targetIndices[0], targetIndices[1]) // FIXME buffer
+
+            matches.addAll(algSource.getAlgorithms(this.pieceType, case)
                     .filter(filter)
                     .map { pair })
         }

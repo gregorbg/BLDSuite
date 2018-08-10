@@ -1,5 +1,7 @@
 package com.suushiemaniac.cubing.bld.util
 
+import com.suushiemaniac.cubing.bld.model.cycle.PieceCycle
+import com.suushiemaniac.cubing.bld.model.cycle.ThreeCycle
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
 
@@ -30,6 +32,14 @@ object SpeffzUtil {
 
     fun denormalize(speffzLetters: String, denormScheme: Array<String>): String {
         return mapLetters(speffzLetters, FULL_SPEFFZ, denormScheme)
+    }
+
+    fun PieceCycle.toSpeffz(): String {
+        return this.getAllTargets().joinToString("") { FULL_SPEFFZ[it] }
+    }
+
+    fun String.toThreeCycle(buffer: Int = 0): PieceCycle {
+        return ThreeCycle(buffer, FULL_SPEFFZ.indexOf(this[0].toString()), FULL_SPEFFZ.indexOf(this[1].toString()))
     }
 
     fun mapLetters(letters: String, originScheme: Array<String>, targetScheme: Array<String>): String {

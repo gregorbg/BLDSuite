@@ -34,4 +34,8 @@ object StringUtil {
                 && this.containsAll(that.toCharStrings())
                 && that.containsAll(this.toCharStrings())
     }
+
+    fun StringBuilder.trySpace(): StringBuilder {
+        return this.append(if (this.endsWith(" ")) "" else " ")
+    }
 }

@@ -1,6 +1,7 @@
 package com.suushiemaniac.cubing.bld.model.source
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
+import com.suushiemaniac.cubing.bld.model.cycle.PieceCycle
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
 
 import java.net.URI
@@ -14,15 +15,17 @@ interface AlgSource {
 
     fun mayRead(): Boolean
 
-    fun getAlgorithms(type: PieceType, letterPair: String): Set<Algorithm>
+    fun getAlgorithms(type: PieceType, case: PieceCycle): Set<Algorithm>
 
-    fun getRawAlgorithms(type: PieceType, letterPair: String): Set<String>
+    fun getRawAlgorithms(type: PieceType, case: PieceCycle): Set<String>
 
     fun mayWrite(): Boolean
 
-    fun addAlgorithm(type: PieceType, letterPair: String, algorithm: Algorithm): Boolean
+    fun addAlgorithm(type: PieceType, case: PieceCycle, algorithm: Algorithm): Boolean
 
-    fun addAlgorithms(type: PieceType, letterPair: String, algorithms: Set<Algorithm>): Boolean
+    fun addAlgorithms(type: PieceType, case: PieceCycle, algorithms: Set<Algorithm>): Boolean {
+        return algorithms.fold(true) { acc, alg -> acc && this.addAlgorithm(type, case, alg) }
+    }
 
     fun mayUpdate(): Boolean
 
@@ -32,5 +35,5 @@ interface AlgSource {
 
     fun deleteAlgorithm(type: PieceType, algorithm: Algorithm): Boolean
 
-    fun deleteAlgorithms(type: PieceType, letterPair: String): Boolean
+    fun deleteAlgorithms(type: PieceType, letterPair: PieceCycle): Boolean
 }
