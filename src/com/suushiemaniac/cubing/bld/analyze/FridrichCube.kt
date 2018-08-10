@@ -63,7 +63,7 @@ class FridrichCube : BldCube {
         this.parseScramble(scramble, true)
     }
 
-    protected fun parseScramble(scramble: Algorithm, reset: Boolean) {
+    fun parseScramble(scramble: Algorithm, reset: Boolean) {
         if (reset) {
             this.resetPuzzle()
         }
@@ -76,7 +76,7 @@ class FridrichCube : BldCube {
         scramble.filter { this.permutations.keys.contains(it) }.forEach(this::permute)
     }
 
-    protected fun bruteForceSolve(checkSolved: (FridrichCube) -> Boolean): String {
+    fun bruteForceSolve(checkSolved: (FridrichCube) -> Boolean): String {
         if (checkSolved(this)) {
             return "Solved already!"
         }

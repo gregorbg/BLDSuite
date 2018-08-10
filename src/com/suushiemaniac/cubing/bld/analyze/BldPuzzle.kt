@@ -13,13 +13,13 @@ import com.suushiemaniac.cubing.bld.util.ArrayUtil.cycleLeft
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.deepInnerIndex
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.deepOuterIndex
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.filledArray
+import com.suushiemaniac.cubing.bld.util.CollectionUtil.random
 import com.suushiemaniac.cubing.bld.util.MapUtil.allTo
 import com.suushiemaniac.cubing.bld.util.MapUtil.alwaysTo
-import com.suushiemaniac.cubing.bld.util.MapUtil.reset
 import com.suushiemaniac.cubing.bld.util.MapUtil.increment
+import com.suushiemaniac.cubing.bld.util.MapUtil.reset
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil
 import com.suushiemaniac.lang.json.JSON
-import java.util.*
 import kotlin.math.max
 
 abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
@@ -43,9 +43,9 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
     val parities = (this.getPieceTypes() alwaysTo false).toMutableMap()
 
     var scramble: Algorithm = SimpleAlg()
-    var scrambleOrientationPremoves: Algorithm = SimpleAlg()
+    var scrambleOrientationPreMoves: Algorithm = SimpleAlg()
 
-    var letterPairLanguage = System.getProperty("user.language")
+    var letterPairLanguage: String = System.getProperty("user.language")
 
     val letterSchemes = (this.getPieceTypes() alwaysTo SpeffzUtil.FULL_SPEFFZ).toMutableMap()
     val avoidBreakIns = this.getPieceTypes() alwaysTo true
@@ -57,6 +57,10 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
 
     var algSource: AlgSource? = null
     var misOrientMethod = MisOrientMethod.SOLVE_DIRECT
+        set(value) {
+            field = value
+            this.reSolve()
+        }
 
     fun loadPermutations(): Map<Move, Map<PieceType, Array<Int>>> {
         val filename = "permutations/$model.json"
@@ -103,8 +107,7 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
     }
 
     fun reSolve() {
-        val current = this.scramble
-        this.parseScramble(current)
+        this.parseScramble(this.scramble)
     }
 
     fun getPieceTypes(withOrientationModel: Boolean = false): List<PieceType> {
@@ -143,11 +146,11 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
     }
 
     protected fun reorientPuzzle() {
-        this.scrambleOrientationPremoves = this.getReorientationMoves()
-        this.scrambleOrientationPremoves.forEach(this::permute)
+        this.scrambleOrientationPreMoves = this.getReorientationMoves()
+        this.scrambleOrientationPreMoves.forEach(this::permute)
     }
 
-    open protected fun scramblePuzzle(scramble: Algorithm) {
+    protected open fun scramblePuzzle(scramble: Algorithm) {
         val preMoveScramble = this.getSolvingOrientationPremoves().merge(scramble)
 
         preMoveScramble.asIterable()
@@ -222,214 +225,164 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
         return this.cycles.getValue(type).lastOrNull() ?: -1
     }
 
-    fun getSolutionRaw(type: PieceType): String {
+    fun compileSolutionCycles(type: PieceType): List<Triple<Int, Int, Int>> {
         val currentCycles = this.cycles.getValue(type)
+        val mainBuffer = this.mainBuffers.getValue(type)
+
+        var currentBuffer = mainBuffer
         val bufferFloats = this.bufferFloats.getValue(type)
 
+        val cycles = mutableListOf<Triple<Int, Int, Int>>()
+
+        for (c in currentCycles.indices.chunked(2)) {
+            if (c[0] in bufferFloats.keys) {
+                currentBuffer = bufferFloats.getValue(c[0])
+            }
+
+            if (c.size == 2) {
+                cycles.add(Triple(currentBuffer, currentCycles[c[0]], currentCycles[c[1]]))
+            } else {
+                cycles.add(Triple(currentBuffer, currentCycles[c[0]], currentCycles[c[0]]))
+            }
+        }
+
+        for (i in 0 until type.targetsPerPiece) {
+            val misOrients = this.getMisOrientedPieces(type, i)
+
+            when {
+                this.misOrientMethod == MisOrientMethod.SINGLE_TARGET -> {
+                    val cubies = this.cubies.getValue(type)
+
+                    for (piece in misOrients) {
+                        val outer = cubies.deepOuterIndex(piece)
+                        val inner = cubies.deepInnerIndex(piece)
+
+                        cycles.add(Triple(mainBuffer, piece, cubies[outer][(inner + i) % type.targetsPerPiece]))
+                    }
+                }
+                this.misOrientMethod == MisOrientMethod.SOLVE_DIRECT -> cycles.addAll(misOrients.map { Triple(it, it, i) })
+            }
+        }
+
+        return cycles
+    }
+
+    fun getSolutionTargets(type: PieceType, nice: Boolean = false): String {
+        val (currentCycles, currentTwists) = this.compileSolutionCycles(type).partition { it.first != it.second }
         val letters = this.getLetteringScheme(type)
 
-        if (currentCycles.size > 0) {
-            val solutionRaw = StringBuilder()
+        val accu = StringBuilder()
+        var lastBuffer = -1
 
-            for (i in currentCycles.indices) {
-                if (bufferFloats.containsKey(i)) {
-                    val bufferLetter = letters[bufferFloats.getValue(i)]
-                    val position = SpeffzUtil.speffzToSticker(SpeffzUtil.normalize(bufferLetter, letters), type)
+        for ((buffer, first, second) in currentCycles) {
+            if (lastBuffer != buffer) {
+                val mainBuffer = lastBuffer < 0
+                lastBuffer = buffer
 
-                    solutionRaw.append("(").append(position).append(")")
+                if (!mainBuffer) {
+                    val position = SpeffzUtil.speffzToSticker(SpeffzUtil.normalize(letters[buffer], letters), type)
+
+                    accu.append(if (nice) "(float $position) " else "($position)")
                 }
-
-                solutionRaw.append(letters[currentCycles[i]])
             }
 
-            return solutionRaw.toString().trim { it <= ' ' }
-        } else {
-            return "Solved"
+            if (first == second) {
+                if (nice) accu.append("Parity: ")
+                accu.append(letters[first])
+            } else {
+                accu.append(letters[first])
+                accu.append(letters[second])
+            }
+
+            if (nice) accu.append(" ")
+        }
+
+        if (nice) accu.append(if (accu.toString().endsWith(" ")) "" else " ")
+
+        for ((direction, cycles) in currentTwists.groupBy { it.third }) {
+            accu.append(if (nice) "Orient $direction: " else "[$direction]")
+            accu.append(cycles.joinToString("") { letters[it.first] })
+        }
+
+        return accu.toString().trim()
+    }
+
+    fun getSolutionAlgorithms(type: PieceType): List<Algorithm> {
+        if (this.algSource == null || !this.algSource!!.isReadable) {
+            return listOf()
+        }
+
+        return this.compileSolutionCycles(type).map {
+            val lettering = this.getLetteringScheme(type)
+            val letterTargets = it.toList().drop(1).map { t -> lettering[t] }
+            val bufferSticker = SpeffzUtil.speffzToSticker(SpeffzUtil.normalize(lettering[it.first], lettering), type)
+
+            // val caseAlgs = this.algSource!!.getAlgorithms(type, cycle)
+            val caseAlgs = this.algSource!!.getAlgorithms(type, letterTargets.joinToString(""))
+            return@map caseAlgs.toList().random()
+                    ?: ImageStringReader().parse("Not found: $bufferSticker>${letterTargets.joinToString("-")}")
         }
     }
 
-    fun getSolutionRaw(withRotation: Boolean = false): String {
-        val solutionParts = mutableListOf<String>()
+    fun getRawSolutionAlgorithm(type: PieceType): Algorithm {
+        return this.getSolutionAlgorithms(type).reduce(Algorithm::merge)
+    }
+
+    fun getExplanationString(explain: (PieceType) -> String, withRotation: Boolean = false): String {
+        val explanations = mutableListOf<String>()
 
         if (withRotation) {
-            solutionParts.add("Rotations: " + if (this.scrambleOrientationPremoves.algLength() > 0) this.scrambleOrientationPremoves.toFormatString() else "/")
+            explanations.add("Rotations: " + if (this.scrambleOrientationPreMoves.algLength() > 0) this.scrambleOrientationPreMoves.toFormatString() else "/")
         }
 
-        solutionParts += this.getExecutionOrderPieceTypes()
-                .map { "${it.humanName}: ${getSolutionRaw(it)}" }
+        explanations += this.getExplanation(explain)
+                .map { "${it.key.humanName}: ${it.value}" }
 
-        return solutionParts.joinToString("\n")
+        return explanations.joinToString("\n")
     }
 
-    fun getSolutionPairs(type: PieceType): String {
-        val pairs = StringBuilder()
-
-        val currentCycles = this.cycles.getValue(type)
-        val letters = this.letterSchemes.getValue(type)
-
-        val bufferFloats = this.bufferFloats.getValue(type)
-
-        if (currentCycles.size > 0 || this.getMisOrientedCount(type) > 0) {
-            for (i in currentCycles.indices) {
-                if (bufferFloats.containsKey(i)) {
-                    val bufferLetter = letters[bufferFloats.getValue(i)]
-                    val position = SpeffzUtil.speffzToSticker(SpeffzUtil.normalize(bufferLetter, letters), type)
-
-                    pairs.append("(float ")
-                            .append(position)
-                            .append(") ")
-                }
-
-                pairs.append(letters[currentCycles[i]])
-
-                if (i % 2 == 1) {
-                    pairs.append(" ")
-                }
-            }
-
-            pairs.append(if (pairs.toString().endsWith(" ")) "" else " ")
-            pairs.append(this.getRotationSolutions(type))
-        } else {
-            return "Solved"
-        }
-
-        return pairs.toString().trim { it <= ' ' }
+    fun <T> getExplanation(explain: (PieceType) -> T): Map<PieceType, T> {
+        return this.getExecutionOrderPieceTypes()
+                .map { it to explain(it) }
+                .toMap()
     }
 
     fun getSolutionPairs(withRotation: Boolean = false): String {
-        val solutionParts = mutableListOf<String>()
-
-        if (withRotation) {
-            solutionParts.add("Rotations: " + if (this.scrambleOrientationPremoves.algLength() > 0) this.scrambleOrientationPremoves.toFormatString() else "/")
-        }
-
-        solutionParts += this.getExecutionOrderPieceTypes()
-                .map { "${it.humanName}: ${getSolutionPairs(it)}" }
-
-        return solutionParts.joinToString("\n")
+        return this.getExplanationString({ this.getSolutionTargets(it, true) }, withRotation)
     }
 
-    fun getSolutionAlgorithms(type: PieceType): String {
-        if (this.algSource == null || !this.algSource!!.isReadable) {
-            return ""
-        }
-
-        val pairs = StringBuilder()
-
-        val currentCycles = this.cycles.getValue(type)
-
-        if (currentCycles.size > 0 || this.getMisOrientedCount(type) > 0) { // TODO alg sources buffer support
-            var i = 0
-            while (i < currentCycles.size) {
-                if (i + 1 >= currentCycles.size) {
-                    i += 2
-                    continue
-                }
-
-                val pair = this.getLetteringScheme(type)[currentCycles[i]] + this.getLetteringScheme(type)[currentCycles[i + 1]]
-
-                val caseAlgs = this.algSource!!.getAlgorithms(type, pair)
-                var thisAlg: Algorithm = ImageStringReader().parse("LOL")
-
-                if (caseAlgs.isNotEmpty()) {
-                    val listAlgs = ArrayList(caseAlgs)
-                    listAlgs.shuffle() // FIXME better use of alternative algs
-                    thisAlg = listAlgs[0]
-                }
-
-                pairs.append(thisAlg.toFormatString())
-                pairs.append("\n")
-                i += 2
-            }
-
-            pairs.append(if (pairs.toString().endsWith(" ")) "" else " ")
-            pairs.append(this.getRotationSolutions(type))
-        } else {
-            return "Solved"
-        }
-
-        return pairs.toString().trim { it <= ' ' }
+    fun getSolutionTargets(withRotation: Boolean = false): String {
+        return this.getExplanationString({ this.getSolutionTargets(it, false) }, withRotation)
     }
 
     fun getSolutionAlgorithms(withRotation: Boolean = false): String {
-        val solutionParts = mutableListOf<String>()
-
-        if (withRotation) {
-            solutionParts.add("Rotations: " + if (this.scrambleOrientationPremoves.algLength() > 0) this.scrambleOrientationPremoves.toFormatString() else "/")
-        }
-
-        solutionParts += this.getExecutionOrderPieceTypes()
-                .map { "${it.humanName}:\n${getSolutionAlgorithms(it)}" }
-
-        return solutionParts.joinToString("\n")
+        return this.getExplanationString({ this.getSolutionAlgorithms(it).joinToString("\n", transform = Algorithm::toFormatString) }, withRotation)
     }
 
-    fun getRawSolutionAlgorithm(type: PieceType): String {
-        if (this.algSource == null || !this.algSource!!.isReadable) {
-            return ""
-        }
+    fun getRawSolutionAlgorithm(withRotation: Boolean = false): Algorithm {
+        val basis = if (withRotation) this.scrambleOrientationPreMoves.copy() else SimpleAlg()
 
-        var finalAlg: Algorithm = SimpleAlg()
+        val fullSolution = this.getExplanation(this::getRawSolutionAlgorithm).values
+                .reduce(Algorithm::merge)
 
-        val currentCycles = this.cycles.getValue(type)
-
-        if (currentCycles.size > 0 || this.getMisOrientedCount(type) > 0) { // TODO alg sources buffer support
-            var i = 0
-            while (i < currentCycles.size) {
-                if (i + 1 >= currentCycles.size) {
-                    i += 2
-                    continue
-                }
-
-                val pair = this.getLetteringScheme(type)[currentCycles[i]] + this.getLetteringScheme(type)[currentCycles[i + 1]]
-
-                val caseAlgs = this.algSource!!.getAlgorithms(type, pair)
-                var thisAlg: Algorithm = ImageStringReader().parse("LOL")
-
-                if (caseAlgs.isNotEmpty()) {
-                    val listAlgs = ArrayList(caseAlgs)
-                    listAlgs.shuffle()
-                    thisAlg = listAlgs[0]
-                }
-
-                finalAlg = finalAlg.merge(thisAlg)
-                i += 2
-            }
-        } else {
-            return "Solved"
-        }
-
-        return finalAlg.toFormatString().trim { it <= ' ' }
-    }
-
-    fun getRawSolutionAlgorithm(withRotation: Boolean): String {
-        val solutionParts = mutableListOf<String>()
-
-        if (withRotation) {
-            solutionParts.add("Rotations: " + if (this.scrambleOrientationPremoves.algLength() > 0) this.scrambleOrientationPremoves.toFormatString() else "/")
-        }
-
-        solutionParts += this.getExecutionOrderPieceTypes()
-                .map { "${it.humanName}: ${getRawSolutionAlgorithm(it)}" }
-
-        return solutionParts.joinToString("\n")
+        return basis.merge(fullSolution)
     }
 
     fun getPreSolvedCount(type: PieceType): Int {
-        val solvedFlags = this.preSolvedPieces.getValue(type)
-
-        return solvedFlags.drop(1).count { it }
+        return this.preSolvedPieces.getValue(type)
+                .drop(1) // we're not interested in the main buffer itself
+                .count { it }
     }
 
     fun getMisOrientedCount(type: PieceType): Int {
-        return type.targetsPerPiece.countingArray().sumBy { this.getMisOrientedCount(type, it) }
+        return type.targetsPerPiece.countingArray()
+                .sumBy { this.getMisOrientedCount(type, it) }
     }
 
     fun getMisOrientedCount(type: PieceType, orientation: Int): Int {
-        val actualOrient = orientation % type.targetsPerPiece
-        val orientations = this.misOrientedPieces.getValue(type)[actualOrient]
-
-        return orientations.drop(1).count { it }
+        return this.misOrientedPieces.getValue(type)[orientation % type.targetsPerPiece]
+                .drop(1) // we're not interested in the main buffer itself
+                .count { it }
     }
 
     protected fun getMisOrientedPieces(type: PieceType, orientation: Int): List<Int> {
@@ -441,47 +394,11 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
                 .map { cubies[it][orientation] }
     }
 
-    protected fun getMisOrientedPieceNames(type: PieceType, orientation: Int): List<String> {
+    protected fun getMisOrientedPieceLetters(type: PieceType, orientation: Int): List<String> {
         val lettering = this.getLetteringScheme(type)
         val pieces = this.getMisOrientedPieces(type, orientation)
 
         return pieces.map { lettering[it] }
-    }
-
-    protected fun getRotationSolutions(type: PieceType): String {
-        val pairs = StringBuilder()
-
-        val orientations = type.targetsPerPiece
-
-        for (i in 1 until orientations) {
-            if (this.getMisOrientedCount(type, i) > 0) {
-                pairs.append(if (pairs.toString().endsWith(" ")) "" else " ")
-
-                when (this.misOrientMethod) {
-                    BldPuzzle.MisOrientMethod.SOLVE_DIRECT -> {
-                        pairs.append("Orient $i: ")
-                        pairs.append(this.getMisOrientedPieceNames(type, i).joinToString(" "))
-                    }
-
-                    BldPuzzle.MisOrientMethod.SINGLE_TARGET -> {
-                        val misOrients = this.getMisOrientedPieces(type, i)
-                        val lettering = this.getLetteringScheme(type)
-                        val cubies = this.cubies.getValue(type)
-
-                        for (piece in misOrients) {
-                            val outer = cubies.deepOuterIndex(piece)
-                            val inner = cubies.deepInnerIndex(piece)
-
-                            pairs.append(lettering[piece])
-                            pairs.append(lettering[cubies[outer][(inner + i) % orientations]])
-                            pairs.append(" ")
-                        }
-                    }
-                }
-            }
-        }
-
-        return pairs.toString().trim { it <= ' ' }
     }
 
     fun getLetteringScheme(type: PieceType): Array<String> {
@@ -573,23 +490,23 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
 
         val numFloats = this.getBufferFloatNum(type)
         val floatsMax = this.getBackupBuffers(type).size
-        statString.append(Collections.nCopies(numFloats, "\\").joinToString(""))
+        statString.append(List(numFloats) {"\\"}.joinToString(""))
 
         if (indent) {
-            statString.append(Collections.nCopies(floatsMax - numFloats, " ").joinToString(""))
+            statString.append(List(floatsMax - numFloats) {" "}.joinToString(""))
         }
 
         val maxTargets = type.numPiecesNoBuffer / 2 * 3 + type.numPiecesNoBuffer % 2
         val lenDiff = Integer.toString(maxTargets).length - Integer.toString(targets).length
-        statString.append(Collections.nCopies(lenDiff + 1, " ").joinToString(""))
+        statString.append(List(lenDiff + 1) {" "}.joinToString(""))
 
         val breakInMax = type.numPiecesNoBuffer / 2
         val breakIns = this.getBreakInCount(type)
 
-        statString.append(Collections.nCopies(breakIns, "#").joinToString(""))
+        statString.append(List(breakIns) {"#"}.joinToString(""))
 
         if (indent) {
-            statString.append(Collections.nCopies(breakInMax - breakIns, " ").joinToString(""))
+            statString.append(List(breakInMax - breakIns) {" "}.joinToString(""))
         }
 
         val misOrientPreSolvedMax = type.numPiecesNoBuffer
@@ -601,10 +518,10 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
                 statString.append(" ")
             }
 
-            statString.append(Collections.nCopies(misOriented, "~").joinToString(""))
+            statString.append(List(misOriented) {"~"}.joinToString(""))
 
             if (indent) {
-                statString.append(Collections.nCopies(misOrientPreSolvedMax - misOriented, " ").joinToString(""))
+                statString.append(List(misOrientPreSolvedMax - misOriented) {" "}.joinToString(""))
             }
         }
 
@@ -614,10 +531,10 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
             statString.append(" ")
         }
 
-        statString.append(Collections.nCopies(preSolved, "+").joinToString(""))
+        statString.append(List(preSolved) {"+"}.joinToString(""))
 
         if (indent) {
-            statString.append(Collections.nCopies(misOrientPreSolvedMax - preSolved, " ").joinToString(""))
+            statString.append(List(misOrientPreSolvedMax - preSolved) {" "}.joinToString(""))
         }
 
         return if (indent) statString.toString() else statString.toString().trim { it <= ' ' }
@@ -749,7 +666,7 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
 
     fun setBuffer(type: PieceType, newBuffer: Int): Boolean {
         if (this.cycleCubiesForBuffer(type, newBuffer)) {
-            this.mainBuffers.put(type, newBuffer)
+            this.mainBuffers[type] = newBuffer
 
             this.reSolve()
             return true
@@ -816,7 +733,7 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
             return false
         }
 
-        val rawSolution = this.getSolutionRaw(type)
+        val rawSolution = this.getSolutionTargets(type)
         var matches = true
 
         if (rawSolution == "Solved") {
@@ -844,14 +761,14 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
 
         this.parseScramble(alg.inverse())
 
-        var solves = this.getSolutionRaw(type).equals(solutionCase.replace("\\s".toRegex(), ""), ignoreCase = true) && this.getMisOrientedCount(type) == 0
+        var solves = this.getSolutionTargets(type).equals(solutionCase.replace("\\s".toRegex(), ""), ignoreCase = true) && this.getMisOrientedCount(type) == 0
 
         if (pure) {
             val remainingTypes = this.getPieceTypes().toMutableList()
             remainingTypes.remove(type)
 
             for (remainingType in remainingTypes) {
-                solves = solves and (this.getSolutionRaw(remainingType) == "Solved" && this.getMisOrientedCount(remainingType) == 0)
+                solves = solves and (this.getSolutionTargets(remainingType) == "Solved" && this.getMisOrientedCount(remainingType) == 0)
             }
         }
 
@@ -867,6 +784,7 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
     fun clone(scramble: Algorithm): BldPuzzle {
         val clone = this.clone()
         clone.parseScramble(scramble)
+
         return clone
     }
 

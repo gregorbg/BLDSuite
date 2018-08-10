@@ -4,5 +4,5 @@
 *.class
 *.jar
 
-src/Main.java
+src/Main.kt
 src/META-INF/

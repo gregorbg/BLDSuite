@@ -115,7 +115,7 @@ class MassAnalyzer(var analyze: BldPuzzle) {
 
             for (type in this.analyze.getPieceTypes()) {
                 if (this.analyze.getCycleLength(type) > 0) {
-                    val solutionPairs = this.analyze.getSolutionPairs(type)
+                    val solutionPairs = this.analyze.getSolutionTargets(type) // TODO
                             .replace((if (singleLetter) "\\s+?" else "$.").toRegex(), "")
                             .split((if (singleLetter) "" else "\\s+?").toRegex())
                             .dropLastWhile { it.isEmpty() }

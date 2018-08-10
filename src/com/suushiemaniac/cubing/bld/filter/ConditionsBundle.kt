@@ -192,9 +192,9 @@ class ConditionsBundle(val pieceType: PieceType) {
                 && this.targets.evaluate(inCube.getCycleLength(this.pieceType))
                 && this.preSolved.evaluate(inCube.getPreSolvedCount(this.pieceType))
                 && this.misOriented.evaluate(inCube.getMisOrientedCount(this.pieceType))
-                && inCube.getSolutionRaw(this.pieceType).matches(this.memoRegex.toRegex()) // TODO have regular expressions comply w/ buffer floats!
-                && inCube.getSolutionRaw(this.pieceType).matches(this.letterPairRegex.toRegex())
-                && inCube.getSolutionRaw(this.pieceType).matches(this.predicateRegex.toRegex())
+                && inCube.getSolutionTargets(this.pieceType).matches(this.memoRegex.toRegex()) // TODO have regular expressions comply w/ buffer floats!
+                && inCube.getSolutionTargets(this.pieceType).matches(this.letterPairRegex.toRegex())
+                && inCube.getSolutionTargets(this.pieceType).matches(this.predicateRegex.toRegex())
                 && this.statisticalPredicate(inCube))
     }
 
