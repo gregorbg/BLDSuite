@@ -21,7 +21,7 @@ class MassAnalyzer(var analyze: BldPuzzle) {
         for (scramble in scrambles) {
             this.analyze.parseScramble(scramble)
 
-            for (type in this.analyze.pieceTypes) {
+            for (type in this.analyze.getPieceTypes()) {
                 if (this.analyze.hasParity(type)) {
                     parityCounts.increment(type)
                 }
@@ -30,7 +30,7 @@ class MassAnalyzer(var analyze: BldPuzzle) {
                     solvedBufferCounts.increment(type)
                 }
 
-                targets.getOrPut(type) { mutableMapOf() }.increment(this.analyze.getStatLength(type))
+                targets.getOrPut(type) { mutableMapOf() }.increment(this.analyze.getCycleLength(type))
                 breakIns.getOrPut(type) { mutableMapOf() }.increment(this.analyze.getBreakInCount(type))
                 preSolved.getOrPut(type) { mutableMapOf() }.increment(this.analyze.getPreSolvedCount(type))
                 misOriented.getOrPut(type) { mutableMapOf() }.increment(this.analyze.getMisOrientedCount(type))
@@ -41,7 +41,7 @@ class MassAnalyzer(var analyze: BldPuzzle) {
 
         println("Total scrambles: $numCubes")
 
-        for (type in this.analyze.pieceTypes) {
+        for (type in this.analyze.getPieceTypes()) {
             println()
             println("Parity: " + parityCounts[type])
             println("Average: " + parityCounts.getValue(type) / numCubes.toFloat())
@@ -84,11 +84,11 @@ class MassAnalyzer(var analyze: BldPuzzle) {
         for (scramble in scrambles) {
             this.analyze.parseScramble(scramble)
 
-            for (type in this.analyze.pieceTypes) {
+            for (type in this.analyze.getPieceTypes()) {
                 pieceTypeMap.getOrPut(type) { mutableMapOf() }.increment(this.analyze.getStatString(type))
             }
 
-            overall.increment(this.analyze.statString)
+            overall.increment(this.analyze.getStatString())
         }
 
         for ((type, subMap) in pieceTypeMap.entries) {
@@ -113,8 +113,8 @@ class MassAnalyzer(var analyze: BldPuzzle) {
         for (scramble in scrambles) {
             this.analyze.parseScramble(scramble)
 
-            for (type in this.analyze.pieceTypes) {
-                if (this.analyze.getStatLength(type) > 0) {
+            for (type in this.analyze.getPieceTypes()) {
+                if (this.analyze.getCycleLength(type) > 0) {
                     val solutionPairs = this.analyze.getSolutionPairs(type)
                             .replace((if (singleLetter) "\\s+?" else "$.").toRegex(), "")
                             .split((if (singleLetter) "" else "\\s+?").toRegex())

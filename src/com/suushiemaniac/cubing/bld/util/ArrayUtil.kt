@@ -39,16 +39,16 @@ object ArrayUtil {
         return -1
     }
 
-    fun Int.filledArray(): Array<Int> {
-        return (0 until this).toList().toTypedArray()
+    fun Int.countingArray(): Array<Int> {
+        return Array(this) { it }
     }
 
-    fun <T> Array<T>.fillWith(element: T): Array<T> {
-        for (i in this.indices) {
-            this[i] = element
-        }
+    inline fun <reified T> Int.filledArray(value: T): Array<T> {
+        return Array(this) { value }
+    }
 
-        return this
+    inline fun <reified T> Int.filledArray(value: () -> T): Array<T> {
+        return Array(this) { value() }
     }
 
     fun <T> Array<T>.countOf(element: T): Int {

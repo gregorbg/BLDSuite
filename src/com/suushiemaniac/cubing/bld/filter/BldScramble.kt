@@ -108,10 +108,10 @@ class BldScramble(var analyzingPuzzle: BldPuzzle, var conditions: List<Condition
         fun cloneFrom(refCube: BldPuzzle, isStrict: Boolean): BldScramble {
             val conditions = mutableListOf<ConditionsBundle>()
 
-            for (type in refCube.pieceTypes) {
+            for (type in refCube.getPieceTypes()) {
                 val condition = ConditionsBundle(type)
 
-                condition.targets = if (isStrict) EXACT(refCube.getStatLength(type)) else MAX(refCube.getStatLength(type))
+                condition.targets = if (isStrict) EXACT(refCube.getCycleLength(type)) else MAX(refCube.getCycleLength(type))
                 condition.breakIns = if (isStrict) EXACT(refCube.getBreakInCount(type)) else MAX(refCube.getBreakInCount(type))
                 condition.parity = if (refCube.hasParity(type)) if (isStrict) YES() else MAYBE() else NO()
                 condition.preSolved = if (isStrict) EXACT(refCube.getPreSolvedCount(type)) else MIN(refCube.getPreSolvedCount(type))
@@ -158,7 +158,7 @@ class BldScramble(var analyzingPuzzle: BldPuzzle, var conditions: List<Condition
         }
 
         protected fun findTypeByMnemonic(refCube: BldPuzzle, mnemonic: String): PieceType? {
-            for (type in refCube.pieceTypes) {
+            for (type in refCube.getPieceTypes()) {
                 if (type.mnemonic.equals(mnemonic, true)) {
                     return type
                 }

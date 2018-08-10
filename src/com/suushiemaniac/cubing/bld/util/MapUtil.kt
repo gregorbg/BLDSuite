@@ -14,8 +14,22 @@ object MapUtil {
         return sum / criteriaHit
     }
 
-    infix fun <K, V> Collection<K>.constantlyTo(value: () -> V): Map<K, V> {
+    infix fun <K, V> Collection<K>.allTo(value: (K) -> V): Map<K, V> {
+        return mapOf(*this.map { it to value(it) }.toTypedArray())
+    }
+
+    infix fun <K, V> Collection<K>.alwaysTo(value: () -> V): Map<K, V> {
         return mapOf(*this.map { it to value() }.toTypedArray())
+    }
+
+    infix fun <K, V> Collection<K>.alwaysTo(value: V): Map<K, V> {
+        return mapOf(*this.map { it to value }.toTypedArray())
+    }
+
+    fun <K, V> MutableMap<K, V>.reset(action: (Map.Entry<K, V>) -> V) {
+        for (entry in this) {
+            this[entry.key] = action(entry)
+        }
     }
 
     fun <K> MutableMap<K, Int>.increment(key: K) {

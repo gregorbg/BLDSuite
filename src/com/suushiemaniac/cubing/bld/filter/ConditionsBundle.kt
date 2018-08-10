@@ -185,11 +185,11 @@ class ConditionsBundle(val pieceType: PieceType) {
     }
 
     fun matchingConditions(inCube: BldPuzzle): Boolean {
-        return (inCube.pieceTypes.contains(this.pieceType)
+        return (inCube.getPieceTypes().contains(this.pieceType)
                 && this.parity.evaluatePositive(inCube.hasParity(this.pieceType))
                 && this.bufferSolved.evaluatePositive(inCube.isBufferSolved(this.pieceType, this.isAllowTwistedBuffer))
                 && this.breakIns.evaluate(inCube.getBreakInCount(this.pieceType))
-                && this.targets.evaluate(inCube.getStatLength(this.pieceType))
+                && this.targets.evaluate(inCube.getCycleLength(this.pieceType))
                 && this.preSolved.evaluate(inCube.getPreSolvedCount(this.pieceType))
                 && this.misOriented.evaluate(inCube.getMisOrientedCount(this.pieceType))
                 && inCube.getSolutionRaw(this.pieceType).matches(this.memoRegex.toRegex()) // TODO have regular expressions comply w/ buffer floats!

@@ -10,7 +10,7 @@ class BreakInOptim(val source: AlgSource, val refCube: BldPuzzle = CubicPuzzle.F
     val cache: MutableMap<PieceType, MutableMap<String, List<String>>> = mutableMapOf()
 
     init {
-        for (type in refCube.pieceTypes) {
+        for (type in refCube.getPieceTypes()) {
             val typeMap = mutableMapOf<String, List<String>>()
 
             if (fullCache) {
