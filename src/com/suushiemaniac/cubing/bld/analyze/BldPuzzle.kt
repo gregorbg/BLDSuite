@@ -7,6 +7,7 @@ import com.suushiemaniac.cubing.alglib.move.Move
 import com.suushiemaniac.cubing.bld.model.cycle.*
 import com.suushiemaniac.cubing.bld.model.cycle.ComplexMisOrientCycle
 import com.suushiemaniac.cubing.bld.model.cycle.MisOrientCycle
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.LetterPairImage
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
 import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.TwistyPuzzle
@@ -16,6 +17,7 @@ import com.suushiemaniac.cubing.bld.util.ArrayUtil.cycleLeft
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.deepInnerIndex
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.deepOuterIndex
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.filledArray
+import com.suushiemaniac.cubing.bld.util.CollectionUtil
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.random
 import com.suushiemaniac.cubing.bld.util.MapUtil.allTo
 import com.suushiemaniac.cubing.bld.util.MapUtil.alwaysTo
@@ -272,11 +274,11 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
         return cycles
     }
 
-    fun groupMisOrients(misOrients: List<MisOrientCycle>): List<ComplexMisOrientCycle> { // TODO improve grouping
+    open fun groupMisOrients(type: PieceType, misOrients: List<MisOrientCycle>): List<ComplexMisOrientCycle> {
         return misOrients
                 .map { it as MisOrientPiece }
                 .groupBy { it.orientation }
-                .map { (orient, pieces) -> ComplexMisOrientCycle("Orient $orient", *pieces.toTypedArray()) }
+                .map { ComplexMisOrientCycle("Orient ${it.key}", *it.value.toTypedArray()) }
     }
 
     fun getSolutionTargets(type: PieceType, nice: Boolean = false): String {
@@ -312,7 +314,7 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
         if (nice) {
             accu.trySpace()
 
-            for (cycle in this.groupMisOrients(currentTwists.map { it as MisOrientCycle })) {
+            for (cycle in this.groupMisOrients(type, currentTwists.map { it as MisOrientCycle })) {
                 accu.append("${cycle.description}: ")
                 accu.append(cycle.getAllTargets().joinToString("") { letters[it] })
                 accu.trySpace()
@@ -608,22 +610,39 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
     fun isBufferSolvedAndMisOriented(type: PieceType): Boolean {
         var bufferTwisted = false
 
-        val orientations = type.targetsPerPiece
-
         val reference = this.cubies.getValue(type)
         val state = this.lastScrambledState.getValue(type)
 
-        for (i in 1 until orientations) {
+        for (i in 1 until type.targetsPerPiece) {
             var bufferCurrentOrigin = true
 
-            for (j in 0 until orientations) {
-                bufferCurrentOrigin = bufferCurrentOrigin and (state[reference[0][j]] == reference[0][(j + i) % orientations])
+            for (j in 0 until type.targetsPerPiece) {
+                bufferCurrentOrigin = bufferCurrentOrigin and (state[reference[0][j]] == reference[0][(j + i) % type.targetsPerPiece])
             }
 
             bufferTwisted = bufferTwisted or bufferCurrentOrigin
         }
 
         return bufferTwisted
+    }
+
+    protected fun getCurrentBufferOrientation(type: PieceType): Int {
+        val reference = this.cubies.getValue(type)
+        val state = this.state.getValue(type)
+
+        for (i in 1 until type.targetsPerPiece) {
+            var bufferCurrentOrigin = true
+
+            for (j in 0 until type.targetsPerPiece) {
+                bufferCurrentOrigin = bufferCurrentOrigin and (state[reference[0][j]] == reference[0][(j + i) % type.targetsPerPiece])
+            }
+
+            if (bufferCurrentOrigin) {
+                return i
+            }
+        }
+
+        return 0
     }
 
     fun getBufferFloatNum(type: PieceType): Int {

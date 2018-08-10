@@ -2,6 +2,8 @@ package com.suushiemaniac.cubing.bld.analyze
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg
+import com.suushiemaniac.cubing.bld.model.cycle.*
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.*
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
 import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.CubicPuzzle
@@ -12,6 +14,9 @@ import com.suushiemaniac.cubing.bld.util.ArrayUtil.cycleLeft
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.deepInnerIndex
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.deepOuterIndex
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.swap
+import com.suushiemaniac.cubing.bld.util.CollectionUtil
+import com.suushiemaniac.cubing.bld.util.SpeffzUtil
+import com.suushiemaniac.cubing.bld.util.StringUtil.trySpace
 
 open class BldCube : BldPuzzle {
     var cornerParityMethod = CornerParityMethod.SWAP_UB_UL
@@ -208,8 +213,47 @@ open class BldCube : BldPuzzle {
         }
     }
 
+    override fun groupMisOrients(type: PieceType, misOrients: List<MisOrientCycle>): List<ComplexMisOrientCycle> {
+        val grouped = misOrients
+                .map { it as MisOrientPiece }
+                .groupBy { it.orientation }
+                .mapValues { it.value.toMutableList() }
+                .toMutableMap()
+
+        val bufferState = this.getCurrentBufferOrientation(type)
+
+        if (bufferState > 0) {
+            val cubies = this.cubies.getValue(type)
+            grouped.getOrPut(bufferState) { mutableListOf() }.add(MisOrientPiece(cubies[0][bufferState], bufferState))
+        }
+
+        val accu = mutableListOf<ComplexMisOrientCycle>()
+
+        val longNames = mapOf<PieceType, List<String>>(
+                CORNER to listOf("", "Sune", "Antisune"),
+                EDGE to listOf("", "Std")
+        )
+
+        for ((orient, pieces) in grouped) { // TODO refine: corners only in triple if on same layer
+            var remainder = pieces.toList()
+
+            while (remainder.size >= type.targetsPerPiece) {
+                accu.add(ComplexMisOrientCycle(longNames.getValue(type)[orient], *remainder.take(type.targetsPerPiece).toTypedArray()))
+                remainder = remainder.drop(type.targetsPerPiece)
+            }
+
+            grouped[orient] = remainder.toMutableList()
+        }
+
+        for (tuple in CollectionUtil.zip(*grouped.values.toTypedArray())) {
+            accu.add(ComplexMisOrientCycle("DiffTogether", *tuple.toTypedArray()))
+        }
+
+        return accu
+    }
+
     override fun getOrientationSideCount(): Int {
-        return 6
+        return CENTER.numPieces
     }
 
     protected fun getAdjacentCenters(center: Int): Set<Int> {
