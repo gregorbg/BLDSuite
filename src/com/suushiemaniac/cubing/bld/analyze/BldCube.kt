@@ -245,7 +245,7 @@ open class BldCube : BldPuzzle {
 
         val longNames = mapOf<PieceType, List<String>>(
                 CORNER to listOf("", "Sune", "Antisune"),
-                EDGE to listOf("", "Std")
+                EDGE to listOf("", "Flip")
         )
 
         val lowerSwaps = mutableListOf<List<MisOrientPiece>>()
@@ -281,19 +281,24 @@ open class BldCube : BldPuzzle {
 
         for (tuple in lowerSwaps) {
             if (type.targetsPerPiece <= tuple.size) {
-                accu.add(ComplexMisOrientCycle("Std", *tuple.toTypedArray()))
+                val stdNames = mapOf<PieceType, String>(
+                        CORNER to "Twist",
+                        EDGE to "Flip"
+                )
+
+                accu.add(ComplexMisOrientCycle(stdNames.getValue(type), *tuple.toTypedArray()))
             } else {
                 val tuplePieces = tuple.map { this.getPermutationPiece(type, it.target) }
                 val tupleColors = tuplePieces.map { this.getOrientationSides(type, it) }
                 val commonColors = tupleColors.reduce { a, b -> a.intersect(b) }
 
                 val sidePreferences = listOf(2, 3, 0).drop(tuple.size - commonColors.size)
-                val preferredPiece = tuplePieces.sortedBy { this.getOrientationSides(type, it).intersect(sidePreferences).size }.first()
+                val preferredPiece = tuplePieces.sortedByDescending { this.getOrientationSides(type, it).intersect(sidePreferences).size }.first()
 
                 val originalPartner = tuplePieces.find { it != preferredPiece } ?: -1 // FIXME this search query is hard-coded to NxN corners
 
                 val colorPreferences = commonColors + listOf(0, 2, 3).intersect(sidePreferences)
-                val execColor = colorPreferences.find { this.getOrientationSides(type, preferredPiece).contains(it) } ?: -1
+                val execColor = colorPreferences.find { this.getOrientationSides(type, preferredPiece).contains(it) } ?: colorPreferences.find { this.getOrientationSides(type, preferredPiece).contains(this.getOppositeCenter(it)) } ?: -1
 
                 val potentialPartners = this.getPiecesOnOrientationSide(type, execColor) - preferredPiece
                 val sortedPartnerGroups = potentialPartners.groupBy { this.getOrientationSides(type, it).intersect(this.getOrientationSides(type, preferredPiece)).size }
