@@ -318,10 +318,10 @@ open class BldCube : BldPuzzle {
 
                     val executionPartner = executionPartners.find { it != preferredPiece } ?: -1
 
-                    val checkPosition = this.findCurrentOrientationSide(type, preferredPiece, commonColor)
+                    val checkPosition = this.findCurrentOrientationSide(type, preferredPiece, execSide)
                     val execType = if (this.getOrientationSides(type, executionPartner).contains(checkPosition)) "Headlights" else "Chameleon"
 
-                    val niceExecSide = "ULFRBD"[execSide].toString() // fixme F moves screw up naming conventions
+                    val niceExecSide = "ULFRBD"[execSide].toString()
 
                     accu.add(ComplexMisOrientCycle("$execType:$niceExecSide",
                             MisOrientPiece(this.findCurrentTargetPosition(type, preferredPiece, commonColor), this.getPieceOrientation(type, preferredPiece)),
