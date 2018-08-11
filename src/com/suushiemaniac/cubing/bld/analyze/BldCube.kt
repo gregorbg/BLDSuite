@@ -260,7 +260,9 @@ open class BldCube : BldPuzzle {
                 val commonColor = colors.reduce { a, b -> a.intersect(b) }.firstOrNull()
 
                 if (commonColor != null) {
-                    accu.add(ComplexMisOrientCycle(longNames.getValue(type)[orient], *targets.toTypedArray()))
+                    val labelledTargets = targets.map { MisOrientPiece(this.findCurrentTargetPosition(type, this.getPermutationPiece(type, it.target), commonColor), it.orientation) }
+
+                    accu.add(ComplexMisOrientCycle(longNames.getValue(type)[orient], *labelledTargets.toTypedArray()))
                 } else {
                     val buffer = this.getBuffer(type)
                     val nonBufferTargets = targets.toMutableList().filter { this.getPermutationPiece(type, it.target) != this.getPermutationPiece(type, buffer) }
