@@ -3,7 +3,6 @@ package com.suushiemaniac.cubing.bld.analyze
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg
 import com.suushiemaniac.cubing.bld.model.cycle.*
-import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.*
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
 import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.CubicPuzzle
@@ -15,8 +14,7 @@ import com.suushiemaniac.cubing.bld.util.ArrayUtil.deepInnerIndex
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.deepOuterIndex
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.swap
 import com.suushiemaniac.cubing.bld.util.CollectionUtil
-import com.suushiemaniac.cubing.bld.util.SpeffzUtil
-import com.suushiemaniac.cubing.bld.util.StringUtil.trySpace
+import com.suushiemaniac.cubing.bld.util.CollectionUtil.random
 
 open class BldCube : BldPuzzle {
     var cornerParityMethod = CornerParityMethod.SWAP_UB_UL
@@ -31,13 +29,8 @@ open class BldCube : BldPuzzle {
             this.reSolve()
         }
 
-    val cornerParityDependents: List<PieceType>
-        get() {
-            val allDeps = mutableListOf(EDGE, WING, INNERWING)
-            allDeps.retainAll(this.model.pieceTypes.asList())
-
-            return allDeps
-        }
+    val cornerParityDependents: Set<PieceType>
+        get() = mutableListOf(EDGE, WING, INNERWING).intersect(this.model.pieceTypes.asList())
 
     var executionOrder: List<PieceType> = listOf(TCENTER, XCENTER, WING, EDGE, CORNER)
 
@@ -47,12 +40,8 @@ open class BldCube : BldPuzzle {
     var optim: BreakInOptim? = null
 
     val dynamicReorientPieceTypes: List<PieceType>
-        get() {
-            val dynamicTypes = mutableListOf(XCENTER, TCENTER, INNERXCENTER, INNERTCENTER, LEFTOBLIQUE, RIGHTOBLIQUE)
-            dynamicTypes.retainAll(this.model.pieceTypes.asList())
-
-            return dynamicTypes
-        }
+        get() = mutableListOf(XCENTER, TCENTER, INNERXCENTER, INNERTCENTER, LEFTOBLIQUE, RIGHTOBLIQUE)
+                .intersect(this.model.pieceTypes.toList()).toList()
 
     constructor(model: CubicPuzzle) : super(model)
     constructor(model: CubicPuzzle, scramble: Algorithm) : super(model, scramble)
@@ -245,8 +234,79 @@ open class BldCube : BldPuzzle {
             grouped[orient] = remainder.toMutableList()
         }
 
+        val colorPreference = listOf(0, 5, 2, 4)
+
         for (tuple in CollectionUtil.zip(*grouped.values.toTypedArray())) {
-            accu.add(ComplexMisOrientCycle("DiffTogether", *tuple.toTypedArray()))
+            if (type.targetsPerPiece <= tuple.size) {
+                accu.add(ComplexMisOrientCycle("DiffTogether", *tuple.toTypedArray()))
+            } else {
+                val tuplePieces = tuple.map { this.getPermutationPiece(type, it.target) }
+                val tupleColors = tuplePieces.map { this.getOrientationSides(type, it) }
+                val commonColors = tupleColors.reduce { a, b -> a.intersect(b) }
+
+                if (commonColors.size == 2) { // FIXME these numbers are hard-coded to NxN corners
+                    val preferredPiece = tuplePieces.random() ?: -1
+                    val executionPartner = tuplePieces.find { it != preferredPiece } ?: -1
+
+                    val interestingColor = colorPreference.find { commonColors.contains(it) } ?: -1
+
+                    val checkPosition = this.findCurrentOrientationSide(type, preferredPiece, interestingColor)
+                    val execType = if (this.getOrientationSides(type, executionPartner).contains(checkPosition)) "Headlights" else "Chameleon"
+
+                    accu.add(ComplexMisOrientCycle(execType, *tuple.toTypedArray()))
+                } else if (commonColors.size == 1) {
+                    val commonColor = commonColors.first()
+
+                    val sidePreferences = listOf(3, 0, 2) - commonColor
+                    val preferredPiece = tuplePieces.find { sidePreferences.intersect(this.getOrientationSides(type, it)).isNotEmpty() } ?: -1
+
+                    val execSide = sidePreferences.find { this.getOrientationSides(type, preferredPiece).contains(it) } ?: -1
+
+                    val potentialPartners = this.getPiecesOnOrientationSide(type, commonColor)
+                    val executionPartners = potentialPartners.filter { this.getOrientationSides(type, it).contains(execSide)}
+
+                    val executionPartner = executionPartners.find { it != preferredPiece } ?: -1
+
+                    val checkPosition = this.findCurrentOrientationSide(type, preferredPiece, commonColor)
+                    val execType = if (this.getOrientationSides(type, executionPartner).contains(checkPosition)) "Headlights" else "Chameleon"
+
+                    val niceExecSide = "ULFRBD"[execSide].toString()
+
+                    accu.add(ComplexMisOrientCycle("$execType:$niceExecSide", *tuple.toTypedArray()))
+                } else if (commonColors.isEmpty()) {
+                    val sidePreference = 0
+
+                    val preferredPiece = tuplePieces.find { this.getOrientationSides(type, it).contains(sidePreference) } ?: -1
+                    val oppositePiece = tuplePieces.find { it != preferredPiece } ?: -1
+
+                    val potentialPartners = this.getPiecesOnOrientationSide(type, sidePreference) - preferredPiece
+                    val executionPartners = potentialPartners.filter {
+                        val ownColors = this.getOrientationSides(type, it)
+
+                        return@filter this.getOrientationSides(type, preferredPiece).intersect(ownColors).size >
+                                this.getOrientationSides(type, oppositePiece).intersect(ownColors).size
+                    }
+
+                    val setupPreference = listOf(3, 2, 1, 4)
+                    val usedSetup = setupPreference.find { executionPartners.any { p ->
+                        this.getOrientationSides(type, p).intersect(this.getOrientationSides(type, oppositePiece))
+                                .contains(it)
+                    } } ?: -1
+
+                    val executionPartner = executionPartners.find { this.getOrientationSides(type, it).contains(usedSetup) } ?: -1
+
+                    val checkPosition = this.findCurrentOrientationSide(type, preferredPiece, sidePreference)
+                    val execType = if (this.getOrientationSides(type, executionPartner).contains(checkPosition)) "Headlights" else "Chameleon"
+
+                    val helperSide = this.getOrientationSides(type, preferredPiece)
+                            .intersect(this.getOrientationSides(type, executionPartner)).find { it != sidePreference } ?: -1
+                    val niceExecSide = "ULFRBD"[helperSide].toString()
+
+                    accu.add(ComplexMisOrientCycle("$execType:U$niceExecSide", *tuple.toTypedArray()))
+                } else { // FIXME remove this else branch at some point in the future (signed suushie_maniac 11.8.2018)
+                    accu.add(ComplexMisOrientCycle("LOL-Group", *tuple.toTypedArray()))
+                }
+            }
         }
 
         return accu

@@ -7,7 +7,6 @@ import com.suushiemaniac.cubing.alglib.move.Move
 import com.suushiemaniac.cubing.bld.model.cycle.*
 import com.suushiemaniac.cubing.bld.model.cycle.ComplexMisOrientCycle
 import com.suushiemaniac.cubing.bld.model.cycle.MisOrientCycle
-import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.LetterPairImage
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
 import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.TwistyPuzzle
@@ -17,7 +16,6 @@ import com.suushiemaniac.cubing.bld.util.ArrayUtil.cycleLeft
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.deepInnerIndex
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.deepOuterIndex
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.filledArray
-import com.suushiemaniac.cubing.bld.util.CollectionUtil
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.random
 import com.suushiemaniac.cubing.bld.util.MapUtil.allTo
 import com.suushiemaniac.cubing.bld.util.MapUtil.alwaysTo
@@ -267,7 +265,8 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
                         cycles.add(ThreeCycle(mainBuffer, piece, cubies[outer][(inner + i) % type.targetsPerPiece]))
                     }
                 }
-                this.misOrientMethod == MisOrientMethod.SOLVE_DIRECT -> cycles.addAll(misOrients.map { MisOrientPiece(it, i) })
+                this.misOrientMethod == MisOrientMethod.SOLVE_DIRECT ->
+                    cycles.addAll(misOrients.map { MisOrientPiece(it, i) })
             }
         }
 
@@ -283,7 +282,9 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
 
     fun getSolutionTargets(type: PieceType, nice: Boolean = false): String {
         val (currentTwists, currentCycles) = this.compileSolutionCycles(type).partition { it is MisOrientCycle }
+
         val letters = this.getLetteringScheme(type)
+        val ref = this.cubies.getValue(type)
 
         val accu = StringBuilder()
         var lastBuffer = -1
@@ -322,7 +323,7 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
         } else {
             for ((orientation, cycles) in currentTwists.map { it as MisOrientPiece }.groupBy { it.orientation }) {
                 accu.append("[$orientation]")
-                accu.append(cycles.joinToString("") { letters[it.piece] })
+                accu.append(cycles.joinToString("") { letters[it.target] })
             }
         }
 
@@ -455,21 +456,45 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
     }
 
     fun getLetterPairCorrespondant(type: PieceType, piece: Int): String {
-        val cubies = this.cubies[type]
         val lettering = this.getLetteringScheme(type)
+        return this.getCorrespondents(type, piece).joinToString("") { lettering[it] }
+    }
 
-        if (cubies != null) {
-            val outer = cubies.deepOuterIndex(piece)
+    fun getOrientationSides(type: PieceType, piece: Int): Set<Int> {
+        return this.cubies.getValue(type)[piece].map { this.getOrientationSide(type, it) }.toSet()
+    }
 
-            if (outer > -1) {
-                val pieceModel = cubies[outer]
-                val pieces = pieceModel.toMutableList() - piece
+    fun getOrientationSide(type: PieceType, target: Int): Int {
+        val piecesPerSide = (type.numPieces * type.targetsPerPiece) / this.getOrientationSideCount()
+        return target / piecesPerSide
+    }
 
-                return pieces.joinToString("") { lettering[it] }
-            }
+    fun findCurrentTargetPosition(type: PieceType, piece: Int, side: Int): Int {
+        val target = this.cubies.getValue(type)[piece].find { this.getOrientationSide(type, it) == side }
+        return this.state.getValue(type).indexOf(target)
+    }
+
+    fun findCurrentOrientationSide(type: PieceType, piece: Int, side: Int): Int {
+        return this.getOrientationSide(type, this.findCurrentTargetPosition(type, piece, side))
+    }
+
+    fun getPiecesOnOrientationSide(type: PieceType, side: Int): List<Int> {
+        return this.cubies.getValue(type).indices.filter { this.getOrientationSides(type, it).contains(side) }
+    }
+
+    fun getCorrespondents(type: PieceType, target: Int): List<Int> {
+        val outer = this.getPermutationPiece(type, target)
+
+        if (outer > -1) {
+            val pieceModel = this.cubies.getValue(type)[outer]
+            return pieceModel.toMutableList() - target
         }
 
-        return ""
+        return listOf()
+    }
+
+    fun getPermutationPiece(type: PieceType, target: Int): Int {
+        return this.cubies.getValue(type).deepOuterIndex(target)
     }
 
     fun getScrambleScore(type: PieceType): Double { // TODO refine

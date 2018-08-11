@@ -6,6 +6,9 @@ class ComplexMisOrientCycle(val description: String, vararg val pieces: MisOrien
     override val buffer: Int
         get() = this.pieces.asList().random()?.buffer ?: -1
 
+    override val orientation: Int
+        get() = this.pieces.asList().random()?.orientation ?: -1
+
     override fun getAllTargets(): List<Int> {
         return this.pieces.flatMap { it.getAllTargets() }
     }

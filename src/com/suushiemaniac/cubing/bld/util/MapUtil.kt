@@ -3,7 +3,7 @@ package com.suushiemaniac.cubing.bld.util
 object MapUtil {
     fun <K : Comparable<K>, V> Map<K, V>.sortedPrint() {
         for (i in this.keys.sorted()) {
-            println("""$i: ${this[i]}""")
+            println("$i: ${this[i]}")
         }
     }
 
