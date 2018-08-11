@@ -14,7 +14,6 @@ import com.suushiemaniac.cubing.bld.util.ArrayUtil.deepInnerIndex
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.deepOuterIndex
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.swap
 import com.suushiemaniac.cubing.bld.util.CollectionUtil
-import com.suushiemaniac.cubing.bld.util.CollectionUtil.random
 
 open class BldCube : BldPuzzle {
     var cornerParityMethod = CornerParityMethod.SWAP_UB_UL
@@ -279,88 +278,39 @@ open class BldCube : BldPuzzle {
         }
 
         lowerSwaps.addAll(CollectionUtil.zip(*grouped.values.toTypedArray()))
-        val colorPreference = listOf(0, 5, 2, 4)
 
         for (tuple in lowerSwaps) {
             if (type.targetsPerPiece <= tuple.size) {
-                accu.add(ComplexMisOrientCycle("StdLow", *tuple.toTypedArray()))
+                accu.add(ComplexMisOrientCycle("Std", *tuple.toTypedArray()))
             } else {
                 val tuplePieces = tuple.map { this.getPermutationPiece(type, it.target) }
                 val tupleColors = tuplePieces.map { this.getOrientationSides(type, it) }
                 val commonColors = tupleColors.reduce { a, b -> a.intersect(b) }
 
-                if (commonColors.size == 2) { // FIXME these numbers are hard-coded to NxN corners
-                    val preferredPiece = tuplePieces.random() ?: -1
-                    val executionPartner = tuplePieces.find { it != preferredPiece } ?: -1
+                val sidePreferences = listOf(2, 3, 0).drop(tuple.size - commonColors.size)
+                val preferredPiece = tuplePieces.sortedBy { this.getOrientationSides(type, it).intersect(sidePreferences).size }.first()
 
-                    val interestingColor = colorPreference.find { commonColors.contains(it) } ?: -1
+                val originalPartner = tuplePieces.find { it != preferredPiece } ?: -1 // FIXME this search query is hard-coded to NxN corners
 
-                    val checkPosition = this.findCurrentOrientationSide(type, preferredPiece, interestingColor)
-                    val execType = if (this.getOrientationSides(type, executionPartner).contains(checkPosition)) "Headlights" else "Chameleon"
+                val colorPreferences = commonColors + listOf(0, 2, 3).intersect(sidePreferences)
+                val execColor = colorPreferences.find { this.getOrientationSides(type, preferredPiece).contains(it) } ?: -1
 
-                    accu.add(ComplexMisOrientCycle(execType,
-                            MisOrientPiece(this.findCurrentTargetPosition(type, preferredPiece, interestingColor), this.getPieceOrientation(type, preferredPiece)),
-                            MisOrientPiece(this.findCurrentTargetPosition(type, executionPartner, interestingColor), this.getPieceOrientation(type, executionPartner))))
-                } else if (commonColors.size == 1) {
-                    val commonColor = commonColors.first()
+                val potentialPartners = this.getPiecesOnOrientationSide(type, execColor) - preferredPiece
+                val sortedPartnerGroups = potentialPartners.groupBy { this.getOrientationSides(type, it).intersect(this.getOrientationSides(type, preferredPiece)).size }
+                val closestPartners = sortedPartnerGroups.getValue(sortedPartnerGroups.keys.max() ?: -1)
 
-                    val sidePreferences = listOf(3, 0, 2) - commonColor
-                    val execSide = sidePreferences.find { tuplePieces.any { p ->
-                        this.getOrientationSides(type, p).contains(it)
-                    } } ?: -1
+                val executionPartner = closestPartners.sortedByDescending { this.getOrientationSides(type, it).intersect(this.getOrientationSides(type, originalPartner)).size }.first()
 
-                    val preferredPiece = tuplePieces.find { this.getOrientationSides(type, it).contains(execSide) } ?: -1
+                val checkPosition = this.findCurrentOrientationSide(type, preferredPiece, execColor)
+                val execType = if (this.getOrientationSides(type, executionPartner).contains(checkPosition)) "Headlights" else "Chameleon"
 
-                    val originalPartner = tuplePieces.find { it != preferredPiece } ?: -1
+                val originalPartnerColor = this.getOrientationSides(type, originalPartner).find { it == execColor || it == this.getOppositeCenter(execColor) } ?: -1
 
-                    val potentialPartners = this.getPiecesOnOrientationSide(type, commonColor)
-                    val executionPartners = potentialPartners.filter { this.getOrientationSides(type, it).contains(execSide)}
+                // TODO perhaps add exec note: intersection between execution partner piece stickers and original partner piece stickers
 
-                    val executionPartner = executionPartners.find { it != preferredPiece } ?: -1
-
-                    val checkPosition = this.findCurrentOrientationSide(type, preferredPiece, execSide)
-                    val execType = if (this.getOrientationSides(type, executionPartner).contains(checkPosition)) "Headlights" else "Chameleon"
-
-                    val niceExecSide = "ULFRBD"[execSide].toString()
-
-                    accu.add(ComplexMisOrientCycle("$execType:$niceExecSide",
-                            MisOrientPiece(this.findCurrentTargetPosition(type, preferredPiece, commonColor), this.getPieceOrientation(type, preferredPiece)),
-                            MisOrientPiece(this.findCurrentTargetPosition(type, originalPartner, commonColor), this.getPieceOrientation(type, originalPartner))))
-                } else if (commonColors.isEmpty()) {
-                    val sidePreference = 0
-
-                    val preferredPiece = tuplePieces.find { this.getOrientationSides(type, it).contains(sidePreference) } ?: -1
-                    val oppositePiece = tuplePieces.find { it != preferredPiece } ?: -1
-
-                    val potentialPartners = this.getPiecesOnOrientationSide(type, sidePreference) - preferredPiece
-                    val executionPartners = potentialPartners.filter {
-                        val ownColors = this.getOrientationSides(type, it)
-
-                        return@filter this.getOrientationSides(type, preferredPiece).intersect(ownColors).size >
-                                this.getOrientationSides(type, oppositePiece).intersect(ownColors).size
-                    }
-
-                    val setupPreference = listOf(3, 2, 1, 4)
-                    val usedSetup = setupPreference.find { executionPartners.any { p ->
-                        this.getOrientationSides(type, p).intersect(this.getOrientationSides(type, oppositePiece))
-                                .contains(it)
-                    } } ?: -1
-
-                    val executionPartner = executionPartners.find { this.getOrientationSides(type, it).contains(usedSetup) } ?: -1
-
-                    val checkPosition = this.findCurrentOrientationSide(type, preferredPiece, sidePreference)
-                    val execType = if (this.getOrientationSides(type, executionPartner).contains(checkPosition)) "Headlights" else "Chameleon"
-
-                    val helperSide = this.getOrientationSides(type, preferredPiece)
-                            .intersect(this.getOrientationSides(type, executionPartner)).find { it != sidePreference } ?: -1
-                    val niceExecSide = "ULFRBD"[helperSide].toString()
-
-                    accu.add(ComplexMisOrientCycle("$execType:U$niceExecSide",
-                            MisOrientPiece(this.findCurrentTargetPosition(type, preferredPiece, sidePreference), this.getPieceOrientation(type, preferredPiece)),
-                            MisOrientPiece(this.findCurrentTargetPosition(type, oppositePiece, this.getOppositeCenter(sidePreference)), this.getPieceOrientation(type, oppositePiece))))
-                } else { // FIXME remove this else branch at some point in the future (signed suushie_maniac 11.8.2018)
-                    accu.add(ComplexMisOrientCycle("LOL-Group", *tuple.toTypedArray()))
-                }
+                accu.add(ComplexMisOrientCycle(execType,
+                        MisOrientPiece(this.findCurrentTargetPosition(type, preferredPiece, execColor), this.getPieceOrientation(type, preferredPiece)),
+                        MisOrientPiece(this.findCurrentTargetPosition(type, originalPartner, originalPartnerColor), this.getPieceOrientation(type, originalPartner))))
             }
         }
 
