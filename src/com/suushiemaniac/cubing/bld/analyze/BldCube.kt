@@ -91,6 +91,32 @@ open class BldCube : BldPuzzle {
         return CENTER.reader.parse(neededRotations)
     }
 
+    override fun compilePermuteSolutionCycles(type: PieceType): List<PieceCycle> {
+        if (type == CORNER && this.cornerParityMethod == CornerParityMethod.APPLY_ALGORITHM && this.hasParity(CORNER)) {
+            val currentCycles = this.cycles.getValue(type)
+            val mainBuffer = this.mainBuffers.getValue(type)
+
+            var currentBuffer = mainBuffer
+            val bufferFloats = this.bufferFloats.getValue(type)
+
+            val cycles = mutableListOf<PieceCycle>()
+
+            cycles.add(ParityCycle(currentBuffer, currentCycles[0]))
+
+            for (c in currentCycles.indices.drop(1).chunked(2)) {
+                if (c[0] in bufferFloats.keys) {
+                    currentBuffer = bufferFloats.getValue(c[0])
+                }
+
+                cycles.add(ThreeCycle(currentBuffer, currentCycles[c[0]], currentCycles[c[1]]))
+            }
+
+            return cycles
+        }
+
+        return super.compilePermuteSolutionCycles(type)
+    }
+
     override fun getReorientationMoves(): Algorithm {
         when {
             this.getOrientationPieceTypes().contains(CENTER) -> {
@@ -223,22 +249,41 @@ open class BldCube : BldPuzzle {
                 EDGE to listOf("", "Std")
         )
 
-        for ((orient, pieces) in grouped) { // TODO refine: corners only in triple if on same layer
-            var remainder = pieces.toList()
+        val lowerSwaps = mutableListOf<List<MisOrientPiece>>()
+
+        for ((orient, pieces) in grouped) {
+            val remainder = pieces.toMutableList()
 
             while (remainder.size >= type.targetsPerPiece) {
-                accu.add(ComplexMisOrientCycle(longNames.getValue(type)[orient], *remainder.take(type.targetsPerPiece).toTypedArray()))
-                remainder = remainder.drop(type.targetsPerPiece)
+                val targets = remainder.take(type.targetsPerPiece)
+
+                val colors = targets.map { this.getOrientationSides(type, this.getPermutationPiece(type, it.target)) }
+                val commonColor = colors.reduce { a, b -> a.intersect(b) }.firstOrNull()
+
+                if (commonColor != null) {
+                    accu.add(ComplexMisOrientCycle(longNames.getValue(type)[orient], *targets.toTypedArray()))
+                } else {
+                    val buffer = this.getBuffer(type)
+                    val nonBufferTargets = targets.toMutableList().filter { this.getPermutationPiece(type, it.target) != this.getPermutationPiece(type, buffer) }
+
+                    nonBufferTargets.forEach { lowerSwaps.add(listOf(
+                            MisOrientPiece(buffer, this.getPieceOrientation(type, this.getPermutationPiece(type, buffer))),
+                            it
+                    )) }
+                }
+
+                targets.forEach { remainder.remove(it) }
             }
 
             grouped[orient] = remainder.toMutableList()
         }
 
+        lowerSwaps.addAll(CollectionUtil.zip(*grouped.values.toTypedArray()))
         val colorPreference = listOf(0, 5, 2, 4)
 
-        for (tuple in CollectionUtil.zip(*grouped.values.toTypedArray())) {
+        for (tuple in lowerSwaps) {
             if (type.targetsPerPiece <= tuple.size) {
-                accu.add(ComplexMisOrientCycle("DiffTogether", *tuple.toTypedArray()))
+                accu.add(ComplexMisOrientCycle("StdLow", *tuple.toTypedArray()))
             } else {
                 val tuplePieces = tuple.map { this.getPermutationPiece(type, it.target) }
                 val tupleColors = tuplePieces.map { this.getOrientationSides(type, it) }
@@ -253,14 +298,20 @@ open class BldCube : BldPuzzle {
                     val checkPosition = this.findCurrentOrientationSide(type, preferredPiece, interestingColor)
                     val execType = if (this.getOrientationSides(type, executionPartner).contains(checkPosition)) "Headlights" else "Chameleon"
 
-                    accu.add(ComplexMisOrientCycle(execType, *tuple.toTypedArray()))
+                    accu.add(ComplexMisOrientCycle(execType,
+                            MisOrientPiece(this.findCurrentTargetPosition(type, preferredPiece, interestingColor), this.getPieceOrientation(type, preferredPiece)),
+                            MisOrientPiece(this.findCurrentTargetPosition(type, executionPartner, interestingColor), this.getPieceOrientation(type, executionPartner))))
                 } else if (commonColors.size == 1) {
                     val commonColor = commonColors.first()
 
                     val sidePreferences = listOf(3, 0, 2) - commonColor
-                    val preferredPiece = tuplePieces.find { sidePreferences.intersect(this.getOrientationSides(type, it)).isNotEmpty() } ?: -1
+                    val execSide = sidePreferences.find { tuplePieces.any { p ->
+                        this.getOrientationSides(type, p).contains(it)
+                    } } ?: -1
 
-                    val execSide = sidePreferences.find { this.getOrientationSides(type, preferredPiece).contains(it) } ?: -1
+                    val preferredPiece = tuplePieces.find { this.getOrientationSides(type, it).contains(execSide) } ?: -1
+
+                    val originalPartner = tuplePieces.find { it != preferredPiece } ?: -1
 
                     val potentialPartners = this.getPiecesOnOrientationSide(type, commonColor)
                     val executionPartners = potentialPartners.filter { this.getOrientationSides(type, it).contains(execSide)}
@@ -270,9 +321,11 @@ open class BldCube : BldPuzzle {
                     val checkPosition = this.findCurrentOrientationSide(type, preferredPiece, commonColor)
                     val execType = if (this.getOrientationSides(type, executionPartner).contains(checkPosition)) "Headlights" else "Chameleon"
 
-                    val niceExecSide = "ULFRBD"[execSide].toString()
+                    val niceExecSide = "ULFRBD"[execSide].toString() // fixme F moves screw up naming conventions
 
-                    accu.add(ComplexMisOrientCycle("$execType:$niceExecSide", *tuple.toTypedArray()))
+                    accu.add(ComplexMisOrientCycle("$execType:$niceExecSide",
+                            MisOrientPiece(this.findCurrentTargetPosition(type, preferredPiece, commonColor), this.getPieceOrientation(type, preferredPiece)),
+                            MisOrientPiece(this.findCurrentTargetPosition(type, originalPartner, commonColor), this.getPieceOrientation(type, originalPartner))))
                 } else if (commonColors.isEmpty()) {
                     val sidePreference = 0
 
@@ -302,7 +355,9 @@ open class BldCube : BldPuzzle {
                             .intersect(this.getOrientationSides(type, executionPartner)).find { it != sidePreference } ?: -1
                     val niceExecSide = "ULFRBD"[helperSide].toString()
 
-                    accu.add(ComplexMisOrientCycle("$execType:U$niceExecSide", *tuple.toTypedArray()))
+                    accu.add(ComplexMisOrientCycle("$execType:U$niceExecSide",
+                            MisOrientPiece(this.findCurrentTargetPosition(type, preferredPiece, sidePreference), this.getPieceOrientation(type, preferredPiece)),
+                            MisOrientPiece(this.findCurrentTargetPosition(type, oppositePiece, this.getOppositeCenter(sidePreference)), this.getPieceOrientation(type, oppositePiece))))
                 } else { // FIXME remove this else branch at some point in the future (signed suushie_maniac 11.8.2018)
                     accu.add(ComplexMisOrientCycle("LOL-Group", *tuple.toTypedArray()))
                 }

@@ -230,7 +230,7 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
         return this.cycles.getValue(type).lastOrNull() ?: -1
     }
 
-    fun compileSolutionCycles(type: PieceType): List<PieceCycle> {
+    open fun compilePermuteSolutionCycles(type: PieceType): List<PieceCycle> {
         val currentCycles = this.cycles.getValue(type)
         val mainBuffer = this.mainBuffers.getValue(type)
 
@@ -250,6 +250,15 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
                 cycles.add(ParityCycle(currentBuffer, currentCycles[c[0]]))
             }
         }
+
+        return cycles
+    }
+
+    fun compileSolutionCycles(type: PieceType): List<PieceCycle> {
+        val mainBuffer = this.mainBuffers.getValue(type)
+
+        val cycles = mutableListOf<PieceCycle>()
+        cycles.addAll(this.compilePermuteSolutionCycles(type))
 
         for (i in 0 until type.targetsPerPiece) {
             val misOrients = this.getMisOrientedPieces(type, i)
@@ -415,6 +424,11 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
         return orientations.indices.drop(1)
                 .filter { orientations[it] }
                 .map { cubies[it][orientation] }
+    }
+
+    protected fun getPieceOrientation(type: PieceType, piece: Int): Int {
+        val misOrients = this.misOrientedPieces.getValue(type)
+        return misOrients.indices.find { misOrients[it][piece] } ?: -1
     }
 
     protected fun getMisOrientedPieceLetters(type: PieceType, orientation: Int): List<String> {
