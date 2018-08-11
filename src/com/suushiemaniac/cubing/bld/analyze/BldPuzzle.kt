@@ -293,7 +293,6 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
         val (currentTwists, currentCycles) = this.compileSolutionCycles(type).partition { it is MisOrientCycle }
 
         val letters = this.getLetteringScheme(type)
-        val ref = this.cubies.getValue(type)
 
         val accu = StringBuilder()
         var lastBuffer = -1
@@ -772,6 +771,10 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
 
     fun dropFloatingBuffers() {
         this.getPieceTypes().forEach(this::dropFloatingBuffers)
+    }
+
+    fun getRotations(): Algorithm {
+        return this.scrambleOrientationPreMoves.copy()
     }
 
     protected abstract fun solvePieces(type: PieceType)

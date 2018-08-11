@@ -299,7 +299,7 @@ open class BldCube : BldPuzzle {
 
                 val originalPartner = tuplePieces.find { it != preferredPiece } ?: -1 // FIXME this search query is hard-coded to NxN corners
 
-                val colorPreferences = commonColors + listOf(0, 2, 3).intersect(sidePreferences)
+                val colorPreferences = commonColors.sorted() + listOf(0, 2, 3).intersect(sidePreferences)
                 val execColor = colorPreferences.find { this.getOrientationSides(type, preferredPiece).contains(it) } ?: colorPreferences.find { this.getOrientationSides(type, preferredPiece).contains(this.getOppositeCenter(it)) } ?: -1
 
                 val potentialPartners = this.getPiecesOnOrientationSide(type, execColor) - preferredPiece
