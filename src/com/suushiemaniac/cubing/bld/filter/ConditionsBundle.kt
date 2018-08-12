@@ -14,40 +14,29 @@ import com.suushiemaniac.cubing.bld.util.StringUtil.toCharStrings
 
 class ConditionsBundle(val pieceType: PieceType) {
     var targets: IntCondition = IntCondition.ANY()
-        set(value) {
-            field = value
-            this.balanceProperties()
-        }
-
     var breakIns: IntCondition = IntCondition.ANY()
-        set(value) {
-            field = value
-            this.balanceProperties()
-        }
-
     var preSolved: IntCondition = IntCondition.ANY()
-        set(value) {
-            field = value
-            this.balanceProperties()
-        }
-
     var misOriented: IntCondition = IntCondition.ANY()
-        set(value) {
-            field = value
-            this.balanceProperties()
-        }
 
     var parity: BooleanCondition = BooleanCondition.MAYBE()
-        set(value) {
-            field = value
-            this.balanceProperties()
-        }
-
     var bufferSolved: BooleanCondition = BooleanCondition.MAYBE()
-        set(value) {
-            field = value
-            this.balanceProperties()
-        }
+
+    constructor(pieceType: PieceType,
+                targets: IntCondition = IntCondition.ANY(),
+                breakIns: IntCondition = IntCondition.ANY(),
+                preSolved: IntCondition = IntCondition.ANY(),
+                misOriented: IntCondition = IntCondition.ANY(),
+                parity: BooleanCondition = BooleanCondition.MAYBE(),
+                bufferSolved: BooleanCondition = BooleanCondition.MAYBE()): this(pieceType) {
+        this.targets = targets
+        this.breakIns = breakIns
+        this.preSolved = preSolved
+        this.misOriented = misOriented
+        this.parity = parity
+        this.bufferSolved = bufferSolved
+
+        this.balanceProperties()
+    }
 
     var isAllowTwistedBuffer: Boolean = ALLOW_TWISTED_BUFFER
 

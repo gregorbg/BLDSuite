@@ -15,8 +15,8 @@ import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.runBlocking
 import net.gnehzr.tnoodle.scrambles.Puzzle
 
-class BldScramble(var analyzingPuzzle: BldPuzzle, var conditions: List<ConditionsBundle>) {
-    protected var scramblingSupplier: () -> Puzzle = analyzingPuzzle.model.supplyScramblingPuzzle()
+class BldScramble(val analyzingPuzzle: BldPuzzle, vararg val conditions: ConditionsBundle) {
+    val scramblingSupplier: () -> Puzzle = analyzingPuzzle.model.supplyScramblingPuzzle()
 
     val statString: String
         get() = this.conditions.joinToString(" | ") { it.statString }
@@ -29,10 +29,16 @@ class BldScramble(var analyzingPuzzle: BldPuzzle, var conditions: List<Condition
         return this.supplyScramblingPuzzle()()
     }
 
+    fun balanceConditions() {
+        this.conditions.forEach(ConditionsBundle::balanceProperties)
+    }
+
     fun findScrambleOnThread(): Algorithm {
         val testCube = this.analyzingPuzzle.clone()
         val tNoodle = this.generateScramblingPuzzle()
         val reader = CubicAlgorithmReader()
+
+        this.balanceConditions()
 
         do {
             val scrString = tNoodle.generateScramble()
@@ -63,6 +69,8 @@ class BldScramble(var analyzingPuzzle: BldPuzzle, var conditions: List<Condition
             }
         }
 
+        this.balanceConditions()
+
         return runBlocking {
             val algList = mutableListOf<Algorithm>()
             val testCube = analyzingPuzzle.clone()
@@ -76,11 +84,11 @@ class BldScramble(var analyzingPuzzle: BldPuzzle, var conditions: List<Condition
                 }
             } while (algList.size < numScrambles)
 
-            return@runBlocking algList
+            algList
         }
     }
 
-    protected fun matchingConditions(inCube: BldPuzzle): Boolean {
+    fun matchingConditions(inCube: BldPuzzle): Boolean {
         for (bundle in this.conditions) {
             if (!bundle.matchingConditions(inCube)) {
                 if (SHOW_DISCARDED) {
@@ -122,7 +130,7 @@ class BldScramble(var analyzingPuzzle: BldPuzzle, var conditions: List<Condition
                 conditions.add(condition)
             }
 
-            return BldScramble(refCube, conditions)
+            return BldScramble(refCube, *conditions.toTypedArray())
         }
 
         fun fromStatString(statString: String, refCube: BldPuzzle, isStrict: Boolean): BldScramble {
@@ -154,10 +162,10 @@ class BldScramble(var analyzingPuzzle: BldPuzzle, var conditions: List<Condition
                 }
             }
 
-            return BldScramble(refCube, conditions)
+            return BldScramble(refCube, *conditions.toTypedArray())
         }
 
-        protected fun findTypeByMnemonic(refCube: BldPuzzle, mnemonic: String): PieceType? {
+        fun findTypeByMnemonic(refCube: BldPuzzle, mnemonic: String): PieceType? {
             for (type in refCube.getPieceTypes()) {
                 if (type.mnemonic.equals(mnemonic, true)) {
                     return type

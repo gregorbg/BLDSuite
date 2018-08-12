@@ -348,9 +348,7 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
             val letterTargets = it.getAllTargets().map { t -> lettering[t] }
             val bufferSticker = SpeffzUtil.speffzToSticker(SpeffzUtil.normalize(lettering[it.buffer], lettering), type)
 
-            // val caseAlgs = this.algSource!!.getAlgorithms(type, cycle)
-            val caseAlgs = this.algSource!!.getAlgorithms(type, it)
-            return@map caseAlgs.toList().random()
+            this.algSource!!.getAlgorithms(type, it).toList().random()
                     ?: ImageStringReader().parse("Not found: $bufferSticker>${letterTargets.joinToString("-")}")
         }
     }
