@@ -6,13 +6,11 @@ import com.suushiemaniac.cubing.bld.model.cycle.*
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType.*
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
 import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.CubicPuzzle
-import com.suushiemaniac.cubing.bld.optim.BreakInOptim
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.countOf
-import com.suushiemaniac.cubing.bld.util.ArrayUtil.countingArray
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.cycleLeft
-import com.suushiemaniac.cubing.bld.util.ArrayUtil.deepInnerIndex
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.deepOuterIndex
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.swap
+import com.suushiemaniac.cubing.bld.util.MapUtil.allTo
 import com.suushiemaniac.cubing.bld.util.CollectionUtil
 
 open class BldCube : BldPuzzle {
@@ -36,8 +34,6 @@ open class BldCube : BldPuzzle {
     var top: Int = 0
     var front: Int = 0
 
-    var optim: BreakInOptim? = null
-
     val dynamicReorientPieceTypes: List<PieceType>
         get() = mutableListOf(XCENTER, TCENTER, INNERXCENTER, INNERTCENTER, LEFTOBLIQUE, RIGHTOBLIQUE)
                 .intersect(this.model.pieceTypes.toList()).toList()
@@ -54,15 +50,10 @@ open class BldCube : BldPuzzle {
     }
 
     override fun getExecutionOrderPieceTypes(): List<PieceType> {
-        val definitiveOrder = this.executionOrder.toMutableList()
         val permutations = this.getPermutationPieceTypes().toMutableList()
+        val definitiveOrder = this.executionOrder.intersect(permutations).toMutableList()
 
-        definitiveOrder.retainAll(permutations)
-
-        permutations -= definitiveOrder
-        definitiveOrder += permutations
-
-        return definitiveOrder
+        return definitiveOrder + (permutations - definitiveOrder)
     }
 
     override fun getDefaultCubies(): Map<PieceType, Array<Array<Int>>> {
@@ -80,9 +71,7 @@ open class BldCube : BldPuzzle {
                 INNERTCENTER to SPEFFZ_TCENTERS
         )
 
-        return this.getPieceTypes(true)
-                .map { it to cubies.getValue(it) }
-                .toMap()
+        return this.getPieceTypes(true) allTo { cubies.getValue(it) }
     }
 
     fun getRotationsFromOrientation(orientationModelTop: Int, orientationModelFront: Int): Algorithm {
@@ -253,22 +242,22 @@ open class BldCube : BldPuzzle {
         for ((orient, pieces) in grouped) {
             val remainder = pieces.toMutableList()
 
-            while (remainder.size >= type.targetsPerPiece) {
+            while (remainder.size >= type.targetsPerPiece) { // TODO group by orientation
                 val targets = remainder.take(type.targetsPerPiece)
 
-                val colors = targets.map { this.getOrientationSides(type, this.getPermutationPiece(type, it.target)) }
+                val colors = targets.map { this.getOrientationSides(type, this.getTargetPermutation(type, it.target)) }
                 val commonColor = colors.reduce { a, b -> a.intersect(b) }.firstOrNull()
 
                 if (commonColor != null) {
-                    val labelledTargets = targets.map { MisOrientPiece(this.findCurrentTargetPosition(type, this.getPermutationPiece(type, it.target), commonColor), it.orientation) }
+                    val labelledTargets = targets.map { MisOrientPiece(this.findCurrentTargetPosition(type, this.getTargetPermutation(type, it.target), commonColor), it.orientation) }
 
                     accu.add(ComplexMisOrientCycle(longNames.getValue(type)[orient], *labelledTargets.toTypedArray()))
                 } else {
                     val buffer = this.getBuffer(type)
-                    val nonBufferTargets = targets.toMutableList().filter { this.getPermutationPiece(type, it.target) != this.getPermutationPiece(type, buffer) }
+                    val nonBufferTargets = targets.toMutableList().filter { this.getTargetPermutation(type, it.target) != this.getTargetPermutation(type, buffer) }
 
                     nonBufferTargets.forEach { lowerSwaps.add(listOf(
-                            MisOrientPiece(buffer, this.getPieceOrientation(type, this.getPermutationPiece(type, buffer))),
+                            MisOrientPiece(buffer, this.getPieceOrientation(type, this.getTargetPermutation(type, buffer))),
                             it
                     )) }
                 }
@@ -290,7 +279,7 @@ open class BldCube : BldPuzzle {
 
                 accu.add(ComplexMisOrientCycle(stdNames.getValue(type), *tuple.toTypedArray()))
             } else {
-                val tuplePieces = tuple.map { this.getPermutationPiece(type, it.target) }
+                val tuplePieces = tuple.map { this.getTargetPermutation(type, it.target) }
                 val tupleColors = tuplePieces.map { this.getOrientationSides(type, it) }
                 val commonColors = tupleColors.reduce { a, b -> a.intersect(b) }
 
@@ -344,48 +333,6 @@ open class BldCube : BldPuzzle {
         return opposites[center]
     }
 
-    override fun getBreakInPermutationsAfter(piece: Int, type: PieceType): List<Int> {
-        if (this.algSource == null)
-            return super.getBreakInPermutationsAfter(piece, type)
-
-        if (this.optim == null)
-            this.optim = BreakInOptim(this.algSource!!, this, false)
-
-        val bestTargets = this.optim!!.optimizeBreakInTargetsAfter(piece, type)
-        val breakInPerms = bestTargets
-                .map { this.cubies.getValue(type).deepOuterIndex(it) }
-                .filter { it > -1 }
-                .distinct().toMutableList()
-
-        val expected = super.getBreakInPermutationsAfter(piece, type).toMutableList()
-        expected.removeAll(breakInPerms)
-
-        breakInPerms.addAll(expected)
-
-        return breakInPerms
-    }
-
-    override fun getBreakInOrientationsAfter(piece: Int, type: PieceType): Int {
-        if (this.algSource == null)
-            return super.getBreakInOrientationsAfter(piece, type)
-
-        if (this.optim == null)
-            this.optim = BreakInOptim(this.algSource!!, this, false)
-
-        val bestTargets = this.optim!!.optimizeBreakInTargetsAfter(piece, type)
-        val breakInOrients = bestTargets
-                .map { this.cubies.getValue(type).deepInnerIndex(it) }
-                .filter { it > -1 }
-                .toMutableList()
-
-        val expected = type.targetsPerPiece.countingArray().toMutableList()
-        expected.removeAll(breakInOrients)
-
-        breakInOrients.addAll(expected)
-
-        return breakInOrients[0]
-    }
-
     override fun solvePieces(type: PieceType) {
         if (this.cornerParityDependents.contains(type)) {
             if (!this.isSolved(CORNER)) {
@@ -408,7 +355,6 @@ open class BldCube : BldPuzzle {
 
     override fun hasParity(type: PieceType): Boolean {
         return if (type === EDGE) this.hasParity(CORNER) else super.hasParity(type)
-
     }
 
     protected fun isSolved(type: PieceType): Boolean {
@@ -432,26 +378,18 @@ open class BldCube : BldPuzzle {
             if (i == 0 || !solvedPieces[i]) {
                 val baseIndex = i / divBase
 
-                var assumeSolved = false
-
-                for (j in 0 until divBase) {
-                    var currentSolved = true
-
-                    for (k in 0 until type.targetsPerPiece) {
-                        currentSolved = currentSolved and (state[ref[baseIndex][(i + k) % modBase]] == ref[baseIndex][(i + k + j) % modBase])
+                val assumeSolved = (0 until divBase).any { j ->
+                    (0 until type.targetsPerPiece).all { k ->
+                        state[ref[baseIndex][(i + k) % modBase]] == ref[baseIndex][(i + k + j) % modBase]
                     }
-
-                    assumeSolved = assumeSolved or currentSolved
                 }
 
                 // Piece is preSolved and oriented
                 if (assumeSolved) {
                     solvedPieces[i] = true
 
-                    var assumePreSolved = true
-
-                    for (k in 0 until type.targetsPerPiece) {
-                        assumePreSolved = assumePreSolved and (lastScrambledState[ref[baseIndex][(i + k) % modBase]] == ref[baseIndex][(i + k) % modBase])
+                    val assumePreSolved = (0 until type.targetsPerPiece).all { k ->
+                        lastScrambledState[ref[baseIndex][(i + k) % modBase]] == ref[baseIndex][(i + k) % modBase]
                     }
 
                     preSolvedPieces[i] = assumePreSolved
@@ -462,20 +400,19 @@ open class BldCube : BldPuzzle {
                     //Rotations
                     val rotations = type.targetsPerPiece
 
-                    var j = 1
-                    while (j < rotations && !isRotated) {
-                        var assumeRotated = true
-
-                        for (k in 0 until rotations) {
-                            assumeRotated = assumeRotated and (state[ref[i][k]] == ref[i][(k + j) % rotations])
+                    for (j in 1 until rotations) {
+                        val assumeRotated = (0 until rotations).all { k ->
+                            state[ref[i][k]] == ref[i][(k + j) % rotations]
                         }
 
                         if (assumeRotated) {
                             isRotated = true
+
                             solvedPieces[i] = true
                             misOrientations[j][i] = true
+
+                            break
                         }
-                        j++
                     }
 
                     if (!isRotated) {
@@ -515,8 +452,6 @@ open class BldCube : BldPuzzle {
     }
 
     protected fun cycleByBuffer(type: PieceType) {
-        var pieceCycled = false
-
         val state = this.state.getValue(type)
         val ref = this.cubies.getValue(type)
 
@@ -524,10 +459,7 @@ open class BldCube : BldPuzzle {
 
         val cycles = this.cycles.getValue(type)
 
-        val avoidBreakIns = this.avoidBreakIns[type]
-        val optimizeBreakIns = this.optimizeBreakIns[type]
-
-        val currentCycleLength = cycles.size
+        val avoidBreakIns = this.avoidBreakIns.getValue(type)
 
         val divBase = type.numPieces / this.getPiecePermutations(type)
         val modBase = this.getPieceOrientations(type)
@@ -537,89 +469,50 @@ open class BldCube : BldPuzzle {
             this.increaseCycleCount(type)
 
             val lastTarget = this.getLastTarget(type)
+            val breakInTargets = this.getBreakInTargetsAfter(type, lastTarget)
 
-            val breakInPerms = if (optimizeBreakIns!! && lastTarget > 0 && currentCycleLength % 2 == 1)
-                this.getBreakInPermutationsAfter(lastTarget, type)
-            else
-                super.getBreakInPermutationsAfter(lastTarget, type)
+            for (breakInTarget in breakInTargets) {
+                val piece = this.getTargetPermutation(type, breakInTarget)
+                val bestOrient = this.getTargetOrientation(type, breakInTarget)
 
-            var pieceIndex = 0
-            while (pieceIndex < type.numPiecesNoBuffer && !pieceCycled) {
-                val piece = breakInPerms[pieceIndex]
+                val suitable = state[breakInTarget] / divBase != ref[0][0] / divBase
 
                 // First unsolved pieces is selected
-                if (!solvedPieces[piece]) {
-                    val baseIndex = piece / divBase
-                    val parts = type.targetsPerPiece
-
-                    var bestOrient = if (optimizeBreakIns && lastTarget > 0 && currentCycleLength % 2 == 1)
-                        this.getBreakInOrientationsAfter(lastTarget, type)
-                    else
-                        super.getBreakInOrientationsAfter(lastTarget, type)
-
-                    bestOrient += modBase - piece
-                    bestOrient %= parts
-
-                    val tempPiece = IntArray(parts)
-
-                    for (targetFaces in 0 until parts) {
-                        val extIndex = (piece + bestOrient + targetFaces) % modBase
-
-                        // Buffer is placed in a temp pieces
-                        tempPiece[targetFaces] = state[ref[0][targetFaces % modBase]]
-
-                        // Buffer is replaced with pieces
-                        state[ref[0][targetFaces % modBase]] = state[ref[baseIndex][extIndex]]
-
-                        // Piece is replaced with temp pieces
-                        state[ref[baseIndex][extIndex]] = tempPiece[targetFaces]
+                if (!solvedPieces[piece * divBase + bestOrient / type.targetsPerPiece] && suitable) {
+                    for (targetFaces in 0 until type.targetsPerPiece) {
+                        state.swap(
+                                ref[0][targetFaces % modBase],
+                                ref[piece][(bestOrient + targetFaces) % modBase]
+                        )
                     }
 
                     // Piece cycle is inserted into solution array
-                    cycles.add(ref[baseIndex][(piece + bestOrient) % modBase])
+                    cycles.add(breakInTarget)
 
-                    // set flag to break out of loop
-                    pieceCycled = true
+                    break
                 }
-                pieceIndex++
             }
-        } else {
-            var permutation = 0
-            while (permutation < this.getPiecePermutations(type) && !pieceCycled) {
-                var orientation = 0
-                while (orientation < this.getPieceOrientations(type) && !pieceCycled) {
+        } else { // If the buffer is not preSolved, swap it to the position where the pieces belongs
+            for (permutation in 0 until this.getPiecePermutations(type)) {
+                for (orientation in 0 until this.getPieceOrientations(type)) {
                     val pieceTargets = type.targetsPerPiece
 
-                    var assumeMatch = true
+                    val assumeMatch = (0 until pieceTargets).all {
+                        val currentlyInBuffer = state[ref[0][it]] / divBase
+                        val currentLoopTarget = ref[permutation][(it + orientation) % modBase] / divBase
 
-                    for (targetFaces in 0 until pieceTargets) {
-                        val currentlyInBuffer = state[ref[0][targetFaces]] / divBase
-                        val currentLoopTarget = ref[permutation][(targetFaces + orientation) % modBase] / divBase
-
-                        assumeMatch = assumeMatch and (currentlyInBuffer == currentLoopTarget)
+                        currentlyInBuffer == currentLoopTarget
                     }
 
                     if (assumeMatch && !solvedPieces[permutation * divBase + orientation / pieceTargets]) {
-                        var pieceIndex = orientation
+                        val pieceIndex = (orientation until divBase).find {
+                            val alternativeSolved = solvedPieces[permutation * divBase + it / pieceTargets]
 
-                        if (avoidBreakIns!!) {
-                            val aimedTarget = state[ref[permutation][pieceIndex % modBase]] / divBase
-                            val normalizedBuffer = ref[0][0] / divBase
+                            val alternativePiece = state[ref[permutation][it % modBase]] / divBase
+                            val alternativeSuitable = alternativePiece != ref[0][0] / divBase
 
-                            if (aimedTarget == normalizedBuffer) {
-                                for (alternative in orientation + 1 until divBase) {
-                                    val alternativeSolved = solvedPieces[permutation * divBase + alternative / pieceTargets]
-
-                                    val alternativePiece = state[ref[permutation][alternative % modBase]] / divBase
-                                    val alternativeSuitable = alternativePiece != normalizedBuffer
-
-                                    if (!alternativeSolved && alternativeSuitable) {
-                                        pieceIndex = alternative
-                                        break
-                                    }
-                                }
-                            }
-                        }
+                            !avoidBreakIns || (!alternativeSolved && alternativeSuitable)
+                        } ?: orientation
 
                         for (targetFaces in 0 until pieceTargets) {
                             val currentTarget = (pieceIndex + targetFaces) % modBase
@@ -634,14 +527,11 @@ open class BldCube : BldPuzzle {
                         // Piece cycle is inserted into solution array
                         cycles.add(ref[permutation][pieceIndex])
 
-                        // set flag to break out of loop
-                        pieceCycled = true
+                        return
                     }
-                    orientation++
                 }
-                permutation++
             }
-        }// If the buffer is not preSolved, swap it to the position where the pieces belongs
+        }
     }
 
     protected fun getPieceOrientations(type: PieceType): Int {

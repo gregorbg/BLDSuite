@@ -15,15 +15,15 @@ object MapUtil {
     }
 
     infix fun <K, V> Collection<K>.allTo(value: (K) -> V): Map<K, V> {
-        return mapOf(*this.map { it to value(it) }.toTypedArray())
+        return this.map { it to value(it) }.toMap()
     }
 
     infix fun <K, V> Collection<K>.alwaysTo(value: () -> V): Map<K, V> {
-        return mapOf(*this.map { it to value() }.toTypedArray())
+        return this.map { it to value() }.toMap()
     }
 
     infix fun <K, V> Collection<K>.alwaysTo(value: V): Map<K, V> {
-        return mapOf(*this.map { it to value }.toTypedArray())
+        return this.map { it to value }.toMap()
     }
 
     fun <K, V> MutableMap<K, V>.reset(action: (Map.Entry<K, V>) -> V) {

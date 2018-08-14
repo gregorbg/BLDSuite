@@ -29,7 +29,7 @@ class BreakInOptim(val source: AlgSource, val refCube: BldPuzzle = CubicPuzzle.F
             val algList = mutableListOf<Algorithm>()
             val targetMap = mutableMapOf<Algorithm, Int>()
 
-            for (t in this.refCube.getLetteringScheme(type).indices) { // FIXME improve int iteration
+            for (t in 0 until type.numTargets) { // FIXME improve int iteration
                 val case = ThreeCycle(0, target, t) // FIXME buffer
                 val sourceList = this.source.getAlgorithms(type, case)
 
@@ -39,7 +39,7 @@ class BreakInOptim(val source: AlgSource, val refCube: BldPuzzle = CubicPuzzle.F
                 }
             }
 
-            return algList.sortedWith(AlgComparator.SINGLETON)
+            algList.sortedWith(AlgComparator.SINGLETON)
                     .map { targetMap.getValue(it) }
         }
     }

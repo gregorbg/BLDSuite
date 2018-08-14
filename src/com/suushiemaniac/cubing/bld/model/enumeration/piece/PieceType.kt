@@ -10,6 +10,9 @@ interface PieceType {
     val numPiecesNoBuffer: Int
         get() = this.numPieces - 1
 
+    val numTargets: Int
+        get() = this.numPieces * this.targetsPerPiece
+
     val numAlgs: Int
 
     val reader: NotationReader

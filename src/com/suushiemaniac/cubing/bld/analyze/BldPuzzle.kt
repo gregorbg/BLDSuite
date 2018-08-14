@@ -11,6 +11,7 @@ import com.suushiemaniac.cubing.bld.model.enumeration.piece.LetterPairImage
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
 import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.TwistyPuzzle
 import com.suushiemaniac.cubing.bld.model.source.AlgSource
+import com.suushiemaniac.cubing.bld.optim.BreakInOptim
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.countingArray
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.cycleLeft
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.deepInnerIndex
@@ -61,6 +62,8 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
     val bufferFloats = this.getPieceTypes() alwaysTo { mutableMapOf<Int, Int>() }
 
     var algSource: AlgSource? = null
+    var optim: BreakInOptim? = null
+
     var misOrientMethod = MisOrientMethod.SOLVE_DIRECT
         set(value) {
             field = value
@@ -188,13 +191,15 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
         }
     }
 
-    protected open fun getBreakInPermutationsAfter(piece: Int, type: PieceType): List<Int> {
-        val targetCount = type.numPieces
-        return targetCount.countingArray().asList().subList(1, targetCount)
-    }
+    protected open fun getBreakInTargetsAfter(type: PieceType, piece: Int): List<Int> {
+        if (this.algSource == null || !this.optimizeBreakIns.getValue(type) || this.cycles.getValue(type).size % 2 == 0) {
+            return this.cubies.getValue(type).reduce { a, b -> a + b }.toList()
+        }
 
-    protected open fun getBreakInOrientationsAfter(piece: Int, type: PieceType): Int {
-        return 0
+        if (this.optim == null)
+            this.optim = BreakInOptim(this.algSource!!, this, false)
+
+        return this.optim!!.optimizeBreakInTargetsAfter(piece, type)
     }
 
     fun getBuffer(type: PieceType): Int {
@@ -260,7 +265,7 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
         val cycles = mutableListOf<PieceCycle>()
         cycles.addAll(this.compilePermuteSolutionCycles(type))
 
-        for (i in 0 until type.targetsPerPiece) {
+        for (i in 1 until type.targetsPerPiece) {
             val misOrients = this.getMisOrientedPieces(type, i)
 
             when {
@@ -476,7 +481,7 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
     }
 
     fun getOrientationSide(type: PieceType, target: Int): Int {
-        val piecesPerSide = (type.numPieces * type.targetsPerPiece) / this.getOrientationSideCount()
+        val piecesPerSide = type.numTargets / this.getOrientationSideCount()
         return target / piecesPerSide
     }
 
@@ -494,7 +499,7 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
     }
 
     fun getCorrespondents(type: PieceType, target: Int): List<Int> {
-        val outer = this.getPermutationPiece(type, target)
+        val outer = this.getTargetPermutation(type, target)
 
         if (outer > -1) {
             val pieceModel = this.cubies.getValue(type)[outer]
@@ -504,8 +509,12 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
         return listOf()
     }
 
-    fun getPermutationPiece(type: PieceType, target: Int): Int {
+    fun getTargetPermutation(type: PieceType, target: Int): Int {
         return this.cubies.getValue(type).deepOuterIndex(target)
+    }
+
+    fun getTargetOrientation(type: PieceType, target: Int): Int {
+        return this.cubies.getValue(type).deepInnerIndex(target)
     }
 
     fun getScrambleScore(type: PieceType): Double { // TODO refine
