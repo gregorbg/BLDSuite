@@ -18,35 +18,15 @@ object SpeffzUtil {
     val WING_MAPPING = arrayOf("UBr", "URf", "UFl", "ULb", "LUf", "LFd", "LDb", "LBu", "FUr", "FRd", "FDl", "FLu", "RUb", "RBd", "RDf", "RFu", "BUl", "BLd", "BDr", "BRu", "DFr", "DRb", "DBl", "DLf")
     val T_CENTER_MAPPING = arrayOf("Ub", "Ur", "Uf", "Ul", "Lu", "Lf", "Ld", "Lb", "Fu", "Fr", "Fd", "Fl", "Ru", "Rb", "Rd", "Rf", "Bu", "Bl", "Bd", "Br", "Df", "Dr", "Db", "Dl")
 
-    fun speffzToSticker(speffz: String, type: PieceType): String {
-        return FULL_SPEFFZ.applyIndex(speffz, getMapping(type))
+    fun Int.targetToSticker(type: PieceType): String {
+        return getMapping(type)[this]
     }
 
-    fun stickerToSpeffz(sticker: String, type: PieceType): String {
-        return getMapping(type).applyIndex(sticker, FULL_SPEFFZ)
+    fun String.stickerToTarget(type: PieceType): Int {
+        return getMapping(type).indexOf(this)
     }
 
-    fun normalize(denormLetters: String, denormScheme: Array<String>): String {
-        return mapLetters(denormLetters, denormScheme, FULL_SPEFFZ)
-    }
-
-    fun denormalize(speffzLetters: String, denormScheme: Array<String>): String {
-        return mapLetters(speffzLetters, FULL_SPEFFZ, denormScheme)
-    }
-
-    fun PieceCycle.toSpeffz(): String {
-        return this.getAllTargets().joinToString("") { FULL_SPEFFZ[it] }
-    }
-
-    fun String.toThreeCycle(buffer: Int = 0): PieceCycle {
-        return ThreeCycle(buffer, FULL_SPEFFZ.indexOf(this[0].toString()), FULL_SPEFFZ.indexOf(this[1].toString()))
-    }
-
-    fun mapLetters(letters: String, originScheme: Array<String>, targetScheme: Array<String>): String {
-        return letters.toCharStrings().joinToString("") { originScheme.applyIndex(it, targetScheme) }
-    }
-
-    fun getMapping(type: PieceType): Array<String> {
+    private fun getMapping(type: PieceType): Array<String> {
         if (type !is CubicPieceType) return arrayOf()
 
         return when (type) {
@@ -59,9 +39,33 @@ object SpeffzUtil {
         }
     }
 
-    fun stickerEquals(thisSticker: String, thatSticker: String): Boolean {
-        return if (thisSticker.isEmpty() || thatSticker.isEmpty()) false
-            else thisSticker.contentSetEquals(thatSticker) && thisSticker[0] == thatSticker[0]
+    fun String.normalize(denormScheme: Array<String>): String {
+        return mapLetters(this, denormScheme, FULL_SPEFFZ)
+    }
+
+    fun String.denormalize(denormScheme: Array<String>): String {
+        return mapLetters(this, FULL_SPEFFZ, denormScheme)
+    }
+
+    private fun mapLetters(letters: String, originScheme: Array<String>, targetScheme: Array<String>): String {
+        return letters.toCharStrings().joinToString("") { originScheme.applyIndex(it, targetScheme) }
+    }
+
+    fun PieceCycle.toSpeffz(): String {
+        return this.toTargetString(FULL_SPEFFZ)
+    }
+
+    fun PieceCycle.toTargetString(scheme: Array<String>): String {
+        return this.getAllTargets().joinToString("") { scheme[it] }
+    }
+
+    fun String.toThreeCycle(buffer: Int = 0): PieceCycle {
+        return ThreeCycle(buffer, FULL_SPEFFZ.indexOf(this[0].toString()), FULL_SPEFFZ.indexOf(this[1].toString()))
+    }
+
+    fun String.stickerEquals(thatSticker: String): Boolean {
+        return if (this.isEmpty() || thatSticker.isEmpty()) false
+            else this.contentSetEquals(thatSticker) && this[0] == thatSticker[0]
 
     }
 }

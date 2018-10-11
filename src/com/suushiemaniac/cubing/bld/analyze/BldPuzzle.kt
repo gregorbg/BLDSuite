@@ -23,6 +23,7 @@ import com.suushiemaniac.cubing.bld.util.MapUtil.alwaysTo
 import com.suushiemaniac.cubing.bld.util.MapUtil.increment
 import com.suushiemaniac.cubing.bld.util.MapUtil.reset
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil
+import com.suushiemaniac.cubing.bld.util.SpeffzUtil.targetToSticker
 import com.suushiemaniac.cubing.bld.util.StringUtil.trySpace
 import com.suushiemaniac.lang.json.JSON
 import kotlin.math.max
@@ -235,7 +236,7 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
         return this.cycles.getValue(type).lastOrNull() ?: -1
     }
 
-    open fun compilePermuteSolutionCycles(type: PieceType): List<PieceCycle> {
+    protected open fun compilePermuteSolutionCycles(type: PieceType): List<PieceCycle> {
         val currentCycles = this.cycles.getValue(type)
         val mainBuffer = this.mainBuffers.getValue(type)
 
@@ -308,7 +309,7 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
                 lastBuffer = cycle.buffer
 
                 if (!mainBuffer) {
-                    val position = SpeffzUtil.speffzToSticker(SpeffzUtil.normalize(letters[cycle.buffer], letters), type)
+                    val position = cycle.buffer.targetToSticker(type)
 
                     accu.append(if (nice) "(float $position) " else "($position)")
                 }
@@ -351,7 +352,7 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
         return this.compileSolutionCycles(type).map {
             val lettering = this.getLetteringScheme(type)
             val letterTargets = it.getAllTargets().map { t -> lettering[t] }
-            val bufferSticker = SpeffzUtil.speffzToSticker(SpeffzUtil.normalize(lettering[it.buffer], lettering), type)
+            val bufferSticker = it.buffer.targetToSticker(type)
 
             this.algSource!!.getAlgorithms(type, it).toList().random()
                     ?: ImageStringReader().parse("Not found: $bufferSticker>${letterTargets.joinToString("-")}")

@@ -15,7 +15,9 @@ interface AlgSource {
 
     fun mayRead(): Boolean
 
-    fun getAlgorithms(type: PieceType, case: PieceCycle): Set<Algorithm>
+    fun getAlgorithms(type: PieceType, case: PieceCycle): Set<Algorithm> {
+        return this.getRawAlgorithms(type, case).map(type.reader::parse).toSet()
+    }
 
     fun getRawAlgorithms(type: PieceType, case: PieceCycle): Set<String>
 
@@ -35,5 +37,5 @@ interface AlgSource {
 
     fun deleteAlgorithm(type: PieceType, algorithm: Algorithm): Boolean
 
-    fun deleteAlgorithms(type: PieceType, letterPair: PieceCycle): Boolean
+    fun deleteAlgorithms(type: PieceType, case: PieceCycle): Boolean
 }
