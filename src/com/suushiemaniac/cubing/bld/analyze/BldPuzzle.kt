@@ -25,6 +25,7 @@ import com.suushiemaniac.cubing.bld.util.MapUtil.reset
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil.targetToSticker
 import com.suushiemaniac.cubing.bld.util.StringUtil.trySpace
+import com.suushiemaniac.cubing.bld.util.MapUtil.denullify
 import com.suushiemaniac.lang.json.JSON
 import kotlin.math.max
 import kotlin.math.pow
@@ -75,20 +76,14 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
         val filename = "permutations/$model.json"
         val fileURL = this.javaClass.getResource(filename)
 
-        val json = JSON.fromURL(fileURL)
+        val json = JSON.fromURL(fileURL)!!
 
         val permutations = hashMapOf<Move, Map<PieceType, Array<Int>>>()
 
-        for (key in json.nativeKeySet()) {
-            val typeMap = hashMapOf<PieceType, Array<Int>>()
-            val moveJson = json.get(key)
-
-            for (type in this.getPieceTypes(true)) {
-                val permutationList = moveJson.get(type.name).nativeList(JSON::intValue)
-                val permutationArray = permutationList.toTypedArray()
-
-                typeMap[type] = permutationArray
-            }
+        for ((key, moveJson) in json.nativeMap { it }) {
+            val typeMap = this.getPieceTypes(true).map {
+                it to moveJson[it.name]!!.nativeList(JSON::intValue).toTypedArray()
+            }.toMap().denullify()
 
             val move = model.reader.parse(key).firstMove()
             permutations[move] = typeMap
@@ -194,7 +189,7 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
 
     protected open fun getBreakInTargetsAfter(type: PieceType, piece: Int): List<Int> {
         if (this.algSource == null || !this.optimizeBreakIns.getValue(type) || this.cycles.getValue(type).size % 2 == 0) {
-            return this.cubies.getValue(type).reduce { a, b -> a + b }.toList()
+            return this.cubies.getValue(type).sortedBy { it.min() }.reduce { a, b -> a + b }.toList()
         }
 
         if (this.optim == null)
@@ -269,8 +264,8 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
         for (i in 1 until type.targetsPerPiece) {
             val misOrients = this.getMisOrientedPieces(type, i)
 
-            when {
-                this.misOrientMethod == MisOrientMethod.SINGLE_TARGET -> {
+            when (this.misOrientMethod) {
+                MisOrientMethod.SINGLE_TARGET -> {
                     val cubies = this.cubies.getValue(type)
 
                     for (piece in misOrients) {
@@ -280,7 +275,7 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
                         cycles.add(ThreeCycle(mainBuffer, piece, cubies[outer][(inner + i) % type.targetsPerPiece]))
                     }
                 }
-                this.misOrientMethod == MisOrientMethod.SOLVE_DIRECT ->
+                MisOrientMethod.SOLVE_DIRECT ->
                     cycles.addAll(misOrients.map { MisOrientPiece(it, i) })
             }
         }
@@ -500,6 +495,10 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
     }
 
     fun getCorrespondents(type: PieceType, target: Int): List<Int> {
+        if (type is LetterPairImage) {
+            return listOf()
+        }
+
         val outer = this.getTargetPermutation(type, target)
 
         if (outer > -1) {
