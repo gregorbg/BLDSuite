@@ -10,6 +10,7 @@ import com.suushiemaniac.cubing.bld.filter.condition.IntCondition.Companion.EXAC
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition.Companion.MAX
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition.Companion.MIN
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
+import kotlinx.coroutines.experimental.GlobalScope
 import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.runBlocking
@@ -59,7 +60,7 @@ class BldScramble(val analyzingPuzzle: BldPuzzle, vararg val conditions: Conditi
         val scrambleQueue = Channel<Algorithm>(numScrambles * numThreads * numThreads)
 
         for (i in 0 until numThreads) {
-            launch {
+            GlobalScope.launch {
                 val reader = CubicAlgorithmReader()
 
                 while (true) {

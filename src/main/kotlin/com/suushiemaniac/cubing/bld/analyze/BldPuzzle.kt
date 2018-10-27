@@ -74,9 +74,9 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
 
     fun loadPermutations(): Map<Move, Map<PieceType, Array<Int>>> {
         val filename = "permutations/$model.json"
-        val fileURL = this.javaClass.getResource(filename)
+        val fileURL = this.javaClass.classLoader.getResourceAsStream(filename)
 
-        val json = JSON.fromURL(fileURL)!!
+        val json = JSON.fromStream(fileURL)!!
 
         val permutations = hashMapOf<Move, Map<PieceType, Array<Int>>>()
 
