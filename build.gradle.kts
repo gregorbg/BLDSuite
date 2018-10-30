@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.dsl.Coroutines
 
 plugins {
-    kotlin("jvm") version "1.2.71"
+    kotlin("jvm") version "1.3.0"
     `maven-publish`
 }
 
@@ -15,13 +15,13 @@ repositories {
 }
 
 dependencies {
-    runtime(kotlin("stdlib-jdk8"))
+    runtime(kotlin("stdlib"))
 
     compile("com.suushiemaniac:cubing.alglib:2.0+")
     compile("com.suushiemaniac:lang.json:2.0+")
     compile("net.gnehzr:tnoodle-scrambles:0.13.5")
 
-    compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:0.30+")
+    compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.0")
 }
 
 tasks {
@@ -31,7 +31,7 @@ tasks {
 
     create<Jar>("sourcesJar") {
         classifier = "sources"
-        from(java.sourceSets["main"].allSource)
+        from(sourceSets["main"].allSource)
         dependsOn("classes")
     }
 }
@@ -43,12 +43,8 @@ publishing.publications {
     }
 }
 
-kotlin {
-    experimental.coroutines = Coroutines.ENABLE
-
-    sourceSets {
-        getByName("main") {
-            kotlin.exclude("Main.kt")
-        }
+kotlin.sourceSets {
+    forEach {
+        it.kotlin.exclude("Main.kt")
     }
 }

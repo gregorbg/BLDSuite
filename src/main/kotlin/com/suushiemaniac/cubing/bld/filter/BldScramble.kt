@@ -10,10 +10,12 @@ import com.suushiemaniac.cubing.bld.filter.condition.IntCondition.Companion.EXAC
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition.Companion.MAX
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition.Companion.MIN
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
-import kotlinx.coroutines.experimental.GlobalScope
-import kotlinx.coroutines.experimental.channels.Channel
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.runBlocking
+
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+
 import net.gnehzr.tnoodle.scrambles.Puzzle
 
 class BldScramble(val analyzingPuzzle: BldPuzzle, vararg val conditions: ConditionsBundle) {
