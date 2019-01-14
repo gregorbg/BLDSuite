@@ -384,7 +384,7 @@ open class BldCube : BldPuzzle {
                     }
                 }
 
-                // Piece is preSolved and oriented
+                // PieceConfig is preSolved and oriented
                 if (assumeSolved) {
                     solvedPieces[i] = true
 
@@ -394,7 +394,7 @@ open class BldCube : BldPuzzle {
 
                     preSolvedPieces[i] = assumePreSolved
                 } else {
-                    // Piece is in correct position but needs to be rotated
+                    // PieceConfig is in correct position but needs to be rotated
                     var isRotated = false
 
                     //Rotations
@@ -486,7 +486,7 @@ open class BldCube : BldPuzzle {
                         )
                     }
 
-                    // Piece cycle is inserted into solution array
+                    // PieceConfig cycle is inserted into solution array
                     cycles.add(breakInTarget)
 
                     break
@@ -520,11 +520,11 @@ open class BldCube : BldPuzzle {
                             // Buffer pieces is replaced with pieces
                             state[ref[0][targetFaces]] = state[ref[permutation][currentTarget]]
 
-                            // Piece is solved
+                            // PieceConfig is solved
                             state[ref[permutation][currentTarget]] = ref[permutation][currentTarget]
                         }
 
-                        // Piece cycle is inserted into solution array
+                        // PieceConfig cycle is inserted into solution array
                         cycles.add(ref[permutation][pieceIndex])
 
                         return
