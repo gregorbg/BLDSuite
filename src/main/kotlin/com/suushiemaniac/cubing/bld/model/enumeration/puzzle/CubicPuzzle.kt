@@ -43,7 +43,6 @@ enum class CubicPuzzle(override val size: Int, private val scramblingPuzzleGen: 
     }
 
     companion object {
-        @JvmOverloads
         fun fromSize(size: Int, flag: String = ""): CubicPuzzle {
             for (puzzle in values()) {
                 if (puzzle.size == size) {

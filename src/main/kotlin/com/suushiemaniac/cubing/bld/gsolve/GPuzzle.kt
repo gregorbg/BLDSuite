@@ -4,10 +4,11 @@ import com.suushiemaniac.cubing.alglib.alg.Algorithm
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
+import java.io.File
 
-open class BldCube : KPuzzle {
-    protected fun cycleByBuffer(type: PieceType) {
-        val state = this.state.getValue(type)
+open class GPuzzle(defFile: File, bldFile: File) : KPuzzle(defFile) {
+    /*protected fun cycleByBuffer(type: PieceType) {
+        val state = this.puzzleState.getValue(type)
         val ref = this.cubies.getValue(type)
 
         val cycles = this.cycles.getValue(type)
@@ -97,7 +98,7 @@ open class BldCube : KPuzzle {
 
                 return this.getRotationsFromOrientation(top, front)
             }
-            this.reorientMethod == com.suushiemaniac.cubing.bld.gsolve.BldCube.ReorientMethod.FIXED_DLB_CORNER -> {
+            this.reorientMethod == com.suushiemaniac.cubing.bld.gsolve.GPuzzle.ReorientMethod.FIXED_DLB_CORNER -> {
                 val reorientation = arrayOf("x2 y", "z2", "x2 y'", "x2", "z'", "z' y", "z' y2", "z' y'", "x' y", "x' y2", "x' y'", "x'", "z y2", "z y'", "z", "z y", "x y'", "x", "x y", "x y2", "y", "y2", "y'", "")
 
                 val xPosition = this.state.getValue(CubicPieceType.CORNER).indexOf(X)
@@ -109,7 +110,7 @@ open class BldCube : KPuzzle {
 
                 return SimpleAlg()
             }
-            this.reorientMethod == com.suushiemaniac.cubing.bld.gsolve.BldCube.ReorientMethod.DYNAMIC -> {
+            this.reorientMethod == com.suushiemaniac.cubing.bld.gsolve.GPuzzle.ReorientMethod.DYNAMIC -> {
                 val possRotations = arrayOf("", "y'", "y", "y2", "z y", "z", "z y2", "z y'", "x y2", "x y'", "x y", "x", "z' y'", "z'", "z' y2", "z' y", "x'", "x' y'", "x' y", "x' y2", "x2 y'", "z2", "x2 y", "x2")
 
                 var max = Double.MIN_VALUE
@@ -168,5 +169,5 @@ open class BldCube : KPuzzle {
             else -> return SimpleAlg()
         }
 
-    }
+    }*/
 }

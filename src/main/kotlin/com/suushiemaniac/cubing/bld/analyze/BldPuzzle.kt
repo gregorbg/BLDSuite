@@ -339,23 +339,25 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
         return accu.toString().trim()
     }
 
-    fun getSolutionAlgorithms(type: PieceType): List<Algorithm> {
+    fun getSolutionAlgorithms(type: PieceType, squeezeNotFound: Boolean = false): List<Algorithm> {
         if (this.algSource == null || !this.algSource!!.isReadable) {
             return listOf()
         }
 
         return this.compileSolutionCycles(type).map {
             val lettering = this.getLetteringScheme(type)
-            val letterTargets = it.getAllTargets().map { t -> lettering[t] }
+            val letterTargets = it.getAllTargets().joinToString("-", transform = lettering::get)
             val bufferSticker = it.buffer.targetToSticker(type)
 
+            val backupStr = if (squeezeNotFound) "[${type.mnemonic}:$bufferSticker>$letterTargets]" else "Not found: $bufferSticker>$letterTargets"
+
             this.algSource!!.getAlgorithms(type, it).toList().random()
-                    ?: ImageStringReader().parse("Not found: $bufferSticker>${letterTargets.joinToString("-")}")
+                    ?: ImageStringReader().parse(backupStr)
         }
     }
 
     fun getRawSolutionAlgorithm(type: PieceType): Algorithm {
-        return this.getSolutionAlgorithms(type).reduce(Algorithm::merge)
+        return this.getSolutionAlgorithms(type, true).reduce(Algorithm::merge)
     }
 
     fun getExplanationString(explain: (PieceType) -> String, withRotation: Boolean = false): String {
@@ -372,9 +374,7 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
     }
 
     fun <T> getExplanation(explain: (PieceType) -> T): Map<PieceType, T> {
-        return this.getExecutionOrderPieceTypes()
-                .map { it to explain(it) }
-                .toMap()
+        return this.getExecutionOrderPieceTypes().associateWith(explain)
     }
 
     fun getSolutionPairs(withRotation: Boolean = false): String {
@@ -556,23 +556,23 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
 
         val numFloats = this.getBufferFloatNum(type)
         val floatsMax = this.getBackupBuffers(type).size
-        statString.append(List(numFloats) {"\\"}.joinToString(""))
+        statString.append(List(numFloats) { "\\" }.joinToString(""))
 
         if (indent) {
-            statString.append(List(floatsMax - numFloats) {" "}.joinToString(""))
+            statString.append(List(floatsMax - numFloats) { " " }.joinToString(""))
         }
 
         val maxTargets = type.numPiecesNoBuffer / 2 * 3 + type.numPiecesNoBuffer % 2
         val lenDiff = maxTargets.toString().length - targets.toString().length
-        statString.append(List(lenDiff + 1) {" "}.joinToString(""))
+        statString.append(List(lenDiff + 1) { " " }.joinToString(""))
 
         val breakInMax = type.numPiecesNoBuffer / 2
         val breakIns = this.getBreakInCount(type)
 
-        statString.append(List(breakIns) {"#"}.joinToString(""))
+        statString.append(List(breakIns) { "#" }.joinToString(""))
 
         if (indent) {
-            statString.append(List(breakInMax - breakIns) {" "}.joinToString(""))
+            statString.append(List(breakInMax - breakIns) { " " }.joinToString(""))
         }
 
         val misOrientPreSolvedMax = type.numPiecesNoBuffer
@@ -584,10 +584,10 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
                 statString.trySpace()
             }
 
-            statString.append(List(misOriented) {"~"}.joinToString(""))
+            statString.append(List(misOriented) { "~" }.joinToString(""))
 
             if (indent) {
-                statString.append(List(misOrientPreSolvedMax - misOriented) {" "}.joinToString(""))
+                statString.append(List(misOrientPreSolvedMax - misOriented) { " " }.joinToString(""))
             }
         }
 
@@ -597,10 +597,10 @@ abstract class BldPuzzle(val model: TwistyPuzzle) : Cloneable {
             statString.trySpace()
         }
 
-        statString.append(List(preSolved) {"+"}.joinToString(""))
+        statString.append(List(preSolved) { "+" }.joinToString(""))
 
         if (indent) {
-            statString.append(List(misOrientPreSolvedMax - preSolved) {" "}.joinToString(""))
+            statString.append(List(misOrientPreSolvedMax - preSolved) { " " }.joinToString(""))
         }
 
         return if (indent) statString.toString() else statString.toString().trim()

@@ -17,7 +17,7 @@ import kotlin.math.max
 import kotlin.math.pow
 
 class BldAnalysis {
-    val scrambledState = initState().toMutableMap()
+    /*val scrambledState = initState().toMutableMap()
 
     val cycles = this.getPieceTypes() alwaysTo { mutableListOf<Int>() }
     val cycleCount = (this.getPieceTypes() alwaysTo 0).toMutableMap()
@@ -531,5 +531,5 @@ class BldAnalysis {
 
     fun matchesExecution(filter: (Algorithm) -> Boolean): Boolean {
         return this.getPieceTypes().all { this.matchesExecution(it, filter) }
-    }
+    }*/
 }

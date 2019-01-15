@@ -5,10 +5,6 @@ object ArrayUtil {
         return dest[this.indexOf(element)]
     }
 
-    fun <T> Array<T>.index(element: T): Int {
-        return this.indexOf(element) // FIXME remove when migration fully done
-    }
-
     fun <T> Array<T>.swap(from: Int, to: Int) {
         this[to] = this[from].also { this[from] = this[to] }
     }
@@ -55,7 +51,7 @@ object ArrayUtil {
         return this.count { it == element }
     }
 
-    fun <T> Array<Array<T>>.deepCount(element: T): Int {
+    fun <T> Array<Array<T>>.deepCountOf(element: T): Int {
         return this.map { it.countOf(element) }.sum()
     }
 }

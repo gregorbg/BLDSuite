@@ -1,12 +1,14 @@
 package com.suushiemaniac.cubing.bld.util
 
-import java.util.*
+import java.security.SecureRandom
 
 object CollectionUtil {
+    private val secRandom = SecureRandom()
+
     fun <T> List<T>.random(): T? {
         if (this.isEmpty()) return null
 
-        return this[Random().nextInt(this.size)]
+        return this[secRandom.nextInt(this.size)]
     }
 
     fun <T> zip(vararg lists: List<T>): List<List<T>> {
