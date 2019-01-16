@@ -2,12 +2,138 @@ package com.suushiemaniac.cubing.bld.gsolve
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg
+import com.suushiemaniac.cubing.bld.analyze.BldCube
+import com.suushiemaniac.cubing.bld.model.cycle.MisOrientPiece
+import com.suushiemaniac.cubing.bld.model.cycle.ParityCycle
+import com.suushiemaniac.cubing.bld.model.cycle.PieceCycle
+import com.suushiemaniac.cubing.bld.model.cycle.ThreeCycle
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType
+import com.suushiemaniac.cubing.bld.model.enumeration.piece.LetterPairImage
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
+import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.CubicPuzzle
+import com.suushiemaniac.cubing.bld.optim.BreakInOptim
+import com.suushiemaniac.cubing.bld.util.SpeffzUtil
+
 import java.io.File
 
 open class GPuzzle(defFile: File, bldFile: File) : KPuzzle(defFile) {
-    /*protected fun cycleByBuffer(type: PieceType) {
+    val letterSchemes = (this.getPieceTypes() alwaysTo SpeffzUtil.FULL_SPEFFZ).toMutableMap()
+
+    val mainBuffers = (this.getPieceTypes() allTo { this.getDefaultCubies().getValue(it)[0][0] }).toMutableMap()
+    val backupBuffers = this.getPieceTypes() alwaysTo { mutableListOf<Int>() }
+
+    protected open fun getBreakInTargetsAfter(type: PieceType, piece: Int): List<Int> {
+        if (this.algSource == null || !this.optimizeBreakIns.getValue(type) || this.cycles.getValue(type).size % 2 == 0) {
+            return this.cubies.getValue(type).sortedBy { it.min() }.reduce { a, b -> a + b }.toList()
+        }
+
+        if (this.optim == null)
+            this.optim = BreakInOptim(this.algSource!!, BldCube(this.model as CubicPuzzle), false)
+
+        return this.optim!!.optimizeBreakInTargetsAfter(piece, type)
+    }
+
+    protected fun increaseCycleCount(type: PieceType) {
+        this.cycleCount.increment(type)
+    }
+
+    fun getBufferPiece(type: PieceType): Array<Int> {
+        if (type is LetterPairImage) {
+            return arrayOf()
+        }
+
+        return this.cubies.getValue(type)[0].copyOf()
+    }
+
+    protected fun getCurrentBufferOrientation(type: PieceType): Int {
+        val reference = this.cubies.getValue(type)
+        val state = this.state.getValue(type)
+
+        for (i in 1 until type.targetsPerPiece) {
+            val bufferCurrentOrigin = (0 until type.targetsPerPiece).all {
+                state[reference[0][it]] == reference[0][(it + i) % type.targetsPerPiece]
+            }
+
+            if (bufferCurrentOrigin) {
+                return i
+            }
+        }
+
+        return 0
+    }
+
+    fun getBufferTarget(type: PieceType): String {
+        return if (type is LetterPairImage) this.letterPairLanguage else this.getLetteringScheme(type)[this.getBuffer(type)]
+    }
+
+    fun getLetterPairCorrespondant(type: PieceType, piece: Int): String {
+        val lettering = this.getLetteringScheme(type)
+        return this.getCorrespondents(type, piece).joinToString("") { lettering[it] }
+    }
+
+    protected open fun compilePermuteSolutionCycles(type: PieceType): List<PieceCycle> {
+        val currentCycles = this.cycles.getValue(type)
+        val mainBuffer = this.mainBuffers.getValue(type)
+
+        var currentBuffer = mainBuffer
+        val bufferFloats = this.bufferFloats.getValue(type)
+
+        val cycles = mutableListOf<PieceCycle>()
+
+        for (c in currentCycles.indices.chunked(2)) {
+            if (c[0] in bufferFloats.keys) {
+                currentBuffer = bufferFloats.getValue(c[0])
+            }
+
+            if (c.size == 2) {
+                cycles.add(ThreeCycle(currentBuffer, currentCycles[c[0]], currentCycles[c[1]]))
+            } else {
+                cycles.add(ParityCycle(currentBuffer, currentCycles[c[0]]))
+            }
+        }
+
+        return cycles
+    }
+
+    fun compileSolutionCycles(type: PieceType): List<PieceCycle> {
+        val mainBuffer = this.mainBuffers.getValue(type)
+
+        val cycles = mutableListOf<PieceCycle>()
+        cycles.addAll(this.compilePermuteSolutionCycles(type))
+
+        for (i in 1 until type.targetsPerPiece) {
+            val misOrients = this.getMisOrientedPieces(type, i)
+
+            when (this.misOrientMethod) {
+                SINGLE__TARGET -> {
+                    val cubies = this.cubies.getValue(type)
+
+                    for (piece in misOrients) {
+                        val outer = cubies.deepOuterIndex(piece)
+                        val inner = cubies.deepInnerIndex(piece)
+
+                        cycles.add(ThreeCycle(mainBuffer, piece, cubies[outer][(inner + i) % type.targetsPerPiece]))
+                    }
+                }
+                SOLVE__DIRECT ->
+                    cycles.addAll(misOrients.map { MisOrientPiece(it, i) })
+            }
+        }
+
+        return cycles
+    }
+
+    fun getBufferPieceTargets(type: PieceType): Array<String> {
+        if (type is LetterPairImage) {
+            return arrayOf(this.letterPairLanguage)
+        }
+
+        return this.getBufferPiece(type)
+                .map { this.letterSchemes.getValue(type)[it] }
+                .toTypedArray()
+    }
+
+    protected fun cycleByBuffer(type: PieceType) {
         val state = this.puzzleState.getValue(type)
         val ref = this.cubies.getValue(type)
 
@@ -168,6 +294,5 @@ open class GPuzzle(defFile: File, bldFile: File) : KPuzzle(defFile) {
             }
             else -> return SimpleAlg()
         }
-
-    }*/
+    }
 }

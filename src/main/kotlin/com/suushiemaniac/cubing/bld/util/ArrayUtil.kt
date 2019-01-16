@@ -52,6 +52,6 @@ object ArrayUtil {
     }
 
     fun <T> Array<Array<T>>.deepCountOf(element: T): Int {
-        return this.map { it.countOf(element) }.sum()
+        return this.sumBy { it.countOf(element) }
     }
 }

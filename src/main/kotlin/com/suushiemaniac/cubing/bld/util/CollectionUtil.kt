@@ -5,7 +5,7 @@ import java.security.SecureRandom
 object CollectionUtil {
     private val secRandom = SecureRandom()
 
-    fun <T> List<T>.random(): T? {
+    fun <T> List<T>.randomOrNull(): T? {
         if (this.isEmpty()) return null
 
         return this[secRandom.nextInt(this.size)]

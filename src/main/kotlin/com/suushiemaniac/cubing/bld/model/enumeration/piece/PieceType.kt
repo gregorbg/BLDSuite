@@ -13,6 +13,9 @@ interface PieceType {
     val numTargets: Int
         get() = this.numPieces * this.targetsPerPiece
 
+    val maxTargets: Int
+        get() = this.numPiecesNoBuffer / 2 * 3 + this.numPiecesNoBuffer % 2
+
     val numAlgs: Int
 
     val reader: NotationReader

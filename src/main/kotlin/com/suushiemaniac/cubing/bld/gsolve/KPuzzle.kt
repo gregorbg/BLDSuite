@@ -150,8 +150,8 @@ open class KPuzzle(defFile: File) {
         }
 
         protected fun movePuzzle(current: PuzzleState, moveDef: PuzzleState) {
-            for ((pt, m) in current) {
-                movePieces(pt, m, moveDef.getValue(pt))
+            for ((pt, m) in moveDef) {
+                movePieces(pt, current.getValue(pt), m)
             }
         }
 

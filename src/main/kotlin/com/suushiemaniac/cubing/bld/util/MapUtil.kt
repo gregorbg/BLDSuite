@@ -14,18 +14,6 @@ object MapUtil {
         return sum / criteriaHit
     }
 
-    infix fun <K, V> Collection<K>.allTo(value: (K) -> V): Map<K, V> {
-        return this.associateWith(value)
-    }
-
-    infix fun <K, V> Collection<K>.alwaysTo(value: () -> V): Map<K, V> {
-        return this.allTo { value() }
-    }
-
-    infix fun <K, V> Collection<K>.alwaysTo(value: V): Map<K, V> {
-        return this.alwaysTo { value }
-    }
-
     fun <K, V> MutableMap<K, V>.reset(action: (Map.Entry<K, V>) -> V) {
         for (entry in this) {
             this[entry.key] = action(entry)

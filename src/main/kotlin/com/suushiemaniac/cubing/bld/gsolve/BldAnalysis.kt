@@ -3,112 +3,35 @@ package com.suushiemaniac.cubing.bld.gsolve
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg
 import com.suushiemaniac.cubing.alglib.lang.ImageStringReader
-import com.suushiemaniac.cubing.bld.analyze.BldCube
 import com.suushiemaniac.cubing.bld.model.cycle.*
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.LetterPairImage
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
-import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.CubicPuzzle
-import com.suushiemaniac.cubing.bld.optim.BreakInOptim
-import com.suushiemaniac.cubing.bld.util.ArrayUtil.countingArray
-import com.suushiemaniac.cubing.bld.util.SpeffzUtil
+import com.suushiemaniac.cubing.bld.model.source.AlgSource
 import com.suushiemaniac.cubing.bld.util.SpeffzUtil.targetToSticker
-import com.suushiemaniac.cubing.bld.util.StringUtil.trySpace
+import com.suushiemaniac.cubing.bld.util.ArrayUtil.countingArray
+import com.suushiemaniac.cubing.bld.util.ArrayUtil.filledArray
+import com.suushiemaniac.cubing.bld.util.CollectionUtil.randomOrNull
+
 import kotlin.math.max
 import kotlin.math.pow
 
-class BldAnalysis {
-    /*val scrambledState = initState().toMutableMap()
+class BldAnalysis(origin: GPuzzle,
+                  val scramble: Algorithm,
+                  val orientationPreMoves: Algorithm, val solutionCycles: Map<PieceType, List<PieceCycle>>,
+                  val letterSchemes: Map<PieceType, Array<String>>,
+                  val algSource: AlgSource? = null) {
+    val pieceTypes = this.solutionCycles.keys // FIXME iteration / solving order?
 
-    val cycles = this.getPieceTypes() alwaysTo { mutableListOf<Int>() }
-    val cycleCount = (this.getPieceTypes() alwaysTo 0).toMutableMap()
+    val breakInCount = this.pieceTypes.associateWith { 0 }
+    val parities = this.pieceTypes.associateWith { false }
 
-    val parities = this.getPieceTypes().associateWith { false }.toMutableMap()
+    val prePermutedPieces = this.pieceTypes.associateWith { it.numPieces.filledArray(false) }
+    val preSolvedPieces = this.pieceTypes.associateWith { it.numPieces.filledArray(false) }
+    val misOrientedPieces = this.pieceTypes.associateWith { pt -> pt.targetsPerPiece.filledArray { pt.numPieces.filledArray(false) } } // TODO derive
 
-    val solvedPieces = this.getPieceTypes() allTo { it.numPieces.filledArray(false) }
-    val preSolvedPieces = this.getPieceTypes() allTo { it.numPieces.filledArray(false) }
-    val misOrientedPieces = this.getPieceTypes() allTo { pt -> pt.targetsPerPiece.filledArray { pt.numPieces.filledArray(false) } }
+    val bufferFloats = this.pieceTypes.associateWith { mutableMapOf<Int, Int>() }
 
-    var scramble: Algorithm = SimpleAlg()
-    var scrambleOrientationPreMoves: Algorithm = SimpleAlg()
-
-    val letterSchemes = (this.getPieceTypes() alwaysTo SpeffzUtil.FULL_SPEFFZ).toMutableMap()
-
-    val mainBuffers = (this.getPieceTypes() allTo { this.getDefaultCubies().getValue(it)[0][0] }).toMutableMap()
-    val backupBuffers = this.getPieceTypes() alwaysTo { mutableListOf<Int>() }
-    val bufferFloats = this.getPieceTypes() alwaysTo { mutableMapOf<Int, Int>() }
-
-    protected open fun getBreakInTargetsAfter(type: PieceType, piece: Int): List<Int> {
-        if (this.algSource == null || !this.optimizeBreakIns.getValue(type) || this.cycles.getValue(type).size % 2 == 0) {
-            return this.cubies.getValue(type).sortedBy { it.min() }.reduce { a, b -> a + b }.toList()
-        }
-
-        if (this.optim == null)
-            this.optim = BreakInOptim(this.algSource!!, BldCube(this.model as CubicPuzzle), false)
-
-        return this.optim!!.optimizeBreakInTargetsAfter(piece, type)
-    }
-
-    protected fun increaseCycleCount(type: PieceType) {
-        this.cycleCount.increment(type)
-    }
-
-    protected fun getLastTarget(type: PieceType): Int {
-        return this.cycles.getValue(type).lastOrNull() ?: -1
-    }
-
-    protected open fun compilePermuteSolutionCycles(type: PieceType): List<PieceCycle> {
-        val currentCycles = this.cycles.getValue(type)
-        val mainBuffer = this.mainBuffers.getValue(type)
-
-        var currentBuffer = mainBuffer
-        val bufferFloats = this.bufferFloats.getValue(type)
-
-        val cycles = mutableListOf<PieceCycle>()
-
-        for (c in currentCycles.indices.chunked(2)) {
-            if (c[0] in bufferFloats.keys) {
-                currentBuffer = bufferFloats.getValue(c[0])
-            }
-
-            if (c.size == 2) {
-                cycles.add(ThreeCycle(currentBuffer, currentCycles[c[0]], currentCycles[c[1]]))
-            } else {
-                cycles.add(ParityCycle(currentBuffer, currentCycles[c[0]]))
-            }
-        }
-
-        return cycles
-    }
-
-    fun compileSolutionCycles(type: PieceType): List<PieceCycle> {
-        val mainBuffer = this.mainBuffers.getValue(type)
-
-        val cycles = mutableListOf<PieceCycle>()
-        cycles.addAll(this.compilePermuteSolutionCycles(type))
-
-        for (i in 1 until type.targetsPerPiece) {
-            val misOrients = this.getMisOrientedPieces(type, i)
-
-            when (this.misOrientMethod) {
-                KPuzzle.MisOrientMethod.SINGLE_TARGET -> {
-                    val cubies = this.cubies.getValue(type)
-
-                    for (piece in misOrients) {
-                        val outer = cubies.deepOuterIndex(piece)
-                        val inner = cubies.deepInnerIndex(piece)
-
-                        cycles.add(ThreeCycle(mainBuffer, piece, cubies[outer][(inner + i) % type.targetsPerPiece]))
-                    }
-                }
-                KPuzzle.MisOrientMethod.SOLVE_DIRECT ->
-                    cycles.addAll(misOrients.map { MisOrientPiece(it, i) })
-            }
-        }
-
-        return cycles
-    }
-
-    open fun groupMisOrients(type: PieceType, misOrients: List<MisOrientCycle>): List<ComplexMisOrientCycle> {
+    open fun groupMisOrients(misOrients: List<MisOrientCycle>): List<ComplexMisOrientCycle> {
         return misOrients
                 .map { it as MisOrientPiece }
                 .groupBy { it.orientation }
@@ -116,21 +39,22 @@ class BldAnalysis {
     }
 
     fun getSolutionTargets(type: PieceType, nice: Boolean = false): String {
-        val (currentTwists, currentCycles) = this.compileSolutionCycles(type).partition { it is MisOrientCycle }
+        val (currentTwists, currentCycles) = this.solutionCycles.getValue(type).partition { it is MisOrientCycle }
 
         val letters = this.getLetteringScheme(type)
 
         val accu = StringBuilder()
-        var lastBuffer = -1
+        val bufferAccu = mutableListOf<Int>()
 
         for (cycle in currentCycles) {
+            val lastBuffer = bufferAccu.lastOrNull() ?: -1
+
             if (lastBuffer != cycle.buffer) {
-                val mainBuffer = lastBuffer < 0
-                lastBuffer = cycle.buffer
+                val mainBuffer = bufferAccu.toSet().size > 1
+                bufferAccu.add(cycle.buffer)
 
                 if (!mainBuffer) {
                     val position = cycle.buffer.targetToSticker(type)
-
                     accu.append(if (nice) "(float $position) " else "($position)")
                 }
             }
@@ -146,13 +70,13 @@ class BldAnalysis {
             if (nice) accu.append(" ")
         }
 
-        if (nice) {
-            accu.trySpace()
+        if (nice) { // TODO what is this even?
+            accu.append("\t")
 
-            for (cycle in this.groupMisOrients(type, currentTwists.map { it as MisOrientCycle })) {
+            for (cycle in this.groupMisOrients(currentTwists.map { it as MisOrientCycle })) {
                 accu.append("${cycle.description}: ")
                 accu.append(cycle.getAllTargets().joinToString("") { letters[it] })
-                accu.trySpace()
+                accu.append("\t")
             }
         } else {
             for ((orientation, cycles) in currentTwists.map { it as MisOrientPiece }.groupBy { it.orientation }) {
@@ -164,18 +88,20 @@ class BldAnalysis {
         return accu.toString().trim()
     }
 
-    fun getSolutionAlgorithms(type: PieceType): List<Algorithm> {
-        if (this.algSource == null || !this.algSource!!.isReadable) {
+    fun getSolutionAlgorithms(type: PieceType, short: Boolean = false): List<Algorithm> {
+        if (this.algSource == null || !this.algSource.isReadable) {
             return listOf()
         }
 
-        return this.compileSolutionCycles(type).map {
+        return this.solutionCycles.getValue(type).map {
             val lettering = this.getLetteringScheme(type)
-            val letterTargets = it.getAllTargets().map { t -> lettering[t] }
+            val letterTargets = it.getAllTargets().joinToString("-") { t -> lettering[t] }
             val bufferSticker = it.buffer.targetToSticker(type)
 
-            this.algSource!!.getAlgorithms(type, it).toList().random()
-                    ?: ImageStringReader().parse("Not found: $bufferSticker>${letterTargets.joinToString("-")}")
+            val backup = if (short) "[]" else "Not found: $bufferSticker>$letterTargets"
+
+            this.algSource.getAlgorithms(type, it).toList().randomOrNull()
+                    ?: ImageStringReader().parse(backup)
         }
     }
 
@@ -183,353 +109,258 @@ class BldAnalysis {
         return this.getSolutionAlgorithms(type).reduce(Algorithm::merge)
     }
 
-    fun getExplanationString(explain: (PieceType) -> String, withRotation: Boolean = false): String {
+    fun getExplanationString(withRotation: Boolean = false, explain: (PieceType) -> String): String {
         val explanations = mutableListOf<String>()
 
         if (withRotation) {
-            explanations.add("Rotations: " + if (this.scrambleOrientationPreMoves.algLength() > 0) this.scrambleOrientationPreMoves.toFormatString() else "/")
+            val formatRotations = this.getRotations().toFormatString()
+            explanations.add("Rotations: ${if (formatRotations.isNotBlank()) formatRotations else "/"}")
         }
 
-        explanations += this.getExplanation(explain)
+        explanations += this.pieceTypes.associateWith(explain)
                 .map { "${it.key.humanName}: ${it.value}" }
 
         return explanations.joinToString("\n")
     }
 
-    fun <T> getExplanation(explain: (PieceType) -> T): Map<PieceType, T> {
-        return this.getExecutionOrderPieceTypes()
-                .map { it to explain(it) }
-                .toMap()
-    }
-
     fun getSolutionPairs(withRotation: Boolean = false): String {
-        return this.getExplanationString({ this.getSolutionTargets(it, true) }, withRotation)
+        return this.getExplanationString(withRotation) { this.getSolutionTargets(it, true) }
     }
 
     fun getSolutionTargets(withRotation: Boolean = false): String {
-        return this.getExplanationString({ this.getSolutionTargets(it, false) }, withRotation)
+        return this.getExplanationString(withRotation) { this.getSolutionTargets(it, false) }
     }
 
     fun getSolutionAlgorithms(withRotation: Boolean = false): String {
-        return this.getExplanationString({ this.getSolutionAlgorithms(it).joinToString("\n", transform = Algorithm::toFormatString) }, withRotation)
+        return this.getExplanationString(withRotation) { this.getSolutionAlgorithms(it).joinToString("\n", transform = Algorithm::toFormatString) }
     }
 
     fun getRawSolutionAlgorithm(withRotation: Boolean = false): Algorithm {
-        val basis = if (withRotation) this.scrambleOrientationPreMoves.copy() else SimpleAlg()
+        val basis = if (withRotation) this.getRotations() else SimpleAlg()
 
-        val fullSolution = this.getExplanation(this::getRawSolutionAlgorithm).values
+        val fullSolution = this.pieceTypes
+                .map(this::getRawSolutionAlgorithm)
                 .reduce(Algorithm::merge)
 
         return basis.merge(fullSolution)
     }
 
+    fun getPrePermutedCount(type: PieceType): Int {
+        return this.prePermutedPieces.getValue(type)
+                .drop(1) // FIXME we're not interested in the main buffer itself
+                .count { it }
+    }
+
     fun getPreSolvedCount(type: PieceType): Int {
         return this.preSolvedPieces.getValue(type)
-                .drop(1) // we're not interested in the main buffer itself
+                .drop(1) // FIXME we're not interested in the main buffer itself
                 .count { it }
     }
 
-    fun getMisOrientedCount(type: PieceType): Int {
-        return type.targetsPerPiece.countingArray()
-                .sumBy { this.getMisOrientedCount(type, it) }
-    }
-
-    fun getMisOrientedCount(type: PieceType, orientation: Int): Int {
-        return this.misOrientedPieces.getValue(type)[orientation % type.targetsPerPiece]
-                .drop(1) // we're not interested in the main buffer itself
-                .count { it }
-    }
-
-    protected fun getMisOrientedPieces(type: PieceType, orientation: Int): List<Int> {
+    fun getMisOrientedPieces(type: PieceType, orientation: Int): List<Int> {
         val orientations = this.misOrientedPieces.getValue(type)[orientation]
-        val cubies = this.cubies.getValue(type)
 
         return orientations.indices.drop(1)
                 .filter { orientations[it] }
-                .map { cubies[it][orientation] }
+                .map { it + 1 } // FIXME nasty hack
     }
 
-    protected fun getMisOrientedPieceLetters(type: PieceType, orientation: Int): List<String> {
-        val lettering = this.getLetteringScheme(type)
-        val pieces = this.getMisOrientedPieces(type, orientation)
+    fun getMisOrientedCount(type: PieceType, orientation: Int? = null): Int {
+        if (orientation == null) {
+            return type.targetsPerPiece.countingArray()
+                    .sumBy { this.getMisOrientedCount(type, it) }
+        }
 
-        return pieces.map { lettering[it] }
+        return this.getMisOrientedPieces(type, orientation).size
     }
 
     fun getLetteringScheme(type: PieceType): Array<String> {
         return if (type is LetterPairImage) {
-            this.getPieceTypes()
+            this.pieceTypes
                     .flatMap { this.getLetteringScheme(it).asIterable() }
                     .toSortedSet()
                     .toTypedArray()
         } else this.letterSchemes.getValue(type).copyOf()
     }
 
-    fun getBufferTarget(type: PieceType): String {
-        return if (type is LetterPairImage) this.letterPairLanguage else this.getLetteringScheme(type)[this.getBuffer(type)]
-    }
-
-    fun getBufferPiece(type: PieceType): Array<Int> {
-        if (type is LetterPairImage) {
-            return arrayOf()
-        }
-
-        return this.cubies.getValue(type)[0].copyOf()
-    }
-
-    fun getBufferPieceTargets(type: PieceType): Array<String> {
-        if (type is LetterPairImage) {
-            return arrayOf(this.letterPairLanguage)
-        }
-
-        return this.getBufferPiece(type)
-                .map { this.letterSchemes.getValue(type)[it] }
-                .toTypedArray()
-    }
-
-    protected fun getPieceOrientation(type: PieceType, piece: Int): Int {
+    fun getPieceOrientation(type: PieceType, piece: Int): Int { // FIXME
         val misOrients = this.misOrientedPieces.getValue(type)
         return misOrients.indices.find { misOrients[it][piece] } ?: -1
     }
 
-    fun getLetterPairCorrespondant(type: PieceType, piece: Int): String {
-        val lettering = this.getLetteringScheme(type)
-        return this.getCorrespondents(type, piece).joinToString("") { lettering[it] }
-    }
+    fun getScrambleScore(type: PieceType? = null): Float { // TODO refine
+        if (type == null) {
+            val score = this.pieceTypes.sumByDouble { it.numPieces * this.getScrambleScore(it).toDouble() }
+            val weight = this.pieceTypes.sumBy(PieceType::numPieces)
 
-    fun getScrambleScore(type: PieceType): Double { // TODO refine
-        var scoreBase = type.numPieces.toDouble().pow(2)
+            return score.toFloat() / weight
+        }
 
-        scoreBase -= this.getCycleLength(type).toFloat()
-        scoreBase += this.getPreSolvedCount(type).toFloat()
-        scoreBase -= (this.getMisOrientedCount(type) * type.targetsPerPiece).toFloat()
-        scoreBase -= (this.getBreakInCount(type) * type.numPiecesNoBuffer).toFloat()
+        val scoreBase = mutableListOf<Float>()
+
+        scoreBase.add(type.numPieces.toFloat().pow(2))
+
+        scoreBase.add(-this.getTargetCount(type).toFloat())
+        scoreBase.add(this.getPreSolvedCount(type).toFloat())
+        scoreBase.add(-(this.getMisOrientedCount(type) * type.targetsPerPiece).toFloat())
+        scoreBase.add(-(this.getBreakInCount(type) * type.numPiecesNoBuffer).toFloat())
+
+        val scoreScale = mutableListOf<Float>()
 
         if (this.hasParity(type)) {
-            scoreBase -= (0.25 * scoreBase).toFloat()
+            scoreScale.add(.25f)
         }
 
         if (this.isBufferSolved(type)) {
-            scoreBase -= (0.25 * scoreBase).toFloat()
+            scoreScale.add(.25f)
         }
 
-        return max(0.0, scoreBase)
+        return max(0f, (1 - scoreScale.sum()) * scoreBase.sum())
     }
 
-    fun getScrambleScore(): Double {
-        val score = this.getPieceTypes().sumByDouble { it.numPieces * this.getScrambleScore(it) }
-        val weight = this.getPieceTypes().sumBy { it.numPieces }
+    fun getStatString(type: PieceType? = null): String { // TODO
+        if (type == null) {
+            return this.pieceTypes
+                    .reversed()
+                    .joinToString(" | ", transform = this::getStatString)
+        }
 
-        return score / weight
-    }
-
-    fun getStatString(type: PieceType, indent: Boolean = false): String {
         val statString = StringBuilder("${type.mnemonic}: ")
 
-        statString.append(if (this.hasParity(type)) "_" else if (indent) " " else "")
-
-        val targets = this.getCycleLength(type)
-        statString.append(targets)
-
-        statString.append(if (this.isBufferSolved(type)) "*" else if (indent) " " else "")
-        statString.append(if (this.isBufferSolvedAndMisOriented(type)) "*" else if (indent) " " else "")
-
-        val numFloats = this.getBufferFloatNum(type)
-        val floatsMax = this.getBackupBuffers(type).size
-        statString.append(List(numFloats) {"\\"}.joinToString(""))
-
-        if (indent) {
-            statString.append(List(floatsMax - numFloats) {" "}.joinToString(""))
+        if (this.hasParity(type)) {
+            statString.append("_")
         }
 
-        val maxTargets = type.numPiecesNoBuffer / 2 * 3 + type.numPiecesNoBuffer % 2
-        val lenDiff = maxTargets.toString().length - targets.toString().length
-        statString.append(List(lenDiff + 1) {" "}.joinToString(""))
+        statString.append(this.getTargetCount(type))
 
-        val breakInMax = type.numPiecesNoBuffer / 2
-        val breakIns = this.getBreakInCount(type)
+        if (this.isBufferSolved(type)) {
+            statString.append("*")
 
-        statString.append(List(breakIns) {"#"}.joinToString(""))
-
-        if (indent) {
-            statString.append(List(breakInMax - breakIns) {" "}.joinToString(""))
-        }
-
-        val misOrientPreSolvedMax = type.numPiecesNoBuffer
-
-        if (type.targetsPerPiece > 1) {
-            val misOriented = this.getMisOrientedCount(type)
-
-            if (indent || misOriented > 0) {
-                statString.trySpace()
-            }
-
-            statString.append(List(misOriented) {"~"}.joinToString(""))
-
-            if (indent) {
-                statString.append(List(misOrientPreSolvedMax - misOriented) {" "}.joinToString(""))
+            if (this.isBufferSolvedAndMisOriented(type)) {
+                statString.append("*")
             }
         }
 
-        val preSolved = this.getPreSolvedCount(type)
+        val repStatistics = mapOf(
+                "\\" to this.getBufferFloatNum(type),
+                "#" to this.getBreakInCount(type),
+                "~" to this.getMisOrientedCount(type),
+                "+" to this.getPreSolvedCount(type)
+        )
 
-        if (indent || preSolved > 0) {
-            statString.trySpace()
+        for ((sym, num) in repStatistics) {
+            statString.append("\t")
+            statString.append(sym.repeat(num))
         }
 
-        statString.append(List(preSolved) {"+"}.joinToString(""))
+        return statString.toString().trim()
+    }
 
-        if (indent) {
-            statString.append(List(misOrientPreSolvedMax - preSolved) {" "}.joinToString(""))
+    fun getShortStats(type: PieceType? = null): String {
+        if (type == null) {
+            return this.pieceTypes
+                    .reversed()
+                    .joinToString("\n", transform = this::getShortStats)
         }
 
-        return if (indent) statString.toString() else statString.toString().trim()
+        return "${type.humanName}: ${this.getTargetCount(type)}@${this.getBreakInCount(type)} w/ ${this.getPreSolvedCount(type)}-${this.getMisOrientedCount(type)}\\${this.getBufferFloatNum(type)} > ${this.hasParity(type)}"
     }
 
-    fun getStatString(indent: Boolean = false): String {
-        return this.getExecutionOrderPieceTypes()
-                .reversed()
-                .joinToString(" | ") { getStatString(it, indent) }
+    fun getTargetCount(type: PieceType? = null): Int {
+        if (type == null) {
+            return this.pieceTypes.sumBy(this::getTargetCount)
+        }
+
+        return this.solutionCycles.getValue(type)
+                .filter { it is ThreeCycle } // FIXME what about parity + 1?
+                .size * 2
     }
 
-    fun getShortStats(type: PieceType): String {
-        return type.humanName + ": " + this.getCycleLength(type) + "@" + this.getBreakInCount(type) + " w/ " + this.getPreSolvedCount(type) + "-" + this.getMisOrientedCount(type) + "\\" + this.getBufferFloatNum(type) + " > " + this.hasParity(type)
+    fun getBreakInCount(type: PieceType? = null): Int {
+        if (type == null) {
+            return this.pieceTypes.sumBy(this::getBreakInCount)
+        }
+
+        return this.breakInCount.getValue(type)
     }
 
-    fun getShortStats(): String {
-        return this.getExecutionOrderPieceTypes()
-                .reversed()
-                .joinToString("\n") { this.getShortStats(it) }
-    }
+    fun isSingleCycle(type: PieceType? = null): Boolean {
+        if (type == null) {
+            return this.pieceTypes.all(this::isSingleCycle)
+        }
 
-    fun getCycleLength(type: PieceType): Int {
-        return this.cycles.getValue(type).size
-    }
-
-    fun getBreakInCount(type: PieceType): Int {
-        return this.cycleCount.getValue(type)
-    }
-
-    fun isSingleCycle(type: PieceType): Boolean {
         return this.getBreakInCount(type) == 0
     }
 
-    fun isSingleCycle(): Boolean {
-        return this.getPieceTypes().all(this::isSingleCycle)
-    }
+    fun hasParity(type: PieceType? = null): Boolean { // consider parity dependents
+        if (type == null) {
+            return this.pieceTypes.any(this::hasParity)
+        }
 
-    fun hasParity(type: PieceType): Boolean { // consider parity dependents
         return this.parities.getOrElse(type) { false }
     }
 
-    fun hasParity(): Boolean {
-        return this.getPieceTypes().any(this::hasParity)
-    }
-
-    fun isBufferSolved(type: PieceType, acceptMisOrient: Boolean = true): Boolean {
-        val bufferSolved = this.preSolvedPieces.getValue(type)[0]
-
-        return bufferSolved || acceptMisOrient && this.isBufferSolvedAndMisOriented(type)
-    }
-
-    fun isBufferSolvedAndMisOriented(type: PieceType): Boolean {
-        var bufferTwisted = false
-
-        val reference = this.cubies.getValue(type)
-        val state = this.state.getValue(type)
-
-        for (i in 1 until type.targetsPerPiece) {
-            var bufferCurrentOrigin = true
-
-            for (j in 0 until type.targetsPerPiece) {
-                bufferCurrentOrigin = bufferCurrentOrigin and (state[reference[0][j]] == reference[0][(j + i) % type.targetsPerPiece])
-            }
-
-            bufferTwisted = bufferTwisted or bufferCurrentOrigin
+    fun isBufferSolved(type: PieceType? = null, acceptMisOrient: Boolean = true): Boolean {
+        if (type == null) {
+            return this.pieceTypes.any { this.isBufferSolved(it, acceptMisOrient) }
         }
 
-        return bufferTwisted
+        val bufferSolved = this.preSolvedPieces.getValue(type)[0] // FIXME
+
+        return bufferSolved || (acceptMisOrient && this.isBufferSolvedAndMisOriented(type))
     }
 
-    protected fun getCurrentBufferOrientation(type: PieceType): Int {
-        val reference = this.cubies.getValue(type)
-        val state = this.state.getValue(type)
-
-        for (i in 1 until type.targetsPerPiece) {
-            var bufferCurrentOrigin = true
-
-            for (j in 0 until type.targetsPerPiece) {
-                bufferCurrentOrigin = bufferCurrentOrigin and (state[reference[0][j]] == reference[0][(j + i) % type.targetsPerPiece])
-            }
-
-            if (bufferCurrentOrigin) {
-                return i
-            }
+    fun isBufferSolvedAndMisOriented(type: PieceType? = null): Boolean {
+        if (type == null) {
+            return this.pieceTypes.any { this.isBufferSolvedAndMisOriented(it) }
         }
 
-        return 0
+        return this.prePermutedPieces.getValue(type)[0] // FIXME
     }
 
-    fun getBufferFloatNum(type: PieceType): Int {
+    fun getBufferFloatNum(type: PieceType? = null): Int {
+        if (type == null) {
+            return this.pieceTypes.sumBy(this::getBufferFloatNum)
+        }
+
         return this.bufferFloats.getValue(type).size
     }
 
-    fun getBufferFloatNum(): Int {
-        return this.getPieceTypes().sumBy(this::getBufferFloatNum)
-    }
+    fun hasBufferFloat(type: PieceType? = null): Boolean {
+        if (type == null) {
+            return this.pieceTypes.any(this::hasBufferFloat)
+        }
 
-    fun hasBufferFloat(type: PieceType): Boolean {
         return this.getBufferFloatNum(type) > 0
     }
 
-    fun hasBufferFloat(): Boolean {
-        return this.getPieceTypes().any(this::hasBufferFloat)
-    }
+    fun getNoahtation(type: PieceType? = null): String {
+        if (type == null) {
+            return this.pieceTypes
+                    .reversed()
+                    .joinToString(" / ") { this.getNoahtation(it) }
+        }
 
-    fun getNoahtation(type: PieceType): String {
-        val misOriented = "'".repeat(this.getMisOrientedCount(type))
-        return "${type.mnemonic}: ${this.getCycleLength(type)}$misOriented"
-    }
-
-    fun getNoahtation(): String {
-        return this.getExecutionOrderPieceTypes()
-                .reversed()
-                .joinToString(" / ") { this.getNoahtation(it) }
-    }
-
-    protected fun getBackupBuffers(type: PieceType): List<Int> {
-        return this.backupBuffers.getValue(type).toList()
+        return "${type.mnemonic}: ${this.getTargetCount(type)}${"'".repeat(this.getMisOrientedCount(type))}"
     }
 
     fun getRotations(): Algorithm {
-        return this.scrambleOrientationPreMoves.copy()
+        return this.orientationPreMoves.copy()
     }
 
-    fun matchesExecution(type: PieceType, filter: (Algorithm) -> Boolean): Boolean {
+    fun matchesExecution(type: PieceType? = null, filter: (Algorithm) -> Boolean): Boolean {
+        if (type == null) {
+            return this.pieceTypes.all { this.matchesExecution(it, filter) }
+        }
+
         if (this.algSource == null) {
             return false
         }
 
         val rawSolution = this.getSolutionTargets(type)
-        var matches = true
 
-        if (rawSolution == "Solved") {
-            return true
-        } else {
-            for (case in this.compileSolutionCycles(type)) {
-                if (case !is ThreeCycle) {
-                    continue
-                }
-
-                val exists = this.algSource!!.getAlgorithms(type, case).any(filter)
-                matches = matches and exists
-            }
-        }
-
-        return matches
+        return if (rawSolution == "Solved") true else this.solutionCycles.getValue(type)
+                .filter { it is ThreeCycle }
+                .all { this.algSource.getAlgorithms(type, it).any(filter) }
     }
-
-    fun matchesExecution(filter: (Algorithm) -> Boolean): Boolean {
-        return this.getPieceTypes().all { this.matchesExecution(it, filter) }
-    }*/
 }
