@@ -58,8 +58,8 @@ Useful for generating memos, evaluating scrambles and reconstructing solves.
 Can even be provided with an `AlgSource` (currently only implemented in the `database` module)
 to print full algorithm solutions.
 
-Abstract base implementation is defined in `BldPuzzle.java`, which should be used as static variable type.
-Concrete implementations are written in the classes `ThreeBldCube.java`, `FourBldCube.java`, `FiveBldCube.java` and so on.
+Abstract base implementation is defined in `GPuzzle.kt`, which should be used as static variable type.
+Puzzles are loaded with file specifications similar to KSolve.
 
 ### filter
 A package for conditional BLD scrambling.

@@ -13,15 +13,15 @@ class AlgComparator private constructor() : Comparator<Algorithm> {
                 + this.subGroupScore(alg)) / 4f
     }
 
-    protected fun lengthScore(alg: Algorithm): Int {
+    fun lengthScore(alg: Algorithm): Int {
         return -2 * alg.moveLength() + 26
     }
 
-    protected fun rotationScore(alg: Algorithm): Int {
+    fun rotationScore(alg: Algorithm): Int {
         return -5 * alg.rotationGroup.size() + 10
     }
 
-    protected fun subGroupScore(alg: Algorithm): Int {
+    fun subGroupScore(alg: Algorithm): Int {
         return -5 * alg.subGroup.size() + 25
     }
 

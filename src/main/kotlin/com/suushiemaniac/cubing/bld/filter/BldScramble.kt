@@ -1,56 +1,37 @@
 package com.suushiemaniac.cubing.bld.filter
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
-import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader
-import com.suushiemaniac.cubing.bld.analyze.BldPuzzle
+import com.suushiemaniac.cubing.bld.analyze.BldAnalysis
 import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.Companion.MAYBE
 import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.Companion.NO
 import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.Companion.YES
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition.Companion.EXACT
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition.Companion.MAX
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition.Companion.MIN
-import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
+import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.TwistyPuzzle
 
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
-import net.gnehzr.tnoodle.scrambles.Puzzle
+import java.io.File
 
-class BldScramble(val analyzingPuzzle: BldPuzzle, vararg val conditions: ConditionsBundle) {
-    val scramblingSupplier: () -> Puzzle = analyzingPuzzle.model.supplyScramblingPuzzle()
+class BldScramble(val model: TwistyPuzzle, gConfig: File, vararg val conditions: ConditionsBundle) {
+    val analyzer = model.gPuzzle(gConfig)
 
     val statString: String
         get() = this.conditions.joinToString(" | ") { it.statString }
-
-    fun supplyScramblingPuzzle(): () -> Puzzle {
-        return this.scramblingSupplier
-    }
-
-    fun generateScramblingPuzzle(): Puzzle {
-        return this.supplyScramblingPuzzle()()
-    }
 
     fun balanceConditions() {
         this.conditions.forEach(ConditionsBundle::balanceProperties)
     }
 
     fun findScrambleOnThread(): Algorithm {
-        val testCube = this.analyzingPuzzle.clone()
-        val tNoodle = this.generateScramblingPuzzle()
-        val reader = CubicAlgorithmReader()
-
         this.balanceConditions()
 
-        do {
-            val scrString = tNoodle.generateScramble()
-            val scramble = reader.parse(scrString)
-
-            testCube.parseScramble(scramble)
-        } while (!this.matchingConditions(testCube))
-
-        return testCube.scramble
+        val supplier = model.independentScrambleSupplier()
+        return supplier.find { this.matchingConditions(this.analyzer.getAnalysis(it)) }!!
     }
 
     fun findScramblesOnThread(num: Int): List<Algorithm> {
@@ -63,11 +44,10 @@ class BldScramble(val analyzingPuzzle: BldPuzzle, vararg val conditions: Conditi
 
         for (i in 0 until numThreads) {
             GlobalScope.launch {
-                val reader = CubicAlgorithmReader()
+                val supplier = model.independentScrambleSupplier()
 
-                while (true) {
-                    val algorithm = reader.parse(generateScramblingPuzzle().generateScramble())
-                    scrambleQueue.send(algorithm)
+                for (scramble in supplier) {
+                    scrambleQueue.send(scramble)
                 }
             }
         }
@@ -75,14 +55,14 @@ class BldScramble(val analyzingPuzzle: BldPuzzle, vararg val conditions: Conditi
         this.balanceConditions()
 
         return runBlocking {
-            val algList = mutableListOf<Algorithm>()
-            val testCube = analyzingPuzzle.clone()
+            val algList = mutableListOf<Algorithm>() // TODO use sequences instead?
 
             do {
-                testCube.parseScramble(scrambleQueue.receive())
+                val scramble = scrambleQueue.receive()
+                val analysis = analyzer.getAnalysis(scramble)
 
-                if (matchingConditions(testCube)) {
-                    algList.add(testCube.scramble)
+                if (matchingConditions(analysis)) {
+                    algList.add(scramble)
                     feedbackFunction(algList.size)
                 }
             } while (algList.size < numScrambles)
@@ -91,11 +71,11 @@ class BldScramble(val analyzingPuzzle: BldPuzzle, vararg val conditions: Conditi
         }
     }
 
-    fun matchingConditions(inCube: BldPuzzle): Boolean {
+    fun matchingConditions(inCube: BldAnalysis): Boolean {
         for (bundle in this.conditions) {
             if (!bundle.matchingConditions(inCube)) {
                 if (SHOW_DISCARDED) {
-                    println("Discarded " + inCube.getStatString(true))
+                    println("Discarded " + inCube.getStatString())
                 }
 
                 return false
@@ -116,34 +96,37 @@ class BldScramble(val analyzingPuzzle: BldPuzzle, vararg val conditions: Conditi
             BldScramble.SHOW_DISCARDED = showDiscarded
         }
 
-        fun cloneFrom(refCube: BldPuzzle, isStrict: Boolean): BldScramble {
+        // TODO for the below two cloning methods: cleverly "infer" where this gConfig comes from?
+
+        fun cloneFrom(refCube: TwistyPuzzle, gConfig: File, analysis: BldAnalysis, isStrict: Boolean = false): BldScramble {
             val conditions = mutableListOf<ConditionsBundle>()
 
-            for (type in refCube.getPieceTypes()) {
+            for (type in analysis.pieceTypes) {
                 val condition = ConditionsBundle(type)
 
-                condition.targets = if (isStrict) EXACT(refCube.getCycleLength(type)) else MAX(refCube.getCycleLength(type))
-                condition.breakIns = if (isStrict) EXACT(refCube.getBreakInCount(type)) else MAX(refCube.getBreakInCount(type))
-                condition.parity = if (refCube.hasParity(type)) if (isStrict) YES() else MAYBE() else NO()
-                condition.preSolved = if (isStrict) EXACT(refCube.getPreSolvedCount(type)) else MIN(refCube.getPreSolvedCount(type))
-                condition.misOriented = if (isStrict) EXACT(refCube.getMisOrientedCount(type)) else MAX(refCube.getMisOrientedCount(type))
-                condition.bufferSolved = if (refCube.isBufferSolved(type)) if (isStrict) YES() else MAYBE() else NO()
+                condition.targets = if (isStrict) EXACT(analysis.getTargetCount(type)) else MAX(analysis.getTargetCount(type))
+                condition.breakIns = if (isStrict) EXACT(analysis.getBreakInCount(type)) else MAX(analysis.getBreakInCount(type))
+                condition.parity = if (analysis.hasParity(type)) if (isStrict) YES() else MAYBE() else NO()
+                condition.preSolved = if (isStrict) EXACT(analysis.getPreSolvedCount(type)) else MIN(analysis.getPreSolvedCount(type))
+                condition.misOriented = if (isStrict) EXACT(analysis.getMisOrientedCount(type)) else MAX(analysis.getMisOrientedCount(type))
+                condition.bufferSolved = if (analysis.isBufferSolved(type)) if (isStrict) YES() else MAYBE() else NO()
 
-                condition.isAllowTwistedBuffer = !isStrict || refCube.isBufferSolvedAndMisOriented(type)
+                condition.isAllowTwistedBuffer = !isStrict || analysis.isBufferSolvedAndMisOriented(type)
+
                 conditions.add(condition)
             }
 
-            return BldScramble(refCube, *conditions.toTypedArray())
+            return BldScramble(refCube, gConfig, *conditions.toTypedArray())
         }
 
-        fun fromStatString(statString: String, refCube: BldPuzzle, isStrict: Boolean): BldScramble {
+        fun fromStatString(statString: String, refCube: TwistyPuzzle, gConfig: File, isStrict: Boolean = false): BldScramble {
             val conditions = mutableListOf<ConditionsBundle>()
 
             for (pieceStatString in statString.split("\\|".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
                 "([A-Za-z]+?):(_?)(0|[1-9][0-9]*)(\\*?)(#*)(~*)(\\+*)".toRegex()
                         .matchEntire(pieceStatString.replace("\\s".toRegex(), ""))?.let {
                     val mnemonic = it.groupValues[1]
-                    val type = findTypeByMnemonic(refCube, mnemonic)
+                    val type = refCube.pieceTypes.find { type -> type.mnemonic.equals(mnemonic, true) }
 
                     val condition = ConditionsBundle(type!!)
 
@@ -165,17 +148,7 @@ class BldScramble(val analyzingPuzzle: BldPuzzle, vararg val conditions: Conditi
                 }
             }
 
-            return BldScramble(refCube, *conditions.toTypedArray())
-        }
-
-        fun findTypeByMnemonic(refCube: BldPuzzle, mnemonic: String): PieceType? {
-            for (type in refCube.getPieceTypes()) {
-                if (type.mnemonic.equals(mnemonic, true)) {
-                    return type
-                }
-            }
-
-            return null
+            return BldScramble(refCube, gConfig, *conditions.toTypedArray())
         }
     }
 }

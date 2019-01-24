@@ -1,21 +1,19 @@
 package com.suushiemaniac.cubing.bld.optim
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
-import com.suushiemaniac.cubing.bld.analyze.BldPuzzle
 import com.suushiemaniac.cubing.bld.model.cycle.ThreeCycle
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
-import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.CubicPuzzle
 import com.suushiemaniac.cubing.bld.model.source.AlgSource
 
-class BreakInOptim(val source: AlgSource, val refCube: BldPuzzle = CubicPuzzle.FIVE.analyzingPuzzle, fullCache: Boolean = true) {
+class BreakInOptimizer(val source: AlgSource, vararg pieceType: PieceType, fullCache: Boolean = true) {
     val cache: MutableMap<PieceType, MutableMap<Int, List<Int>>> = mutableMapOf()
 
     init {
-        for (type in refCube.getPieceTypes()) {
+        for (type in pieceType) {
             val typeMap = mutableMapOf<Int, List<Int>>()
 
             if (fullCache) {
-                for (target in refCube.getLetteringScheme(type).indices) {
+                for (target in 0 until type.numTargets) {
                     typeMap[target] = this.optimizeBreakInTargetsAfter(target, type)
                 }
             }
@@ -24,7 +22,7 @@ class BreakInOptim(val source: AlgSource, val refCube: BldPuzzle = CubicPuzzle.F
         }
     }
 
-    fun optimizeBreakInTargetsAfter(target: Int, type: PieceType): List<Int> {
+    fun optimizeBreakInTargetsAfter(target: Int, type: PieceType): List<Int> { // TODO this has to return actual targets
         return this.cache.getOrPut(type) { mutableMapOf() }.getOrPut(target) {
             val algList = mutableListOf<Algorithm>()
             val targetMap = mutableMapOf<Algorithm, Int>()

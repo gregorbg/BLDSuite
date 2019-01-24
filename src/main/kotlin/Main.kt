@@ -1,9 +1,7 @@
 import com.suushiemaniac.cubing.bld.gsolve.KPuzzle
-import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType
-import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.CubicPuzzle
 import java.io.File
 
-fun main(vararg args: String) {
+fun main() {
     //val analysis = CubicPuzzle.THREE_BLD.scrambleAnalysis
     //analysis.setBuffer(CubicPieceType.EDGE, 2)
 

@@ -2,76 +2,101 @@ package com.suushiemaniac.cubing.bld.gsolve
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg
-import com.suushiemaniac.cubing.bld.analyze.BldCube
+import com.suushiemaniac.cubing.bld.analyze.BldAnalysis
 import com.suushiemaniac.cubing.bld.model.cycle.MisOrientPiece
 import com.suushiemaniac.cubing.bld.model.cycle.ParityCycle
 import com.suushiemaniac.cubing.bld.model.cycle.PieceCycle
 import com.suushiemaniac.cubing.bld.model.cycle.ThreeCycle
-import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType
-import com.suushiemaniac.cubing.bld.model.enumeration.piece.LetterPairImage
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
-import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.CubicPuzzle
-import com.suushiemaniac.cubing.bld.optim.BreakInOptim
-import com.suushiemaniac.cubing.bld.util.SpeffzUtil
+import com.suushiemaniac.cubing.bld.model.source.AlgSource
+import com.suushiemaniac.cubing.bld.optim.BreakInOptimizer
+import com.suushiemaniac.cubing.bld.util.CollectionUtil.combinations
+import com.suushiemaniac.cubing.bld.util.CollectionUtil.permutations
+import com.suushiemaniac.cubing.bld.util.CollectionUtil.countingList
+import com.suushiemaniac.cubing.bld.util.PuzzleState
+import com.suushiemaniac.cubing.bld.util.clone
+import com.suushiemaniac.cubing.bld.util.deepEquals
 
 import java.io.File
 
-open class GPuzzle(defFile: File, bldFile: File) : KPuzzle(defFile) {
-    val letterSchemes = (this.getPieceTypes() alwaysTo SpeffzUtil.FULL_SPEFFZ).toMutableMap()
+open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private val commandMap: Map<String, Map<String, List<String>>>) : KPuzzle(kCommandMap) {
+    constructor(kCommandMap: Map<String, Map<String, List<String>>>, bldFile: File): this(kCommandMap, groupByCommand(bldFile.readLines()))
+    constructor(defFile: File, bldFile: File): this(groupByCommand(defFile.readLines()), groupByCommand(bldFile.readLines()))
 
-    val mainBuffers = (this.getPieceTypes() allTo { this.getDefaultCubies().getValue(it)[0][0] }).toMutableMap()
-    val backupBuffers = this.getPieceTypes() alwaysTo { mutableListOf<Int>() }
+    val letterSchemes = this.loadLetterSchemes()
 
-    protected open fun getBreakInTargetsAfter(type: PieceType, piece: Int): List<Int> {
-        if (this.algSource == null || !this.optimizeBreakIns.getValue(type) || this.cycles.getValue(type).size % 2 == 0) {
-            return this.cubies.getValue(type).sortedBy { it.min() }.reduce { a, b -> a + b }.toList()
-        }
+    val mainBuffers = this.loadBuffers()
+    //val backupBuffers = this.getPieceTypes() alwaysTo { mutableListOf<Int>() }
 
-        if (this.optim == null)
-            this.optim = BreakInOptim(this.algSource!!, BldCube(this.model as CubicPuzzle), false)
+    val reorientMethod = this.loadReorientMethod()
+    val reorientState = this.loadReorientState()
 
-        return this.optim!!.optimizeBreakInTargetsAfter(piece, type)
+    var algSource: AlgSource? = null
+    val optimizer by lazy { BreakInOptimizer(this.algSource!!, *this.pieceTypes.toTypedArray(), fullCache = false) }
+
+    val avoidBreakIns = this.pieceTypes.associateWith { true }
+    val optimizeBreakIns = this.pieceTypes.associateWith { true }
+
+    private val bruteForceRotations by lazy {
+        // TODO consider not only 2-combinations
+        val reorientations = this.moveDefinitions.keys.filter { it.plane.isRotation }.toSet().combinations(2)
+        val nonCancelling = reorientations.map { SimpleAlg(it.toList()) }.toSet()
+
+        nonCancelling.flatMap { it.allMoves().permutations() }.map { SimpleAlg(it) }.toSet()
     }
 
-    protected fun increaseCycleCount(type: PieceType) {
-        this.cycleCount.increment(type)
+    fun getMainBufferTarget(type: PieceType) = this.mainBuffers.getValue(type)
+    fun getMainBufferPerm(type: PieceType) = this.targetToPiece(type, this.getMainBufferTarget(type)).first
+
+    fun pieceToTarget(type: PieceType, perm: Int, orient: Int) = (perm * type.targetsPerPiece) + orient
+    fun targetToPiece(type: PieceType, target: Int) = Pair(target / type.targetsPerPiece, target % type.targetsPerPiece)
+    fun targetToLetter(type: PieceType, target: Int) = this.letterSchemes.getValue(type)[target]
+
+    fun getBufferLetter(type: PieceType) = this.targetToLetter(type, this.mainBuffers.getValue(type))
+
+    fun permutationToTargets(type: PieceType, perm: Int) = (0 until type.targetsPerPiece)
+            .map { this.pieceToTarget(type, perm, it) }
+            .toTypedArray()
+
+    fun getBufferPermTargets(type: PieceType) = this.permutationToTargets(type, this.getMainBufferPerm(type))
+    fun getCurrentBufferOrientation(type: PieceType) = this.getCurrentOrientation(type, this.getMainBufferPerm(type))
+
+    fun getLetterPairCorrespondants(type: PieceType, perm: Int) = this.permutationToTargets(type, perm)
+            .map { this.targetToLetter(type, it) }
+
+    protected fun getCurrentOrientation(type: PieceType, perm: Int) = this.puzzleState.getValue(type).second[perm]
+
+    protected fun currentlyAtTarget(type: PieceType, target: Int): Int { // FIXME is this working?
+        val (lookupPerm, lookupOrient) = this.targetToPiece(type, target)
+        val (statePerm, stateOrient) = this.puzzleState.getValue(type)
+
+        return this.pieceToTarget(type, statePerm[lookupPerm], (stateOrient[lookupPerm] + lookupOrient) % type.targetsPerPiece)
     }
 
-    fun getBufferPiece(type: PieceType): Array<Int> {
-        if (type is LetterPairImage) {
-            return arrayOf()
-        }
+    protected fun currentTargetInBuffer(type: PieceType) = this.currentlyAtTarget(type, this.getMainBufferTarget(type))
 
-        return this.cubies.getValue(type)[0].copyOf()
+    protected fun getSolutionSpots(type: PieceType, target: Int): List<Int> { // FIXME is this working?
+        val (currentPerm, currentOrient) = this.targetToPiece(type, this.currentlyAtTarget(type, target))
+        val (refPerm, refOrient) = this.solvedState.getValue(type)
+
+        val possiblePermSpots = refPerm.indices.filter { refPerm[it] == currentPerm }
+
+        return possiblePermSpots.map { this.pieceToTarget(type, it, (refOrient[it] + currentOrient) % type.targetsPerPiece) }
     }
 
-    protected fun getCurrentBufferOrientation(type: PieceType): Int {
-        val reference = this.cubies.getValue(type)
-        val state = this.state.getValue(type)
+    protected fun getNextTargetSolutionSpots(type: PieceType) = this.getSolutionSpots(type, this.getMainBufferTarget(type))
 
-        for (i in 1 until type.targetsPerPiece) {
-            val bufferCurrentOrigin = (0 until type.targetsPerPiece).all {
-                state[reference[0][it]] == reference[0][(it + i) % type.targetsPerPiece]
-            }
+    protected fun targetCurrentlySolved(type: PieceType, target: Int) = target in this.getSolutionSpots(type, this.currentlyAtTarget(type, target))
+    protected fun bufferCurrentlySolved(type: PieceType) = this.targetCurrentlySolved(type, this.getMainBufferTarget(type))
 
-            if (bufferCurrentOrigin) {
-                return i
-            }
-        }
+    protected fun getHypotheticalState(scramble: Algorithm): PuzzleState {
+        val clonedState = this.puzzleState.clone()
+        scramblePuzzle(clonedState, scramble, this.moveDefinitions)
 
-        return 0
+        return clonedState
     }
 
-    fun getBufferTarget(type: PieceType): String {
-        return if (type is LetterPairImage) this.letterPairLanguage else this.getLetteringScheme(type)[this.getBuffer(type)]
-    }
-
-    fun getLetterPairCorrespondant(type: PieceType, piece: Int): String {
-        val lettering = this.getLetteringScheme(type)
-        return this.getCorrespondents(type, piece).joinToString("") { lettering[it] }
-    }
-
-    protected open fun compilePermuteSolutionCycles(type: PieceType): List<PieceCycle> {
+    protected open fun compilePermuteSolutionCycles(type: PieceType): List<PieceCycle> { // TODO!!
         val currentCycles = this.cycles.getValue(type)
         val mainBuffer = this.mainBuffers.getValue(type)
 
@@ -95,7 +120,7 @@ open class GPuzzle(defFile: File, bldFile: File) : KPuzzle(defFile) {
         return cycles
     }
 
-    fun compileSolutionCycles(type: PieceType): List<PieceCycle> {
+    fun compileSolutionCycles(type: PieceType): List<PieceCycle> { // TODO!!
         val mainBuffer = this.mainBuffers.getValue(type)
 
         val cycles = mutableListOf<PieceCycle>()
@@ -105,17 +130,15 @@ open class GPuzzle(defFile: File, bldFile: File) : KPuzzle(defFile) {
             val misOrients = this.getMisOrientedPieces(type, i)
 
             when (this.misOrientMethod) {
-                SINGLE__TARGET -> {
-                    val cubies = this.cubies.getValue(type)
-
+                "Single" -> {
                     for (piece in misOrients) {
-                        val outer = cubies.deepOuterIndex(piece)
-                        val inner = cubies.deepInnerIndex(piece)
+                        val (perm, orient) = this.targetToPiece(type, piece)
+                        val next = this.pieceToTarget(type, perm, (orient + i) % type.targetsPerPiece)
 
-                        cycles.add(ThreeCycle(mainBuffer, piece, cubies[outer][(inner + i) % type.targetsPerPiece]))
+                        cycles.add(ThreeCycle(mainBuffer, piece, next))
                     }
                 }
-                SOLVE__DIRECT ->
+                "Compound" ->
                     cycles.addAll(misOrients.map { MisOrientPiece(it, i) })
             }
         }
@@ -123,176 +146,62 @@ open class GPuzzle(defFile: File, bldFile: File) : KPuzzle(defFile) {
         return cycles
     }
 
-    fun getBufferPieceTargets(type: PieceType): Array<String> {
-        if (type is LetterPairImage) {
-            return arrayOf(this.letterPairLanguage)
-        }
+    fun getAnalysis(scramble: Algorithm): BldAnalysis {
+        this.applyScramble(scramble, true)
 
-        return this.getBufferPiece(type)
-                .map { this.letterSchemes.getValue(type)[it] }
-                .toTypedArray()
+        // TODO resolve parities (according to dependency definitions)
+
+        val reorient = this.getReorientationMoves()
+        val cycles = this.pieceTypes.associateWith { this.compileSolutionCycles(it) }
+
+        return BldAnalysis(this, scramble, reorient, cycles, this.letterSchemes, this.algSource)
     }
 
-    protected fun cycleByBuffer(type: PieceType) {
-        val state = this.puzzleState.getValue(type)
-        val ref = this.cubies.getValue(type)
-
-        val cycles = this.cycles.getValue(type)
-
+    fun getNextTarget(type: PieceType): Int? { // TODO how to handle null return?
         val avoidBreakIns = this.avoidBreakIns.getValue(type)
 
-        val divBase = type.numPieces / this.getPiecePermutations(type)
-        val modBase = this.getPieceOrientations(type)
-
-        // If the buffer is preSolved, replace it with an unsolved corner
-        if (solvedPieces[0]) {
-            this.increaseCycleCount(type)
-
+        return if (this.bufferCurrentlySolved(type)) {
+            val targetedPieces = this.getTargetedPieces(type)
             val lastTarget = this.getLastTarget(type)
-            val breakInTargets = this.getBreakInTargetsAfter(type, lastTarget)
 
-            for (breakInTarget in breakInTargets) {
-                val piece = this.getTargetPermutation(type, breakInTarget)
-                val bestOrient = this.getTargetOrientation(type, breakInTarget)
+            // TODO mark buffer float?
 
-                val suitable = state[breakInTarget] / divBase != ref[0][0] / divBase
+            this.getBreakInTargetsAfter(type, lastTarget, targetedPieces).find { !this.targetCurrentlySolved(type, it) }
+        } else {
+            this.getNextTargetSolutionSpots(type).find { // TODO use "current" buffer (according to floats) instead of "main" buffer?
+                val alternativeSolved = this.targetCurrentlySolved(type, it)
+                val alternativeSuitable = this.getMainBufferTarget(type) !in this.getSolutionSpots(type, it)
 
-                // First unsolved pieces is selected
-                if (!solvedPieces[piece * divBase + bestOrient / type.targetsPerPiece] && suitable) {
-                    for (targetFaces in 0 until type.targetsPerPiece) {
-                        state.swap(
-                                ref[0][targetFaces % modBase],
-                                ref[piece][(bestOrient + targetFaces) % modBase]
-                        )
-                    }
-
-                    // PieceConfig cycle is inserted into solution array
-                    cycles.add(breakInTarget)
-
-                    break
-                }
-            }
-        } else { // If the buffer is not preSolved, swap it to the position where the pieces belongs
-            for (permutation in 0 until this.getPiecePermutations(type)) {
-                for (orientation in 0 until this.getPieceOrientations(type)) {
-                    val pieceTargets = type.targetsPerPiece
-
-                    val assumeMatch = (0 until pieceTargets).all {
-                        val currentlyInBuffer = state[ref[0][it]] / divBase
-                        val currentLoopTarget = ref[permutation][(it + orientation) % modBase] / divBase
-
-                        currentlyInBuffer == currentLoopTarget
-                    }
-
-                    if (assumeMatch && !solvedPieces[permutation * divBase + orientation / pieceTargets]) {
-                        val pieceIndex = (orientation until divBase).find {
-                            val alternativeSolved = solvedPieces[permutation * divBase + it / pieceTargets]
-
-                            val alternativePiece = state[ref[permutation][it % modBase]] / divBase
-                            val alternativeSuitable = alternativePiece != ref[0][0] / divBase
-
-                            !avoidBreakIns || (!alternativeSolved && alternativeSuitable)
-                        } ?: orientation
-
-                        for (targetFaces in 0 until pieceTargets) {
-                            val currentTarget = (pieceIndex + targetFaces) % modBase
-
-                            // Buffer pieces is replaced with pieces
-                            state[ref[0][targetFaces]] = state[ref[permutation][currentTarget]]
-
-                            // PieceConfig is solved
-                            state[ref[permutation][currentTarget]] = ref[permutation][currentTarget]
-                        }
-
-                        // PieceConfig cycle is inserted into solution array
-                        cycles.add(ref[permutation][pieceIndex])
-
-                        return
-                    }
-                }
+                !alternativeSolved && (!avoidBreakIns || alternativeSuitable)
             }
         }
     }
 
-    protected fun getReorientationMoves(): Algorithm {
-        when {
-            this.getOrientationPieceTypes().contains(CubicPieceType.CENTER) -> {
-                val lastScrambledCenters = this.state.getValue(CubicPieceType.CENTER)
-
-                val top = lastScrambledCenters[0]
-                val front = lastScrambledCenters[2]
-
-                return this.getRotationsFromOrientation(top, front)
-            }
-            this.reorientMethod == com.suushiemaniac.cubing.bld.gsolve.GPuzzle.ReorientMethod.FIXED_DLB_CORNER -> {
-                val reorientation = arrayOf("x2 y", "z2", "x2 y'", "x2", "z'", "z' y", "z' y2", "z' y'", "x' y", "x' y2", "x' y'", "x'", "z y2", "z y'", "z", "z y", "x y'", "x", "x y", "x y2", "y", "y2", "y'", "")
-
-                val xPosition = this.state.getValue(CubicPieceType.CORNER).indexOf(X)
-
-                if (xPosition > -1) {
-                    val neededRotation = reorientation[xPosition]
-                    return CubicPieceType.CORNER.reader.parse(neededRotation)
-                }
-
-                return SimpleAlg()
-            }
-            this.reorientMethod == com.suushiemaniac.cubing.bld.gsolve.GPuzzle.ReorientMethod.DYNAMIC -> {
-                val possRotations = arrayOf("", "y'", "y", "y2", "z y", "z", "z y2", "z y'", "x y2", "x y'", "x y", "x", "z' y'", "z'", "z' y2", "z' y", "x'", "x' y'", "x' y", "x' y2", "x2 y'", "z2", "x2 y", "x2")
-
-                var max = Double.MIN_VALUE
-                var maxIndex = 0
-
-                val orientationTypes = this.dynamicReorientPieceTypes
-
-                for (i in possRotations.indices) {
-                    var solvedCenters = 0.0
-                    var solvedBadCenters = 0.0
-                    var totalCheckedCenters = 0.0
-
-                    for (type in orientationTypes) {
-                        val state = this.state.getValue(type)
-                        val copyState = state.copyOf()
-
-                        totalCheckedCenters += state.size.toDouble()
-
-                        if (i > 0) {
-                            val rotation = type.reader.parse(possRotations[i])
-
-                            for (permutation in rotation) {
-                                val perm = this.permutations.getValue(permutation).getValue(type)
-                                this.applyPermutations(copyState, perm)
-                            }
-                        }
-
-                        for (j in copyState.indices) {
-                            val norm = this.getPieceOrientations(type)
-
-                            if (copyState[j] / norm == j / norm) {
-                                solvedCenters++
-                                if (j >= 2 * (copyState.size / 3)) solvedBadCenters++
-                            }
-                        }
-                    }
-
-                    solvedCenters /= totalCheckedCenters
-                    solvedBadCenters /= totalCheckedCenters / 3.0
-
-                    val solvedCoeff = (2 * solvedCenters + solvedBadCenters) / 3.0
-
-                    if (solvedCoeff > max) {
-                        max = solvedCoeff
-                        maxIndex = i
-                    }
-                }
-
-                if (maxIndex > 0) {
-                    val rotation = possRotations[maxIndex]
-                    return this.model.reader.parse(rotation)
-                }
-
-                return SimpleAlg()
-            }
-            else -> return SimpleAlg()
+    protected open fun getBreakInTargetsAfter(type: PieceType, piece: Int, targetedPieces: List<Int>): List<Int> {
+        if (this.algSource == null || !this.optimizeBreakIns.getValue(type)) {
+            //return this.targetMap.getValue(type).sortedBy { it.min() }.reduce { a, b -> a + b }.toList()
+            return type.numTargets.countingList() // TODO only use/return unsolved by default
         }
+
+        return this.optimizer.optimizeBreakInTargetsAfter(piece, type)
+    }
+
+    protected fun getReorientationMoves() = when {
+        this.reorientMethod == "Fixed" -> this.bruteForceRotations.find { this.getHypotheticalState(it).deepEquals(this.reorientState) } // TODO deepEquals with wildcards
+                ?: SimpleAlg()
+        this.reorientMethod == "Dynamic" -> this.bruteForceRotations.maxBy {
+            // TODO consider no rotations at all
+            val rotatedState = this.getHypotheticalState(it)
+
+            val solvedCenters = rotatedState.countEquals(this.solvedState) // TODO implement template counting
+            val solvedBadCenters = rotatedState.countEquals(this.reorientState)
+
+            2 * solvedCenters + 3 * solvedBadCenters // FIXME is this an appropriate / intuitive weighting?
+        } ?: SimpleAlg()
+        else -> SimpleAlg()
+    }
+
+    fun solves(type: PieceType, alg: Algorithm, case: PieceCycle, pure: Boolean = true): Boolean {
+        return false // FIXME
     }
 }

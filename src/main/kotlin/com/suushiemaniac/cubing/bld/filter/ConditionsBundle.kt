@@ -1,7 +1,7 @@
 package com.suushiemaniac.cubing.bld.filter
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
-import com.suushiemaniac.cubing.bld.analyze.BldPuzzle
+import com.suushiemaniac.cubing.bld.analyze.BldAnalysis
 import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition
 import com.suushiemaniac.cubing.bld.model.cycle.ThreeCycle
@@ -44,7 +44,7 @@ class ConditionsBundle(val pieceType: PieceType) {
     protected var predicateRegex: String = REGEX_UNIV
     protected var letterPairRegex: String = REGEX_UNIV
 
-    protected var statisticalPredicate: (BldPuzzle) -> Boolean = { true }
+    protected var statisticalPredicate: (BldAnalysis) -> Boolean = { true }
 
     val statString: String
         get() = this.pieceType.mnemonic + ": " + (if (this.parity.positive) "_" else "") +
@@ -178,12 +178,12 @@ class ConditionsBundle(val pieceType: PieceType) {
         }
     }
 
-    fun matchingConditions(inCube: BldPuzzle): Boolean {
-        return (inCube.getPieceTypes().contains(this.pieceType)
+    fun matchingConditions(inCube: BldAnalysis): Boolean {
+        return (inCube.pieceTypes.contains(this.pieceType)
                 && this.parity.evaluatePositive(inCube.hasParity(this.pieceType))
                 && this.bufferSolved.evaluatePositive(inCube.isBufferSolved(this.pieceType, this.isAllowTwistedBuffer))
                 && this.breakIns.evaluate(inCube.getBreakInCount(this.pieceType))
-                && this.targets.evaluate(inCube.getCycleLength(this.pieceType))
+                && this.targets.evaluate(inCube.getTargetCount(this.pieceType))
                 && this.preSolved.evaluate(inCube.getPreSolvedCount(this.pieceType))
                 && this.misOriented.evaluate(inCube.getMisOrientedCount(this.pieceType))
                 && inCube.getSolutionTargets(this.pieceType).matches(this.memoRegex.toRegex()) // TODO have regular expressions comply w/ buffer floats!

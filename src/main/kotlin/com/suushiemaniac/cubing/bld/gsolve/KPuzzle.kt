@@ -14,8 +14,8 @@ import com.suushiemaniac.cubing.bld.util.deepEquals
 
 import java.io.File
 
-open class KPuzzle(defFile: File) {
-    private val commandMap = groupByCommand(defFile.readLines())
+open class KPuzzle(private val commandMap: Map<String, Map<String, List<String>>>) {
+    constructor(defFile: File) : this(groupByCommand(defFile.readLines()))
 
     val model = this.loadNamedModel()
 
@@ -88,8 +88,11 @@ open class KPuzzle(defFile: File) {
             }
         }
 
-        scramble.mapNotNull { this.moveDefinitions[it] }
-                .forEach { movePuzzle(this.puzzleState, it) }
+        scramblePuzzle(this.puzzleState, scramble, this.moveDefinitions)
+    }
+
+    fun g(bldFile: File): GPuzzle { // TODO better name?
+        return GPuzzle(this.commandMap, bldFile)
     }
 
     companion object {
@@ -147,6 +150,12 @@ open class KPuzzle(defFile: File) {
             }
 
             return configurationMap
+        }
+
+        @JvmStatic // Kotlin compiler needs this for lambdas in subclasses
+        protected fun scramblePuzzle(current: PuzzleState, scramble: Algorithm, moveDefinitions: Map<Move, PuzzleState>) {
+            scramble.mapNotNull(moveDefinitions::get)
+                    .forEach { movePuzzle(current, it) }
         }
 
         protected fun movePuzzle(current: PuzzleState, moveDef: PuzzleState) {

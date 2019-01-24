@@ -1,14 +1,17 @@
-package com.suushiemaniac.cubing.bld.analyze.stat
+package com.suushiemaniac.cubing.bld.analyze
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
-import com.suushiemaniac.cubing.bld.analyze.BldPuzzle
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
+import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.TwistyPuzzle
 
 import com.suushiemaniac.cubing.bld.util.MapUtil.increment
 import com.suushiemaniac.cubing.bld.util.MapUtil.sortedPrint
 import com.suushiemaniac.cubing.bld.util.MapUtil.freqAverage
+import java.io.File
 
-class MassAnalyzer(var analyze: BldPuzzle) {
+class MassAnalyzer(val model: TwistyPuzzle, gConfig: File) {
+    val analyzer = model.gPuzzle(gConfig)
+
     fun analyzeProperties(scrambles: List<Algorithm>) {
         val parityCounts = mutableMapOf<PieceType, Int>()
         val solvedBufferCounts = mutableMapOf<PieceType, Int>()
@@ -19,21 +22,21 @@ class MassAnalyzer(var analyze: BldPuzzle) {
         val misOriented = mutableMapOf<PieceType, MutableMap<Int, Int>>()
 
         for (scramble in scrambles) {
-            this.analyze.parseScramble(scramble)
+            val analyze = this.analyzer.getAnalysis(scramble)
 
-            for (type in this.analyze.getPieceTypes()) {
-                if (this.analyze.hasParity(type)) {
+            for (type in analyze.pieceTypes) {
+                if (analyze.hasParity(type)) {
                     parityCounts.increment(type)
                 }
 
-                if (this.analyze.isBufferSolved(type)) {
+                if (analyze.isBufferSolved(type)) {
                     solvedBufferCounts.increment(type)
                 }
 
-                targets.getOrPut(type) { mutableMapOf() }.increment(this.analyze.getCycleLength(type))
-                breakIns.getOrPut(type) { mutableMapOf() }.increment(this.analyze.getBreakInCount(type))
-                preSolved.getOrPut(type) { mutableMapOf() }.increment(this.analyze.getPreSolvedCount(type))
-                misOriented.getOrPut(type) { mutableMapOf() }.increment(this.analyze.getMisOrientedCount(type))
+                targets.getOrPut(type) { mutableMapOf() }.increment(analyze.getTargetCount(type))
+                breakIns.getOrPut(type) { mutableMapOf() }.increment(analyze.getBreakInCount(type))
+                preSolved.getOrPut(type) { mutableMapOf() }.increment(analyze.getPreSolvedCount(type))
+                misOriented.getOrPut(type) { mutableMapOf() }.increment(analyze.getMisOrientedCount(type))
             }
         }
 
@@ -41,7 +44,7 @@ class MassAnalyzer(var analyze: BldPuzzle) {
 
         println("Total scrambles: $numCubes")
 
-        for (type in this.analyze.getPieceTypes()) {
+        for (type in this.model.pieceTypes) {
             println()
             println("Parity: " + parityCounts[type])
             println("Average: " + parityCounts.getValue(type) / numCubes.toFloat())
@@ -82,13 +85,13 @@ class MassAnalyzer(var analyze: BldPuzzle) {
         val overall = mutableMapOf<String, Int>()
 
         for (scramble in scrambles) {
-            this.analyze.parseScramble(scramble)
+            val analyze = this.analyzer.getAnalysis(scramble)
 
-            for (type in this.analyze.getPieceTypes()) {
-                pieceTypeMap.getOrPut(type) { mutableMapOf() }.increment(this.analyze.getStatString(type))
+            for (type in analyze.pieceTypes) {
+                pieceTypeMap.getOrPut(type) { mutableMapOf() }.increment(analyze.getStatString(type))
             }
 
-            overall.increment(this.analyze.getStatString())
+            overall.increment(analyze.getStatString())
         }
 
         for ((type, subMap) in pieceTypeMap.entries) {
@@ -111,11 +114,11 @@ class MassAnalyzer(var analyze: BldPuzzle) {
         val pieceTypeMap = mutableMapOf<PieceType, MutableMap<String, Int>>()
 
         for (scramble in scrambles) {
-            this.analyze.parseScramble(scramble)
+            val analyze = this.analyzer.getAnalysis(scramble)
 
-            for (type in this.analyze.getPieceTypes()) {
-                if (this.analyze.getCycleLength(type) > 0) {
-                    val solutionPairs = this.analyze.getSolutionTargets(type) // TODO
+            for (type in analyze.pieceTypes) {
+                if (analyze.getTargetCount(type) > 0) {
+                    val solutionPairs = analyze.getSolutionTargets(type) // TODO
                             .replace((if (singleLetter) "\\s+?" else "$.").toRegex(), "")
                             .split((if (singleLetter) "" else "\\s+?").toRegex())
                             .dropLastWhile { it.isEmpty() }
@@ -140,10 +143,6 @@ class MassAnalyzer(var analyze: BldPuzzle) {
     }
 
     fun generateRandom(numCubes: Int): List<Algorithm> {
-        val tNoodle = this.analyze.model.scramblingPuzzle
-        val reader = this.analyze.model.reader
-
-        return List<String>(numCubes) { tNoodle.generateScramble() }
-                .map { reader.parse(it) }
+        return List(numCubes) { this.model.randomScramble }
     }
 }
