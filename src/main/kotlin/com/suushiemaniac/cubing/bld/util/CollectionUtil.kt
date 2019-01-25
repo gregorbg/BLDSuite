@@ -40,15 +40,6 @@ object CollectionUtil {
         else -> powerset(left.drop(1), acc + acc.map { it + left.first() })
     }
 
-    fun <T> Set<T>.combinations(combinationSize: Int): Set<Set<T>> = when {
-        combinationSize < 0 -> throw Error("combinationSize cannot be smaller then 0. It is equal to $combinationSize")
-        combinationSize == 0 -> setOf(emptySet())
-        combinationSize >= size -> setOf(this.toSet())
-        else -> powerset()
-                .filter { it.size == combinationSize }
-                .toSet()
-    }
-
     fun <T> Set<T>.permutations(): Set<List<T>> = toList().permutations()
 
     fun <T> List<T>.permutations(): Set<List<T>> = when {

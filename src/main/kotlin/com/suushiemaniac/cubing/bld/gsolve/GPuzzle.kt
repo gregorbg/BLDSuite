@@ -10,11 +10,12 @@ import com.suushiemaniac.cubing.bld.model.cycle.ThreeCycle
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
 import com.suushiemaniac.cubing.bld.model.source.AlgSource
 import com.suushiemaniac.cubing.bld.optim.BreakInOptimizer
-import com.suushiemaniac.cubing.bld.util.CollectionUtil.combinations
+import com.suushiemaniac.cubing.bld.util.CollectionUtil.powerset
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.permutations
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.countingList
 import com.suushiemaniac.cubing.bld.util.PuzzleState
 import com.suushiemaniac.cubing.bld.util.clone
+import com.suushiemaniac.cubing.bld.util.countEquals
 import com.suushiemaniac.cubing.bld.util.deepEquals
 
 import java.io.File
@@ -26,10 +27,11 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
     val letterSchemes = this.loadLetterSchemes()
 
     val mainBuffers = this.loadBuffers()
-    //val backupBuffers = this.getPieceTypes() alwaysTo { mutableListOf<Int>() }
 
     val reorientMethod = this.loadReorientMethod()
     val reorientState = this.loadReorientState()
+
+    val misOrientMethod = this.loadMisOrientMethod()
 
     var algSource: AlgSource? = null
     val optimizer by lazy { BreakInOptimizer(this.algSource!!, *this.pieceTypes.toTypedArray(), fullCache = false) }
@@ -38,33 +40,47 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
     val optimizeBreakIns = this.pieceTypes.associateWith { true }
 
     private val bruteForceRotations by lazy {
-        // TODO consider not only 2-combinations
-        val reorientations = this.moveDefinitions.keys.filter { it.plane.isRotation }.toSet().combinations(2)
+        val reorientations = this.moveDefinitions.keys.filter { it.plane.isRotation }.toSet().powerset().filter { it.size in 1..2 }
         val nonCancelling = reorientations.map { SimpleAlg(it.toList()) }.toSet()
 
         nonCancelling.flatMap { it.allMoves().permutations() }.map { SimpleAlg(it) }.toSet()
     }
 
-    fun getMainBufferTarget(type: PieceType) = this.mainBuffers.getValue(type)
-    fun getMainBufferPerm(type: PieceType) = this.targetToPiece(type, this.getMainBufferTarget(type)).first
+    // FILE LOADING
+
+    fun loadLetterSchemes(): Map<PieceType, Array<String>> {
+        // TODO
+    }
+
+    fun loadBuffers(): Map<PieceType, Int> { // FIXME Stack<Int> instead to allow for floating?
+        // TODO
+    }
+
+    fun loadReorientMethod(): String {
+        return this.commandMap.getValue("Orientation").keys.first().split("\\s+".toRegex()).last()
+    }
+
+    fun loadReorientState(): PuzzleState {
+        val stateLines = this.commandMap.getValue("Orientation").values.first()
+
+        return loadKPosition(this.pieceTypes, stateLines)
+    }
+
+    fun loadMisOrientMethod(): String {
+        return this.commandMap.getValue("MisOrient").keys.first().split("\\s+".toRegex()).last()
+    }
+
+    // CONVERSION METHODS
 
     fun pieceToTarget(type: PieceType, perm: Int, orient: Int) = (perm * type.targetsPerPiece) + orient
     fun targetToPiece(type: PieceType, target: Int) = Pair(target / type.targetsPerPiece, target % type.targetsPerPiece)
     fun targetToLetter(type: PieceType, target: Int) = this.letterSchemes.getValue(type)[target]
 
-    fun getBufferLetter(type: PieceType) = this.targetToLetter(type, this.mainBuffers.getValue(type))
-
     fun permutationToTargets(type: PieceType, perm: Int) = (0 until type.targetsPerPiece)
             .map { this.pieceToTarget(type, perm, it) }
             .toTypedArray()
 
-    fun getBufferPermTargets(type: PieceType) = this.permutationToTargets(type, this.getMainBufferPerm(type))
-    fun getCurrentBufferOrientation(type: PieceType) = this.getCurrentOrientation(type, this.getMainBufferPerm(type))
-
-    fun getLetterPairCorrespondants(type: PieceType, perm: Int) = this.permutationToTargets(type, perm)
-            .map { this.targetToLetter(type, it) }
-
-    protected fun getCurrentOrientation(type: PieceType, perm: Int) = this.puzzleState.getValue(type).second[perm]
+    // K-STYLE METHODS
 
     protected fun currentlyAtTarget(type: PieceType, target: Int): Int { // FIXME is this working?
         val (lookupPerm, lookupOrient) = this.targetToPiece(type, target)
@@ -72,8 +88,6 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
 
         return this.pieceToTarget(type, statePerm[lookupPerm], (stateOrient[lookupPerm] + lookupOrient) % type.targetsPerPiece)
     }
-
-    protected fun currentTargetInBuffer(type: PieceType) = this.currentlyAtTarget(type, this.getMainBufferTarget(type))
 
     protected fun getSolutionSpots(type: PieceType, target: Int): List<Int> { // FIXME is this working?
         val (currentPerm, currentOrient) = this.targetToPiece(type, this.currentlyAtTarget(type, target))
@@ -84,10 +98,29 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
         return possiblePermSpots.map { this.pieceToTarget(type, it, (refOrient[it] + currentOrient) % type.targetsPerPiece) }
     }
 
-    protected fun getNextTargetSolutionSpots(type: PieceType) = this.getSolutionSpots(type, this.getMainBufferTarget(type))
-
+    protected fun getCurrentOrientation(type: PieceType, perm: Int) = this.puzzleState.getValue(type).second[perm]
     protected fun targetCurrentlySolved(type: PieceType, target: Int) = target in this.getSolutionSpots(type, this.currentlyAtTarget(type, target))
+
+    fun getLetterPairCorrespondants(type: PieceType, perm: Int) = this.permutationToTargets(type, perm).map { this.targetToLetter(type, it) }
+
+    // BUFFER HELPERS
+
+    fun getMainBufferTarget(type: PieceType) = this.mainBuffers.getValue(type)
+    fun getMainBufferPerm(type: PieceType) = this.targetToPiece(type, this.getMainBufferTarget(type)).first
+
+    // BUFFER SHORTCUTS
+
     protected fun bufferCurrentlySolved(type: PieceType) = this.targetCurrentlySolved(type, this.getMainBufferTarget(type))
+    protected fun currentTargetInBuffer(type: PieceType) = this.currentlyAtTarget(type, this.getMainBufferTarget(type))
+
+    protected fun getNextTargetSolutionSpots(type: PieceType) = this.getSolutionSpots(type, this.currentTargetInBuffer(type))
+
+    fun getAllBufferTargets(type: PieceType) = this.permutationToTargets(type, this.getMainBufferPerm(type))
+    fun getCurrentBufferOrientation(type: PieceType) = this.getCurrentOrientation(type, this.getMainBufferPerm(type))
+
+    fun getBufferLetter(type: PieceType) = this.targetToLetter(type, this.mainBuffers.getValue(type))
+
+    // STATE MANIPULATION
 
     protected fun getHypotheticalState(scramble: Algorithm): PuzzleState {
         val clonedState = this.puzzleState.clone()
@@ -96,24 +129,19 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
         return clonedState
     }
 
-    protected open fun compilePermuteSolutionCycles(type: PieceType): List<PieceCycle> { // TODO!!
-        val currentCycles = this.cycles.getValue(type)
-        val mainBuffer = this.mainBuffers.getValue(type)
+    // CYCLE BUILDERS
 
-        var currentBuffer = mainBuffer
-        val bufferFloats = this.bufferFloats.getValue(type)
+    protected open fun compilePermuteSolutionCycles(type: PieceType): List<PieceCycle> {
+        val targets = this.compileTargetChain(type) // TODO allow for buffer floating?
+        val mainBuffer = this.getMainBufferTarget(type)
 
         val cycles = mutableListOf<PieceCycle>()
 
-        for (c in currentCycles.indices.chunked(2)) {
-            if (c[0] in bufferFloats.keys) {
-                currentBuffer = bufferFloats.getValue(c[0])
-            }
-
+        for (c in targets.chunked(2)) { // TODO allow for different cycle lengths?
             if (c.size == 2) {
-                cycles.add(ThreeCycle(currentBuffer, currentCycles[c[0]], currentCycles[c[1]]))
+                cycles.add(ThreeCycle(mainBuffer, c[0], c[1]))
             } else {
-                cycles.add(ParityCycle(currentBuffer, currentCycles[c[0]]))
+                cycles.add(ParityCycle(mainBuffer, c[0]))
             }
         }
 
@@ -157,14 +185,15 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
         return BldAnalysis(this, scramble, reorient, cycles, this.letterSchemes, this.algSource)
     }
 
-    fun getNextTarget(type: PieceType): Int? { // TODO how to handle null return?
+    fun getNextTarget(type: PieceType, vararg previous: Int): Int? { // TODO how to handle null return?
         val avoidBreakIns = this.avoidBreakIns.getValue(type)
 
         return if (this.bufferCurrentlySolved(type)) {
-            val targetedPieces = this.getTargetedPieces(type)
-            val lastTarget = this.getLastTarget(type)
+            val targetedPieces = previous.toList()
+            val lastTarget = targetedPieces.last()
 
             // TODO mark buffer float?
+            // FIXME don't shoot to twisted pieces (not in targetSlots but still permuted correctly)
 
             this.getBreakInTargetsAfter(type, lastTarget, targetedPieces).find { !this.targetCurrentlySolved(type, it) }
         } else {
@@ -187,7 +216,7 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
     }
 
     protected fun getReorientationMoves() = when {
-        this.reorientMethod == "Fixed" -> this.bruteForceRotations.find { this.getHypotheticalState(it).deepEquals(this.reorientState) } // TODO deepEquals with wildcards
+        this.reorientMethod == "Fixed" -> this.bruteForceRotations.find { this.getHypotheticalState(it).deepEquals(this.reorientState, true) }
                 ?: SimpleAlg()
         this.reorientMethod == "Dynamic" -> this.bruteForceRotations.maxBy {
             // TODO consider no rotations at all
