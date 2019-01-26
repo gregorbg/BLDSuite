@@ -14,12 +14,6 @@ object MapUtil {
         return sum / criteriaHit
     }
 
-    fun <K, V> MutableMap<K, V>.reset(action: (Map.Entry<K, V>) -> V) {
-        for (entry in this) {
-            this[entry.key] = action(entry)
-        }
-    }
-
     fun <K> MutableMap<K, Int>.increment(key: K) {
         this[key] = this.getOrDefault(key, 0) + 1
     }

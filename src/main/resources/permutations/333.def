@@ -2,19 +2,15 @@ Name 3x3x3
 
 Set CORNER 8 3
 Set EDGE 12 2
+Set CENTER 6 1
 
 Solved
 CORNER
 1 2 3 4 5 6 7 8
 EDGE
 1 2 3 4 5 6 7 8 9 10 11 12
-End
-
-Move U
-CORNER
-4 1 2 3 5 6 7 8
-EDGE
-4 1 2 3 5 6 7 8 9 10 11 12
+CENTER
+1 2 3 4 5 6
 End
 
 Move R
@@ -25,11 +21,71 @@ EDGE
 1 2 3 5 12 6 7 4 9 10 11 8
 End
 
-Move F
+Move x
 CORNER
-2 6 3 4 1 5 7 8
-2 1 0 0 1 2 0 0
+5 6 2 1 8 7 3 4
+1 2 1 2 2 1 2 1
 EDGE
-6 2 3 4 1 9 7 8 5 10 11 12
-1 0 0 0 1 1 0 0 1 0 0 0
+9 6 1 5 12 10 2 4 11 7 3 8
+1 0 1 0 0 0 0 0 1 0 1 0
+CENTER
+3 2 6 4 1 5
+End
+
+Move y
+CORNER
+4 1 2 3 8 5 6 7
+EDGE
+4 1 2 3 8 5 6 7 12 9 10 11
+0 0 0 0 1 1 1 1 0 0 0 0
+CENTER
+1 3 4 5 2 6
+End
+
+CompositeMove z
+x y x'
+End
+
+CompositeMove U
+z R z'
+End
+
+CompositeMove F
+y' R y
+End
+
+CompositeMove D
+z' R z
+End
+
+CompositeMove L
+y2 R y2
+End
+
+CompositeMove B
+y R y'
+End
+
+CompositeMove M
+R L' x'
+End
+
+CompositeMove S
+F' B z
+End
+
+CompositeMove E
+U D' y'
+End
+
+CompositeMove Rw
+R M'
+End
+
+CompositeMove Fw
+F S
+End
+
+CompositeMove Uw
+U E'
 End

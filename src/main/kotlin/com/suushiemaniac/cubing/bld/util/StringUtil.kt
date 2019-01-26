@@ -1,6 +1,8 @@
 package com.suushiemaniac.cubing.bld.util
 
 object StringUtil {
+    private val WS_REGEX = "\\s+".toRegex()
+
     fun String.containsAny(containPoss: Iterable<String>): Boolean {
         return containPoss.any { this.contains(it) }
     }
@@ -27,6 +29,14 @@ object StringUtil {
 
     fun String.charCount(c: Char): Int {
         return this.count { it == c }
+    }
+
+    fun String.repeatWithGap(times: Int, gap: String = " "): String {
+        return List(times) { this }.joinToString(gap)
+    }
+
+    fun String.splitAtWhitespace(): List<String> {
+        return this.split(WS_REGEX)
     }
 
     fun String.contentSetEquals(that: String): Boolean {

@@ -51,7 +51,7 @@ class BldAnalysis(origin: GPuzzle,
             val lastBuffer = bufferAccu.lastOrNull() ?: -1
 
             if (lastBuffer != cycle.buffer) {
-                val mainBuffer = bufferAccu.toSet().size > 1
+                val mainBuffer = bufferAccu.toSet().isEmpty()
                 bufferAccu.add(cycle.buffer)
 
                 if (!mainBuffer) {

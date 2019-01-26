@@ -5,6 +5,7 @@ import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader
 import com.suushiemaniac.cubing.alglib.lang.NotationReader
 import com.suushiemaniac.cubing.bld.gsolve.KPuzzle
 import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
+import com.suushiemaniac.cubing.bld.util.StringUtil.repeatWithGap
 import net.gnehzr.tnoodle.scrambles.Puzzle
 import puzzle.*
 
@@ -32,7 +33,8 @@ enum class CubicPuzzle(override val size: Int, val scramblingPuzzleGen: () -> Pu
     override val reader: NotationReader
         get() = READER_INST
 
-    override val kPuzzle: KPuzzle = KPuzzle(File(this.javaClass.getResource("permutations/${this.size.toString().repeat(3)}.def").toURI()))
+    override val kPuzzle: KPuzzle // FIXME not load a new kPuzzle every time at get
+        get() = KPuzzle(File(this.javaClass.getResource("permutations/${this.size.toString().repeat(3)}.def").toURI()))
 
     override val scramblingPuzzle: Puzzle = this.scramblingPuzzleGen()
 
@@ -46,7 +48,7 @@ enum class CubicPuzzle(override val size: Int, val scramblingPuzzleGen: () -> Pu
     }
 
     override fun toString(): String {
-        return List(3) { this.size.toString() }.joinToString("x")
+        return this.size.toString().repeatWithGap(3, "x")
     }
 
     companion object {
