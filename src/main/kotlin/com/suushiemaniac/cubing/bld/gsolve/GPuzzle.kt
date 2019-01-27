@@ -27,7 +27,8 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
 
     val letterSchemes = this.loadLetterSchemes()
 
-    val mainBuffers = this.loadBuffers()
+    val allBuffers = this.loadBuffers()
+    val mainBuffers = this.allBuffers.mapValues { it.value.first() }
 
     val reorientMethod = this.loadReorientMethod()
     val reorientState = this.loadReorientState()
@@ -50,7 +51,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
         val reOrientations = this.moveDefinitions.keys.filter { it.plane.isRotation }.toSet().powerset().filter { it.size in 1..2 }
         val nonCancelling = reOrientations.map { SimpleAlg(it.toList()) }.toSet()
 
-        nonCancelling.flatMap { it.allMoves().permutations() }.map(::SimpleAlg).toSet()
+        nonCancelling.flatMap { it.allMoves().permutations() }.map(::SimpleAlg).toSet().sortedBy { it.algLength() }
     }
 
     // FILE LOADING
@@ -62,28 +63,25 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
         return parsed.mapValues { it.value.first }
     }
 
-    fun loadBuffers(): Map<PieceType, Int> { // FIXME Stack<Int> instead to allow for floating?
+    fun loadBuffers(): Map<PieceType, List<Int>> {
         val bufferCommands = this.commandMap.getValue("Buffer")
 
-        val collectionMap = mutableMapOf<PieceType, Int>()
-        val pieceTypeNames = this.pieceTypes.map { it.name to it }.toMap() // Help for parsing
+        val collectionMap = mutableListOf<Pair<PieceType, Int>>()
 
         for (bufferDef in bufferCommands.keys) {
             val defScheme = bufferDef.splitAtWhitespace().drop(1)
             val ptName = defScheme.first()
 
-            if (ptName in pieceTypeNames) {
-                val pieceType = pieceTypeNames.getValue(ptName)
+            val pieceType = this.findPieceTypeByName(ptName)
 
-                val bufferOrient = defScheme.last().toInt()
-                val bufferPerm = defScheme.dropLast(1).last().toInt()
+            val bufferOrient = defScheme.last().toInt()
+            val bufferPerm = defScheme.dropLast(1).last().toInt()
 
-                // nasty perm - 1 hack
-                collectionMap[pieceType] = pieceToTarget(pieceType, bufferPerm - 1, bufferOrient)
-            }
+            // nasty perm - 1 hack
+            collectionMap += pieceType to pieceToTarget(pieceType, bufferPerm - 1, bufferOrient)
         }
 
-        return collectionMap
+        return collectionMap.groupBy(Pair<PieceType, Int>::first, Pair<PieceType, Int>::second)
     }
 
     fun loadReorientMethod(): String {
@@ -166,8 +164,6 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
     fun getMainBufferTarget(type: PieceType) = this.mainBuffers.getValue(type)
     fun getMainBufferPerm(type: PieceType) = targetToPerm(type, this.getMainBufferTarget(type))
 
-    fun getMainBufferOrientationTargets(type: PieceType) = permToTargets(type, this.getMainBufferPerm(type))
-
     // STATE MANIPULATION
 
     protected fun getHypotheticalState(scramble: Algorithm) = scramblePuzzle(this.puzzleState.clone(), scramble, this.moveDefinitions)
@@ -178,7 +174,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
         val accumulate = mutableListOf<Int>()
 
         return generateSequence {
-            this.getNextTarget(type, accumulate)?.also { accumulate.add(it) }
+            this.getNextTarget(type, this.getMainBufferTarget(type), accumulate)?.also { accumulate.add(it) }
         }.toList()
     }
 
@@ -201,7 +197,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
             targets.reversed().chunked(2).reversed().map { it.reversed() } else
             targets.chunked(2)
 
-        for (c in chunks) { // TODO allow for different cycle lengths? (M2/OP cycle length 1)
+        for (c in chunks) {
             if (c.size == 2) {
                 cycles.add(ThreeCycle(mainBuffer, c[0], c[1]))
             } else {
@@ -213,8 +209,6 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
     }
 
     fun compileSolutionCycles(type: PieceType): List<PieceCycle> {
-        val mainBuffer = this.getMainBufferTarget(type)
-
         val cycles = mutableListOf<PieceCycle>()
         cycles.addAll(this.compilePermuteSolutionCycles(type))
 
@@ -227,7 +221,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
                         val (perm, orient) = targetToPiece(type, piece)
                         val next = pieceToTarget(type, perm, (orient + i) % type.orientations)
 
-                        cycles += SingleMisOrientCycle(mainBuffer, i, piece, next)
+                        cycles += SingleMisOrientCycle(i, piece, next)
                     }
                 }
                 "Compound" ->
@@ -261,7 +255,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
             } ?: false
 
             if (fixNecessary) {
-                movePuzzle(this.solvedState, this.parityDependencyFixes.getValue(type)) // FIXME fix not correct
+                movePuzzle(this.solvedState, this.parityDependencyFixes.getValue(type))
             }
 
             parityRelevantCycles[type] = this.compileSolutionCycles(type)
@@ -272,21 +266,21 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
         return BldAnalysis(this.reader, reorient, cycles, this.mainBuffers, this.letterSchemes, this.algSource)
     }
 
-    fun getNextTarget(type: PieceType, previous: List<Int>): Int? {
+    fun getNextTarget(type: PieceType, buffer: Int, previous: List<Int>): Int? {
         val avoidBreakIns = this.avoidBreakIns.getValue(type)
 
-        val lastTarget = previous.lastOrNull() ?: this.getMainBufferTarget(type)
+        val lastTarget = previous.lastOrNull() ?: buffer
 
         val targetedPerms = previous.map { targetToPerm(type, it) }
         val lastTargetedPerm = targetToPerm(type, lastTarget)
 
         val currentlyInBuffer = this.currentlyAtTarget(type, lastTarget)
 
-        val bufferSolved = currentlyInBuffer in this.getMainBufferOrientationTargets(type)
+        val bufferSolved = currentlyInBuffer in adjacentTargets(type, buffer)
         val lastCycleCompleted = targetedPerms.count { it == lastTargetedPerm } > 1
 
         if (bufferSolved || lastCycleCompleted) {
-            val possNext = this.getBreakInTargetsAfter(type, lastTarget, previous)
+            val possNext = this.getBreakInTargetsAfter(type, buffer, lastTarget, previous)
 
             // TODO mark buffer float?
             return possNext.find {
@@ -298,21 +292,20 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
         } else {
             val possNext = this.getSolutionSpots(type, currentlyInBuffer)
 
-            // TODO use "current" buffer (according to floats) instead of "main" buffer?
             return possNext.find {
                 val alternativeSolved = this.targetCurrentlySolved(type, it)
-                val alternativeSuitable = this.getMainBufferTarget(type) !in this.getSolutionSpots(type, it)
+                val alternativeSuitable = buffer !in this.getSolutionSpots(type, it)
 
                 !alternativeSolved && (!avoidBreakIns || alternativeSuitable)
             } ?: possNext.find { !this.targetCurrentlySolved(type, it) }
         }
     }
 
-    protected open fun getBreakInTargetsAfter(type: PieceType, target: Int, targeted: List<Int>): List<Int> {
+    protected open fun getBreakInTargetsAfter(type: PieceType, buffer: Int, target: Int, targeted: List<Int>): List<Int> {
         val preSolved = type.numTargets.countingList().filter { this.targetCurrentlyPermuted(type, it) }
 
         if (this.algSource == null || !this.optimizeBreakIns.getValue(type)) {
-            return type.numTargets.countingList() - targeted - this.getMainBufferOrientationTargets(type) - preSolved
+            return type.numTargets.countingList() - targeted - adjacentTargets(type, buffer) - preSolved
         }
 
         return this.optimizer.optimizeBreakInTargetsAfter(target, type) - preSolved
@@ -348,5 +341,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
 
         fun targetToPerm(type: PieceType, target: Int) = targetToPiece(type, target).first
         fun permToTargets(type: PieceType, perm: Int) = type.orientations.countingList().map { pieceToTarget(type, perm, it) }
+
+        fun adjacentTargets(type: PieceType, target: Int) = permToTargets(type, targetToPerm(type, target))
     }
 }
