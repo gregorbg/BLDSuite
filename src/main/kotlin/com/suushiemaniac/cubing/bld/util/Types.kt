@@ -32,24 +32,15 @@ fun PuzzleState.deepEquals(other: PuzzleState, allowWildcard: Boolean = false): 
             && other.all { it.value.deepEquals(this.getValue(it.key), allowWildcard) }
 }
 
-fun PieceState.countEquals(other: PieceState?, allowWildcard: Boolean = false): Int {
+fun PieceState.countEquals(other: PieceState?): Int {
     if (other == null) {
         return 0
     }
 
-    val toCmp = other.clone()
-
-    if (allowWildcard) {
-        for (i in toCmp.first.indices) { // FIXME for orientation (.second) as well?
-            if (toCmp.first[i] == -1) {
-                toCmp.first[i] = this.first[i]
-            }
-        }
-    }
-    
-    return this.first.zip(toCmp.first).zip(this.second.zip(toCmp.second)).sumBy { (a, b) -> if (a.first == b.first && a.second == b.second) 1 else 0 }
+    val bigZip = this.first.zip(other.first).zip(this.second.zip(other.second))
+    return bigZip.sumBy { (p, o) -> if (p.first == p.second && o.first == o.second) 1 else 0 }
 }
 
-fun PuzzleState.countEquals(other: PuzzleState, allowWildcard: Boolean = false): Int {
-    return this.entries.sumBy { (pt, st) -> st.countEquals(other[pt], allowWildcard) }
+fun PuzzleState.countEquals(other: PuzzleState): Int {
+    return other.entries.sumBy { (pt, st) -> st.countEquals(this[pt]) }
 }

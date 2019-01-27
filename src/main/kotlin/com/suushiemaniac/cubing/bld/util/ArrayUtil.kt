@@ -31,6 +31,10 @@ object ArrayUtil {
         return -1
     }
 
+    fun Int.countingArray(offset: Int = 0): Array<Int> {
+        return Array(this) { it + offset }
+    }
+
     inline fun <reified T> Int.filledArray(value: T): Array<T> {
         return Array(this) { value }
     }

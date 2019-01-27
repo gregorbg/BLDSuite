@@ -6,6 +6,7 @@ import com.suushiemaniac.cubing.alglib.move.Move
 import com.suushiemaniac.cubing.bld.model.PieceType
 import com.suushiemaniac.cubing.bld.util.StringUtil.splitAtWhitespace
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.filledArray
+import com.suushiemaniac.cubing.bld.util.ArrayUtil.countingArray
 import com.suushiemaniac.cubing.bld.util.PieceState
 import com.suushiemaniac.cubing.bld.util.PuzzleState
 import com.suushiemaniac.cubing.bld.util.clone
@@ -18,9 +19,7 @@ open class KPuzzle(protected val reader: NotationReader, private val commandMap:
 
     val pieceTypes = this.loadPieceTypes()
 
-    val defSolvedState get() = this.loadSolvedState()
-
-    val solvedState = this.defSolvedState.toMutableMap()
+    val solvedState = this.loadSolvedState().toMutableMap()
     val puzzleState = this.solvedState.toMutableMap()
 
     val moveDefinitions = this.loadMoves()
@@ -37,7 +36,7 @@ open class KPuzzle(protected val reader: NotationReader, private val commandMap:
         return pieceTypes
     }
 
-    private fun loadSolvedState(): PuzzleState {
+    protected fun loadSolvedState(): PuzzleState {
         val solvedCommand = this.commandMap.getValue("Solved").getValue("Solved")
 
         return loadKPosition(this.pieceTypes, solvedCommand)
@@ -52,8 +51,10 @@ open class KPuzzle(protected val reader: NotationReader, private val commandMap:
             val moveBaseName = lnKey.splitAtWhitespace().last()
 
             val moveConfig = if (lnKey.startsWith("Composite")) {
-                val compositeDef = reader.parse(moveDef.joinToString(" "))
-                scramblePuzzle(this.defSolvedState, compositeDef, moveDefs)
+                val compositeDef = this.reader.parse(moveDef.joinToString(" "))
+                val identityMove = computeIdentityMove(this.solvedState)
+
+                compositeDef.mapNotNull(moveDefs::get).map { it.clone() }.fold(identityMove, ::movePuzzle)
             } else {
                 loadKPosition(this.pieceTypes, moveDef)
             }
@@ -64,13 +65,8 @@ open class KPuzzle(protected val reader: NotationReader, private val commandMap:
         return moveDefs
     }
 
-    protected fun applyScramble(scramble: Algorithm, reset: Boolean = false) {
-        if (reset) {
-            resetState(this.puzzleState, this.solvedState)
-        }
-
-        scramblePuzzle(this.puzzleState, scramble, this.moveDefinitions)
-    }
+    protected fun applyScramble(scramble: Algorithm) = scramblePuzzle(this.puzzleState, scramble, this.moveDefinitions)
+    protected fun withAppliedScramble(scramble: Algorithm) = scramblePuzzle(this.puzzleState.clone(), scramble, this.moveDefinitions)
 
     companion object {
         fun groupByCommand(lines: List<String>): Map<String, Map<String, List<String>>> { // TODO beautify return format
@@ -132,19 +128,25 @@ open class KPuzzle(protected val reader: NotationReader, private val commandMap:
             }
         }
 
+        fun computeIdentityMove(state: PuzzleState): PuzzleState {
+            return state.mapValues { it.value.first.size.countingArray(1) to it.value.second.size.filledArray(0) }
+        }
+
         fun scramblePuzzle(current: PuzzleState, scramble: Algorithm, moveDefinitions: Map<Move, PuzzleState>): PuzzleState {
             return current.apply {
                 scramble.mapNotNull(moveDefinitions::get).forEach { movePuzzle(this, it) }
             }
         }
 
-        @JvmStatic protected fun movePuzzle(current: PuzzleState, moveDef: PuzzleState) {
-            for ((pt, m) in moveDef) {
-                movePieces(pt, current.getValue(pt), m)
+        @JvmStatic protected fun movePuzzle(current: PuzzleState, moveDef: PuzzleState): PuzzleState {
+            return current.apply {
+                for ((pt, m) in moveDef) {
+                    movePieces(this.getValue(pt), pt, m)
+                }
             }
         }
 
-        @JvmStatic protected fun movePieces(type: PieceType, current: PieceState, moveDef: PieceState) {
+        @JvmStatic protected fun movePieces(current: PieceState, type: PieceType, moveDef: PieceState) {
             val permTargets = Array(type.permutations) { current.first[moveDef.first[it] - 1] }
             val orientTargets = Array(type.permutations) { current.second[moveDef.first[it] - 1] }
 
@@ -162,13 +164,12 @@ open class KPuzzle(protected val reader: NotationReader, private val commandMap:
 
         fun bruteForcePowerMoves(solved: PuzzleState, moveDef: PuzzleState, reader: NotationReader, moveBaseName: String): Map<Move, PuzzleState> {
             val movePowers = mutableListOf<PuzzleState>()
-            val execState = solved.clone()
+            val currentPower = moveDef.clone()
 
-            movePuzzle(execState, moveDef)
+            while (!movePuzzle(solved.clone(), currentPower).deepEquals(solved)) {
+                movePowers.add(currentPower.clone())
 
-            while (!execState.deepEquals(solved)) {
-                movePowers.add(execState.clone())
-                movePuzzle(execState, moveDef)
+                movePuzzle(currentPower, moveDef)
             }
 
             val moveDefs = mutableMapOf<Move, PuzzleState>()

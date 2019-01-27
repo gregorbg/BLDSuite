@@ -1,6 +1,8 @@
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader
 import com.suushiemaniac.cubing.bld.gsolve.GPuzzle
+import puzzle.NoInspectionFourByFourCubePuzzle
 import puzzle.NoInspectionThreeByThreeCubePuzzle
+
 import java.io.File
 
 fun main() {
@@ -10,8 +12,8 @@ fun main() {
     //println(analysis.scramble)
     //println(analysis.getSolutionPairs(true))
 
-    val defFile = File("/home/suushie_maniac/jvdocs/BLDSuite/src/main/resources/permutations/333.def")
-    val bldFile = File("/home/suushie_maniac/jvdocs/BLDSuite/src/main/resources/orientations/gregor/333.bld")
+    val defFile = File("/home/suushie_maniac/jvdocs/BLDSuite/src/main/resources/kpuzzle/333.def")
+    val bldFile = File("/home/suushie_maniac/jvdocs/BLDSuite/src/main/resources/gpuzzle/gregor/333.bld")
 
     val reader = CubicAlgorithmReader()
     val scrambler = NoInspectionThreeByThreeCubePuzzle()

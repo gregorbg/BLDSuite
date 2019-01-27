@@ -21,15 +21,12 @@ EDGE
 1 2 3 5 12 6 7 4 9 10 11 8
 End
 
-Move x
-CORNER
-5 6 2 1 8 7 3 4
-1 2 1 2 2 1 2 1
+Move M
 EDGE
-9 6 1 5 12 10 2 4 11 7 3 8
+3 2 11 4 5 6 7 8 1 10 9 12
 1 0 1 0 0 0 0 0 1 0 1 0
 CENTER
-3 2 6 4 1 5
+5 2 1 4 6 3
 End
 
 Move y
@@ -40,6 +37,10 @@ EDGE
 0 0 0 0 1 1 1 1 0 0 0 0
 CENTER
 1 3 4 5 2 6
+End
+
+CompositeMove x
+R M' y2 R' y2
 End
 
 CompositeMove z
@@ -64,10 +65,6 @@ End
 
 CompositeMove B
 y R y'
-End
-
-CompositeMove M
-R L' x'
 End
 
 CompositeMove S

@@ -15,7 +15,6 @@ import com.suushiemaniac.cubing.bld.util.CollectionUtil.topologicalSort
 import com.suushiemaniac.cubing.bld.util.StringUtil.splitAtWhitespace
 import com.suushiemaniac.cubing.bld.util.MathUtil.pMod
 import com.suushiemaniac.cubing.bld.util.PuzzleState
-import com.suushiemaniac.cubing.bld.util.clone
 import com.suushiemaniac.cubing.bld.util.countEquals
 import com.suushiemaniac.cubing.bld.util.deepEquals
 
@@ -77,7 +76,6 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
             val bufferOrient = defScheme.last().toInt()
             val bufferPerm = defScheme.dropLast(1).last().toInt()
 
-            // nasty perm - 1 hack
             collectionMap += pieceType to pieceToTarget(pieceType, bufferPerm - 1, bufferOrient)
         }
 
@@ -137,17 +135,16 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
         val (lookupPerm, lookupOrient) = targetToPiece(type, target)
         val (statePerm, stateOrient) = this.puzzleState.getValue(type)
 
-        // nasty perm - 1 hack
-        return pieceToTarget(type, statePerm[lookupPerm] - 1, (lookupOrient - stateOrient[lookupPerm]) pMod type.orientations)
+        val possiblePermSpot = this.solvedState.getValue(type).first.indexOfFirst { it == statePerm[lookupPerm] }
+
+        return pieceToTarget(type, possiblePermSpot, (lookupOrient - stateOrient[lookupPerm]) pMod type.orientations)
     }
 
     protected fun getSolutionSpots(type: PieceType, target: Int): List<Int> {
-        //val (currentPerm, currentOrient) = targetToPiece(type, this.currentlyAtTarget(type, target))
         val (currentPerm, currentOrient) = targetToPiece(type, target)
         val (refPerm, refOrient) = this.solvedState.getValue(type)
 
-        // nasty perm - 1 hack
-        val possiblePermSpots = refPerm.indices.filter { refPerm[it] - 1 == currentPerm }
+        val possiblePermSpots = refPerm.indices.filter { refPerm[it] == refPerm[currentPerm] }
 
         return possiblePermSpots.map { pieceToTarget(type, it, (refOrient[it] + currentOrient) % type.orientations) }
     }
@@ -163,10 +160,6 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
 
     fun getMainBufferTarget(type: PieceType) = this.mainBuffers.getValue(type)
     fun getMainBufferPerm(type: PieceType) = targetToPerm(type, this.getMainBufferTarget(type))
-
-    // STATE MANIPULATION
-
-    protected fun getHypotheticalState(scramble: Algorithm) = scramblePuzzle(this.puzzleState.clone(), scramble, this.moveDefinitions)
 
     // CYCLE BUILDERS
 
@@ -241,8 +234,10 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
     }
 
     fun getAnalysis(scramble: Algorithm): BldAnalysis {
-        resetState(this.solvedState, this.defSolvedState)
-        this.applyScramble(scramble, true)
+        resetState(this.solvedState, this.loadSolvedState())
+        resetState(this.puzzleState, this.solvedState)
+
+        this.applyScramble(scramble)
 
         val reorient = this.getReorientationMoves().also { this.applyScramble(it) }
 
@@ -275,51 +270,50 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
         val lastTargetedPerm = targetToPerm(type, lastTarget)
 
         val currentlyInBuffer = this.currentlyAtTarget(type, lastTarget)
+        val bufferAdjacents = adjacentTargets(type, buffer)
 
-        val bufferSolved = currentlyInBuffer in adjacentTargets(type, buffer)
+        val bufferSolved = currentlyInBuffer in bufferAdjacents
         val lastCycleCompleted = targetedPerms.count { it == lastTargetedPerm } > 1
 
-        if (bufferSolved || lastCycleCompleted) {
-            val possNext = this.getBreakInTargetsAfter(type, buffer, lastTarget, previous)
+        // TODO mark buffer float?
+        val isBreakIn = bufferSolved || lastCycleCompleted
 
-            // TODO mark buffer float?
-            return possNext.find {
-                val alternativeSolved = this.targetCurrentlySolved(type, it)
-                val alternativeSuitable = targetToPerm(type, it) !in targetedPerms
+        val possNext = if (isBreakIn) this.getBreakInTargetsAfter(type, buffer, lastTarget, previous) else
+            this.getSolutionSpots(type, currentlyInBuffer).sortedBy { this.targetToLetter(type, it) } - bufferAdjacents
 
-                !alternativeSolved && alternativeSuitable
-            }
-        } else {
-            val possNext = this.getSolutionSpots(type, currentlyInBuffer)
+        val unsolvedTargets = possNext.filter { !this.targetCurrentlySolved(type, it) }
+        val notTargeted = unsolvedTargets.filter { targetToPerm(type, it) !in targetedPerms }
 
-            return possNext.find {
-                val alternativeSolved = this.targetCurrentlySolved(type, it)
-                val alternativeSuitable = buffer !in this.getSolutionSpots(type, it)
+        val possibleTargets = if (isBreakIn) notTargeted else notTargeted + unsolvedTargets
 
-                !alternativeSolved && (!avoidBreakIns || alternativeSuitable)
-            } ?: possNext.find { !this.targetCurrentlySolved(type, it) }
+        val preferrableTargets = possibleTargets.filter {
+            val alternativeFavorable = buffer !in this.getSolutionSpots(type, this.currentlyAtTarget(type, it))
+            isBreakIn || !avoidBreakIns || alternativeFavorable
         }
+
+        return preferrableTargets.firstOrNull() ?: possibleTargets.firstOrNull()
     }
 
     protected open fun getBreakInTargetsAfter(type: PieceType, buffer: Int, target: Int, targeted: List<Int>): List<Int> {
         val preSolved = type.numTargets.countingList().filter { this.targetCurrentlyPermuted(type, it) }
 
         if (this.algSource == null || !this.optimizeBreakIns.getValue(type)) {
-            return type.numTargets.countingList() - targeted - adjacentTargets(type, buffer) - preSolved
+            val selection = type.numTargets.countingList() - targeted - adjacentTargets(type, buffer) - preSolved
+            return selection.sortedBy { this.targetToLetter(type, it) }
         }
 
         return this.optimizer.optimizeBreakInTargetsAfter(target, type) - preSolved
     }
 
     protected fun getReorientationMoves() = when {
-        this.reorientMethod == "Fixed" -> this.bruteForceRotations.find { this.getHypotheticalState(it).deepEquals(this.reorientState, true) }
+        this.reorientMethod == "Fixed" -> this.bruteForceRotations.find { this.withAppliedScramble(it).deepEquals(this.reorientState, true) }
         this.reorientMethod == "Dynamic" -> this.bruteForceRotations.maxBy {
-            val rotatedState = this.getHypotheticalState(it)
+            val rotatedState = this.withAppliedScramble(it)
 
-            val solvedCenters = rotatedState.countEquals(this.solvedState)
+            val solvedCenters = rotatedState.countEquals(this.solvedState.filterKeys { pt -> pt in reorientState.keys })
             val solvedBadCenters = rotatedState.countEquals(this.reorientState)
 
-            2 * solvedCenters + 3 * solvedBadCenters // FIXME weighting?
+            2 * solvedCenters + 3 * solvedBadCenters
         }
         else -> SimpleAlg()
     } ?: SimpleAlg()
