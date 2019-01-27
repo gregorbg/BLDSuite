@@ -43,9 +43,6 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
     var algSource: AlgSource? = null
     val optimizer by lazy { BreakInOptimizer(this.algSource!!, reader, *this.pieceTypes.toTypedArray(), fullCache = false) }
 
-    val avoidBreakIns = this.pieceTypes.associateWith { true }
-    val optimizeBreakIns = this.pieceTypes.associateWith { true }
-
     private val bruteForceRotations by lazy {
         val reOrientations = this.moveDefinitions.keys.filter { it.plane.isRotation }.toSet().powerset().filter { it.size in 1..2 }
         val nonCancelling = reOrientations.map { SimpleAlg(it.toList()) }.toSet()
@@ -166,6 +163,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
     protected fun compileTargetChain(type: PieceType): List<Int> {
         val accumulate = mutableListOf<Int>()
 
+        // TODO mark/use buffer float?
         return generateSequence {
             this.getNextTarget(type, this.getMainBufferTarget(type), accumulate)?.also { accumulate.add(it) }
         }.toList()
@@ -262,42 +260,38 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
     }
 
     fun getNextTarget(type: PieceType, buffer: Int, previous: List<Int>): Int? {
-        val avoidBreakIns = this.avoidBreakIns.getValue(type)
-
-        val lastTarget = previous.lastOrNull() ?: buffer
-
+        val bufferAdjacency = this.getSolutionSpots(type, buffer).flatMap { adjacentTargets(type, it) }
         val targetedPerms = previous.map { targetToPerm(type, it) }
-        val lastTargetedPerm = targetToPerm(type, lastTarget)
 
-        val currentlyInBuffer = this.currentlyAtTarget(type, lastTarget)
-        val bufferAdjacents = adjacentTargets(type, buffer)
+        val cycleShift = listOf(this.getMainBufferTarget(type)) + previous
 
-        val bufferSolved = currentlyInBuffer in bufferAdjacents
-        val lastCycleCompleted = targetedPerms.count { it == lastTargetedPerm } > 1
-
-        // TODO mark buffer float?
-        val isBreakIn = bufferSolved || lastCycleCompleted
-
-        val possNext = if (isBreakIn) this.getBreakInTargetsAfter(type, buffer, lastTarget, previous) else
-            this.getSolutionSpots(type, currentlyInBuffer).sortedBy { this.targetToLetter(type, it) } - bufferAdjacents
-
-        val unsolvedTargets = possNext.filter { !this.targetCurrentlySolved(type, it) }
-        val notTargeted = unsolvedTargets.filter { targetToPerm(type, it) !in targetedPerms }
-
-        val possibleTargets = if (isBreakIn) notTargeted else notTargeted + unsolvedTargets
-
-        val preferrableTargets = possibleTargets.filter {
-            val alternativeFavorable = buffer !in this.getSolutionSpots(type, this.currentlyAtTarget(type, it))
-            isBreakIn || !avoidBreakIns || alternativeFavorable
+        val currentCycleStart = cycleShift.mapIndexed { i, t ->
+            this.currentlyAtTarget(type, t) in bufferAdjacency
+                    || targetedPerms.subList(0, i).count { it == targetToPerm(type, t) } > 1
         }
 
-        return preferrableTargets.firstOrNull() ?: possibleTargets.firstOrNull()
+        val nextTargetChoice = if (currentCycleStart.last()) {
+            this.getBreakInTargetsAfter(type, buffer, cycleShift.last(), previous)
+        } else {
+            this.getSolutionSpots(type, this.currentlyAtTarget(type, cycleShift.last()))
+                    .sortedBy { this.targetToLetter(type, it) }
+        }
+
+        val unsolvedTargets = nextTargetChoice.filter { !this.targetCurrentlySolved(type, it) }
+
+        val lastBreakPerm = currentCycleStart.indices.drop(1).lastOrNull { currentCycleStart[it - 1] }
+                ?.let { targetToPerm(type, cycleShift[it]) }?.takeUnless { targetedPerms.count { t -> t == it } > 1 }
+
+        val notTargeted = unsolvedTargets.filter { targetToPerm(type, it) !in (targetedPerms - listOfNotNull(lastBreakPerm)) }
+        val favorableTargets = notTargeted.filter { buffer !in this.getSolutionSpots(type, this.currentlyAtTarget(type, it)) }
+
+        return favorableTargets.firstOrNull() ?: notTargeted.firstOrNull()
     }
 
     protected open fun getBreakInTargetsAfter(type: PieceType, buffer: Int, target: Int, targeted: List<Int>): List<Int> {
         val preSolved = type.numTargets.countingList().filter { this.targetCurrentlyPermuted(type, it) }
 
-        if (this.algSource == null || !this.optimizeBreakIns.getValue(type)) {
+        if (this.algSource == null) {
             val selection = type.numTargets.countingList() - targeted - adjacentTargets(type, buffer) - preSolved
             return selection.sortedBy { this.targetToLetter(type, it) }
         }
@@ -306,9 +300,9 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
     }
 
     protected fun getReorientationMoves() = when {
-        this.reorientMethod == "Fixed" -> this.bruteForceRotations.find { this.withAppliedScramble(it).deepEquals(this.reorientState, true) }
+        this.reorientMethod == "Fixed" -> this.bruteForceRotations.find { this.hypotheticalScramble(it).deepEquals(this.reorientState, true) }
         this.reorientMethod == "Dynamic" -> this.bruteForceRotations.maxBy {
-            val rotatedState = this.withAppliedScramble(it)
+            val rotatedState = this.hypotheticalScramble(it)
 
             val solvedCenters = rotatedState.countEquals(this.solvedState.filterKeys { pt -> pt in reorientState.keys })
             val solvedBadCenters = rotatedState.countEquals(this.reorientState)

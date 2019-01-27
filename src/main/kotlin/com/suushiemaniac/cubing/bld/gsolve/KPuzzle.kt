@@ -66,7 +66,7 @@ open class KPuzzle(protected val reader: NotationReader, private val commandMap:
     }
 
     protected fun applyScramble(scramble: Algorithm) = scramblePuzzle(this.puzzleState, scramble, this.moveDefinitions)
-    protected fun withAppliedScramble(scramble: Algorithm) = scramblePuzzle(this.puzzleState.clone(), scramble, this.moveDefinitions)
+    protected fun hypotheticalScramble(scramble: Algorithm) = scramblePuzzle(this.puzzleState.clone(), scramble, this.moveDefinitions)
 
     companion object {
         fun groupByCommand(lines: List<String>): Map<String, Map<String, List<String>>> { // TODO beautify return format

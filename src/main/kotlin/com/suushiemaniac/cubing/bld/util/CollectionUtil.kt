@@ -22,8 +22,8 @@ object CollectionUtil {
         return list
     }
 
-    fun Int.countingList(): List<Int> {
-        return List(this) { it }
+    fun Int.countingList(offset: Int = 0): List<Int> {
+        return List(this) { it + offset }
     }
 
     fun <T> Collection<T>.findByMnemonic(mnemonic: String): List<T> {
