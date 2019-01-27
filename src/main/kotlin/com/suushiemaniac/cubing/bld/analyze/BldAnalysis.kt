@@ -8,31 +8,23 @@ import com.suushiemaniac.cubing.bld.gsolve.GPuzzle
 import com.suushiemaniac.cubing.bld.model.cycle.*
 import com.suushiemaniac.cubing.bld.model.PieceType
 import com.suushiemaniac.cubing.bld.model.AlgSource
-import com.suushiemaniac.cubing.bld.util.ArrayUtil.countingArray
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.filledArray
+import com.suushiemaniac.cubing.bld.util.CollectionUtil.countingList
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.randomOrNull
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.mnemonic
 
 import kotlin.math.max
 import kotlin.math.pow
 
-class BldAnalysis(private val origin: GPuzzle,
-                  val scramble: Algorithm,
-                  val orientationPreMoves: Algorithm, val solutionCycles: Map<PieceType, List<PieceCycle>>,
+class BldAnalysis(private val reader: NotationReader,
+                  val orientationPreMoves: Algorithm,
+                  val solutionCycles: Map<PieceType, List<PieceCycle>>,
+                  val mainBuffers: Map<PieceType, Int>,
                   val letterSchemes: Map<PieceType, Array<String>>,
                   val algSource: AlgSource? = null) {
-    val pieceTypes = this.solutionCycles.keys // FIXME iteration / solving order?
+    val pieceTypes = this.solutionCycles.keys
 
-    val breakInCount = this.pieceTypes.associateWith { 0 } // TODO derive! (difficult??)
-    val parities = this.pieceTypes.associateWith { false } // TODO derive! (easy??)
-
-    val prePermutedPieces = this.pieceTypes.associateWith { it.permutations.filledArray(false) } // TODO derive!
-    val preSolvedPieces = this.pieceTypes.associateWith { it.permutations.filledArray(false) } // TODO derive!
-    val misOrientedPieces = this.pieceTypes.associateWith { pt -> pt.orientations.filledArray { pt.permutations.filledArray(false) } } // TODO derive
-
-    val bufferFloats = this.pieceTypes.associateWith { mutableMapOf<Int, Int>() } // TODO pass or derive??
-
-    open fun groupMisOrients(misOrients: List<MisOrientCycle>): List<ComplexMisOrientCycle> {
+    open fun groupMisOrients(misOrients: List<MisOrientCycle>): List<ComplexMisOrientCycle> { // TODO incorporate into file format
         return misOrients
                 .map { it as MisOrientPiece }
                 .groupBy { it.orientation }
@@ -56,7 +48,7 @@ class BldAnalysis(private val origin: GPuzzle,
 
                 if (!mainBuffer) {
                     val lettering = this.getLetteringScheme(type)
-                    val position = lettering[cycle.buffer]
+                    val position = lettering[cycle.buffer] // FIXME posNotation
                     accu.append(if (nice) "(float $position) " else "($position)")
                 }
             }
@@ -90,7 +82,7 @@ class BldAnalysis(private val origin: GPuzzle,
         return accu.toString().trim()
     }
 
-    fun getSolutionAlgorithms(type: PieceType, reader: NotationReader, short: Boolean = false): List<Algorithm> {
+    fun getSolutionAlgorithms(type: PieceType, short: Boolean = false): List<Algorithm> {
         if (this.algSource == null || !this.algSource.isReadable) {
             return listOf()
         }
@@ -102,13 +94,13 @@ class BldAnalysis(private val origin: GPuzzle,
 
             val backup = if (short) "[]" else "Not found: $bufferSticker>$letterTargets"
 
-            this.algSource.getAlgorithms(type, reader, it).toList().randomOrNull()
+            this.algSource.getAlgorithms(type, this.reader, it).toList().randomOrNull()
                     ?: ImageStringReader().parse(backup)
         }
     }
 
-    fun getRawSolutionAlgorithm(type: PieceType, reader: NotationReader): Algorithm {
-        return this.getSolutionAlgorithms(type, reader).reduce(Algorithm::merge)
+    fun getRawSolutionAlgorithm(type: PieceType): Algorithm {
+        return this.getSolutionAlgorithms(type).reduce(Algorithm::merge)
     }
 
     fun getExplanationString(withRotation: Boolean = false, explain: (PieceType) -> String): String {
@@ -133,18 +125,50 @@ class BldAnalysis(private val origin: GPuzzle,
         return this.getExplanationString(withRotation) { this.getSolutionTargets(it, false) }
     }
 
-    fun getSolutionAlgorithms(reader: NotationReader, withRotation: Boolean = false): String {
-        return this.getExplanationString(withRotation) { this.getSolutionAlgorithms(it, reader).joinToString("\n", transform = Algorithm::toFormatString) }
+    fun getSolutionAlgorithms(withRotation: Boolean = false): String {
+        return this.getExplanationString(withRotation) { this.getSolutionAlgorithms(it).joinToString("\n", transform = Algorithm::toFormatString) }
     }
 
-    fun getRawSolutionAlgorithm(reader: NotationReader, withRotation: Boolean = false): Algorithm {
+    fun getRawSolutionAlgorithm(withRotation: Boolean = false): Algorithm {
         val basis = if (withRotation) this.getRotations() else SimpleAlg()
 
         val fullSolution = this.pieceTypes
-                .map { this.getRawSolutionAlgorithm(it, reader) }
+                .map { this.getRawSolutionAlgorithm(it) }
                 .reduce(Algorithm::merge)
 
         return basis.merge(fullSolution)
+    }
+
+    fun getMainBuffer(type: PieceType): Int {
+        return this.mainBuffers.getValue(type)
+    }
+
+    fun getMainBufferPerm(type: PieceType): Int {
+        return GPuzzle.targetToPerm(type, this.getMainBuffer(type))
+    }
+
+    fun getPrePermutedPieces(type: PieceType): List<Int> {
+        val relevantCycles = this.solutionCycles.getValue(type).filter { it !is MisOrientCycle }
+        val targetedPerms = relevantCycles.flatMap { it.getAllTargets() }.map { GPuzzle.targetToPerm(type, it) }
+
+        return type.permutations.countingList() - targetedPerms
+    }
+
+    fun getPreSolvedPieces(type: PieceType): List<Int> {
+        val targetedPerms = this.solutionCycles.getValue(type).flatMap { it.getAllTargets() }.map { GPuzzle.targetToPerm(type, it) }
+
+        return type.permutations.countingList() - targetedPerms
+    }
+
+    fun getMisOrientedPieces(type: PieceType, orientation: Int?): List<Int> {
+        if (orientation == null) {
+            return type.orientations.countingList().flatMap { this.getMisOrientedPieces(type, it) }
+        }
+
+        val relevantCycles = this.solutionCycles.getValue(type).filter { it is MisOrientCycle }.map { it as MisOrientCycle }
+        val relevantTargets = relevantCycles.filter { it.orientation == orientation }.flatMap { it.getAllTargets() }
+
+        return relevantTargets.map { GPuzzle.targetToPerm(type, it) }
     }
 
     fun getPrePermutedCount(type: PieceType? = null): Int {
@@ -152,8 +176,8 @@ class BldAnalysis(private val origin: GPuzzle,
             return this.pieceTypes.sumBy { this.getPrePermutedCount(it) }
         }
 
-        return this.prePermutedPieces.getValue(type)
-                .count { it } // FIXME count buffer?
+        return this.getPrePermutedPieces(type).toMutableList()
+                .also { it.remove(this.getMainBufferPerm(type)) }.size
     }
 
     fun getPreSolvedCount(type: PieceType? = null): Int {
@@ -161,8 +185,8 @@ class BldAnalysis(private val origin: GPuzzle,
             return this.pieceTypes.sumBy { this.getPreSolvedCount(it) }
         }
 
-        return this.preSolvedPieces.getValue(type)
-                .count { it } // FIXME count buffer?
+        return this.getPreSolvedPieces(type).toMutableList()
+                .also { it.remove(this.getMainBufferPerm(type)) }.size
     }
 
     fun getMisOrientedCount(type: PieceType? = null, orientation: Int? = null): Int {
@@ -170,13 +194,8 @@ class BldAnalysis(private val origin: GPuzzle,
             return this.pieceTypes.sumBy { this.getMisOrientedCount(it, orientation) }
         }
 
-        if (orientation == null) {
-            return type.orientations.countingArray()
-                    .sumBy { this.getMisOrientedCount(type, it) }
-        }
-
-        return this.misOrientedPieces.getValue(type)[orientation]
-                .count { it } // FIXME count buffer?
+        return this.getMisOrientedPieces(type, orientation).toMutableList()
+                .also { it.remove(this.getMainBufferPerm(type)) }.size
     }
 
     fun getLetteringScheme(type: PieceType): Array<String> {
@@ -248,7 +267,7 @@ class BldAnalysis(private val origin: GPuzzle,
             statString.append(sym.repeat(num))
         }
 
-        return statString.toString().trim() // FIXME alignment?
+        return statString.toString().trim()
     }
 
     fun getShortStats(type: PieceType? = null): String {
@@ -274,7 +293,10 @@ class BldAnalysis(private val origin: GPuzzle,
             return this.pieceTypes.sumBy(this::getBreakInCount)
         }
 
-        return this.breakInCount.getValue(type)
+        val relevantCycles = this.solutionCycles.getValue(type).filter { it !is MisOrientCycle }
+        val targetedPerms = relevantCycles.flatMap { it.getAllTargets() }.map { GPuzzle.targetToPerm(type, it) }
+
+        return targetedPerms.groupingBy { it }.eachCount().filterValues { it > 1 }.size
     }
 
     fun isSingleCycle(type: PieceType? = null): Boolean {
@@ -290,7 +312,7 @@ class BldAnalysis(private val origin: GPuzzle,
             return this.pieceTypes.any(this::hasParity)
         }
 
-        return this.parities.getOrElse(type) { false }
+        return this.solutionCycles.getValue(type).any { it is ParityCycle }
     }
 
     fun isBufferSolved(type: PieceType? = null, acceptMisOrient: Boolean = true): Boolean {
@@ -298,7 +320,7 @@ class BldAnalysis(private val origin: GPuzzle,
             return this.pieceTypes.any { this.isBufferSolved(it, acceptMisOrient) }
         }
 
-        val bufferSolved = this.preSolvedPieces.getValue(type)[0] // FIXME
+        val bufferSolved = this.getMainBufferPerm(type) in this.getPreSolvedPieces(type)
 
         return bufferSolved || (acceptMisOrient && this.isBufferSolvedAndMisOriented(type))
     }
@@ -308,7 +330,7 @@ class BldAnalysis(private val origin: GPuzzle,
             return this.pieceTypes.any { this.isBufferSolvedAndMisOriented(it) }
         }
 
-        return this.prePermutedPieces.getValue(type)[0] // FIXME
+        return this.getMainBufferPerm(type) in this.getPrePermutedPieces(type)
     }
 
     fun getBufferFloatNum(type: PieceType? = null): Int {
@@ -316,7 +338,7 @@ class BldAnalysis(private val origin: GPuzzle,
             return this.pieceTypes.sumBy(this::getBufferFloatNum)
         }
 
-        return this.bufferFloats.getValue(type).size
+        return 0 // TODO
     }
 
     fun hasBufferFloat(type: PieceType? = null): Boolean {
@@ -337,9 +359,9 @@ class BldAnalysis(private val origin: GPuzzle,
         return "${this.pieceTypes.mnemonic(type)}: ${this.getTargetCount(type)}${"'".repeat(this.getMisOrientedCount(type))}"
     }
 
-    fun matchesExecution(type: PieceType? = null, reader: NotationReader, filter: (Algorithm) -> Boolean): Boolean {
+    fun matchesExecution(type: PieceType? = null, filter: (Algorithm) -> Boolean): Boolean {
         if (type == null) {
-            return this.pieceTypes.all { this.matchesExecution(it, reader, filter) }
+            return this.pieceTypes.all { this.matchesExecution(it, filter) }
         }
 
         if (this.algSource == null) {
@@ -350,7 +372,7 @@ class BldAnalysis(private val origin: GPuzzle,
 
         return if (rawSolution == "Solved") true else this.solutionCycles.getValue(type)
                 .filter { it is ThreeCycle }
-                .all { this.algSource.getAlgorithms(type, reader, it).any(filter) }
+                .all { this.algSource.getAlgorithms(type, this.reader, it).any(filter) }
     }
 
     fun getRotations(): Algorithm {

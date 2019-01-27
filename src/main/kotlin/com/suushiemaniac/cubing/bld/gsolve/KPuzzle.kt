@@ -18,7 +18,9 @@ open class KPuzzle(protected val reader: NotationReader, private val commandMap:
 
     val pieceTypes = this.loadPieceTypes()
 
-    val solvedState get() = this.loadSolvedState()
+    val defSolvedState get() = this.loadSolvedState()
+
+    val solvedState = this.defSolvedState.toMutableMap()
     val puzzleState = this.solvedState.toMutableMap()
 
     val moveDefinitions = this.loadMoves()
@@ -51,7 +53,7 @@ open class KPuzzle(protected val reader: NotationReader, private val commandMap:
 
             val moveConfig = if (lnKey.startsWith("Composite")) {
                 val compositeDef = reader.parse(moveDef.joinToString(" "))
-                scramblePuzzle(this.solvedState, compositeDef, moveDefs)
+                scramblePuzzle(this.defSolvedState, compositeDef, moveDefs)
             } else {
                 loadKPosition(this.pieceTypes, moveDef)
             }
@@ -64,9 +66,7 @@ open class KPuzzle(protected val reader: NotationReader, private val commandMap:
 
     protected fun applyScramble(scramble: Algorithm, reset: Boolean = false) {
         if (reset) {
-            for ((pt, solvedConf) in this.solvedState) {
-                this.puzzleState[pt] = solvedConf.clone()
-            }
+            resetState(this.puzzleState, this.solvedState)
         }
 
         scramblePuzzle(this.puzzleState, scramble, this.moveDefinitions)
@@ -151,6 +151,12 @@ open class KPuzzle(protected val reader: NotationReader, private val commandMap:
             for (i in 0 until type.permutations) {
                 current.first[i] = permTargets[i]
                 current.second[i] = (orientTargets[i] + moveDef.second[i]) % type.orientations
+            }
+        }
+
+        fun resetState(toReset: MutableMap<PieceType, PieceState>, master: PuzzleState) {
+            for ((pt, solvedConf) in master) {
+                toReset[pt] = solvedConf.clone()
             }
         }
 

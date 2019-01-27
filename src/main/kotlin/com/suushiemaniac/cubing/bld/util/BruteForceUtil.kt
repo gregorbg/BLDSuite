@@ -24,7 +24,7 @@ object BruteForceUtil {
                             val nextPermute = prevPermute.toMutableList()
                             nextPermute.add(blockObj)
 
-                            return@generateSequence nextPermute // FIXME
+                            return@generateSequence nextPermute
                         }
                     }
                 }
@@ -38,14 +38,14 @@ object BruteForceUtil {
         return this.toList().permute(length, inclusive, mayRepeat)
     }
 
-    fun bruteForceAlg(analyze: GPuzzle, cycle: PieceCycle, type: PieceType, alphabet: Array<Move>, prune: Int = 21): List<Algorithm> {
+    fun bruteForceAlg(analyze: GPuzzle, cycles: List<PieceCycle>, type: PieceType, alphabet: Array<Move>, prune: Int = 21): List<Algorithm> {
         val accumulator = mutableListOf<Algorithm>()
 
         for (len in 1 until prune) {
             val moves = alphabet.permute(len, inclusive = false, mayRepeat = true).map { SimpleAlg(it) }
 
             for (alg in moves) {
-                if (analyze.solves(type, alg, cycle, false)) {
+                if (analyze.solves(type, alg, cycles, false)) {
                     accumulator.add(alg)
                 }
             }

@@ -1,5 +1,7 @@
 package com.suushiemaniac.cubing.bld.util
 
+import com.suushiemaniac.cubing.bld.util.CollectionUtil.zip
+
 object StringUtil {
     private val WS_REGEX = "\\s+".toRegex()
 
@@ -30,5 +32,20 @@ object StringUtil {
     fun String.contentSetEquals(that: String): Boolean {
         return this.toCharStrings().containsAll(that.toCharStrings())
                 && that.toCharStrings().containsAll(this.toCharStrings())
+    }
+
+    fun String.alignWhitespaces(delimiter: String = "\t"): String {
+        val lines = this.split("\n")
+        val cells = lines.map { it.split(delimiter) }
+
+        val lineLengths = cells.map { it.map(String::length) }
+
+        val maxLengthPerColumn = zip(*lineLengths.toTypedArray()).map { it.max() ?: 0 }
+
+        val paddedLines = cells.map {
+            it.mapIndexed { i, str -> str.padEnd(maxLengthPerColumn[i], ' ') }.joinToString("")
+        }
+
+        return paddedLines.joinToString("\n")
     }
 }

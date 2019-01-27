@@ -11,6 +11,17 @@ object CollectionUtil {
         return this[secRandom.nextInt(this.size)]
     }
 
+    fun <T> zip(vararg lists: List<T>): List<List<T>> {
+        val minSize = lists.map { it.size }.min() ?: return emptyList()
+        val list = mutableListOf<List<T>>()
+
+        for (i in 0 until minSize) {
+            list.add(lists.map { it[i] })
+        }
+
+        return list
+    }
+
     fun Int.countingList(): List<Int> {
         return List(this) { it }
     }

@@ -24,13 +24,13 @@ class Verificator(val analyzer: GPuzzle, val source: AlgSource, val reader: Nota
 
     fun verifySingleCase(type: PieceType, letterPair: PieceCycle): Map<String, Boolean> {
         return this.source.getRawAlgorithms(type, letterPair)
-                .associateWith { ParseUtils.isParseable(it, this.reader) && this.analyzer.solves(type, this.reader.parse(it), letterPair, true) }
+                .associateWith { ParseUtils.isParseable(it, this.reader) && this.analyzer.solves(type, this.reader.parse(it), listOf(letterPair), true) }
     }
 
     fun attemptFixFor(type: PieceType, letterPair: PieceCycle): Map<String, Algorithm> {
         return this.source.getRawAlgorithms(type, letterPair)
                 .filter { ParseUtils.isParseable(it, this.reader) }
-                .filter { !this.analyzer.solves(type, this.reader.parse(it), letterPair, true) }
+                .filter { !this.analyzer.solves(type, this.reader.parse(it), listOf(letterPair), true) }
                 .associateWith { this.fixAlgorithm(it, type, letterPair) }
                 .denullify()
     }
@@ -39,7 +39,7 @@ class Verificator(val analyzer: GPuzzle, val source: AlgSource, val reader: Nota
         val alg = this.reader.parse(rawAlg)
 
         return this.computePossibleReparations(alg)
-                .firstOrNull { this.analyzer.solves(type, it, letterPair, true) }
+                .firstOrNull { this.analyzer.solves(type, it, listOf(letterPair), true) }
     }
 
     protected fun computePossibleReparations(alg: Algorithm): List<Algorithm> {
