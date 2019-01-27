@@ -3,16 +3,8 @@ package com.suushiemaniac.cubing.bld.util
 object StringUtil {
     private val WS_REGEX = "\\s+".toRegex()
 
-    fun String.containsAny(containPoss: Iterable<String>): Boolean {
-        return containPoss.any { this.contains(it) }
-    }
-
-    fun String.containsAll(containOblig: Iterable<String>): Boolean {
-        return containOblig.all { this.contains(it) }
-    }
-
-    fun String.toCharStrings(): Iterable<String> {
-        return this.toCharArray().map { c -> c.toString() }
+    fun String.toCharStrings(): List<String> {
+        return this.toCharArray().map(Char::toString)
     }
 
     fun String.guessRegExpRange(): String {
@@ -27,10 +19,6 @@ object StringUtil {
         return "[" + this.first() + "-" + this.last() + "]"
     }
 
-    fun String.charCount(c: Char): Int {
-        return this.count { it == c }
-    }
-
     fun String.repeatWithGap(times: Int, gap: String = " "): String {
         return List(times) { this }.joinToString(gap)
     }
@@ -40,8 +28,7 @@ object StringUtil {
     }
 
     fun String.contentSetEquals(that: String): Boolean {
-        return this.length == that.length
-                && this.containsAll(that.toCharStrings())
-                && that.containsAll(this.toCharStrings())
+        return this.toCharStrings().containsAll(that.toCharStrings())
+                && that.toCharStrings().containsAll(this.toCharStrings())
     }
 }

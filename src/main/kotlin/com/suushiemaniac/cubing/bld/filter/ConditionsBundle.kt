@@ -1,16 +1,16 @@
 package com.suushiemaniac.cubing.bld.filter
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
+import com.suushiemaniac.cubing.alglib.lang.NotationReader
 import com.suushiemaniac.cubing.bld.analyze.BldAnalysis
 import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition
 import com.suushiemaniac.cubing.bld.model.cycle.ThreeCycle
-import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
-import com.suushiemaniac.cubing.bld.model.source.AlgSource
-import com.suushiemaniac.cubing.bld.util.SpeffzUtil
-import com.suushiemaniac.cubing.bld.util.BruteForceUtil.permuteStr
+import com.suushiemaniac.cubing.bld.model.PieceType
+import com.suushiemaniac.cubing.bld.model.AlgSource
 import com.suushiemaniac.cubing.bld.util.StringUtil.guessRegExpRange
 import com.suushiemaniac.cubing.bld.util.StringUtil.toCharStrings
+import com.suushiemaniac.cubing.bld.util.BruteForceUtil.permute
 
 class ConditionsBundle(val pieceType: PieceType) {
     var targets: IntCondition = IntCondition.ANY()
@@ -47,7 +47,7 @@ class ConditionsBundle(val pieceType: PieceType) {
     protected var statisticalPredicate: (BldAnalysis) -> Boolean = { true }
 
     val statString: String
-        get() = this.pieceType.mnemonic + ": " + (if (this.parity.positive) "_" else "") +
+        get() = this.pieceType.humanName + ": " + (if (this.parity.positive) "_" else "") +
                 (if (this.parity.isImportant) "! " else "? ") +
                 this.targets.toString() +
                 " " +
@@ -62,7 +62,7 @@ class ConditionsBundle(val pieceType: PieceType) {
     private fun balanceTargets() {
         this.targets.capMin(0)
         // C=10 E=16 W=34 XC=34 TC=34
-        this.targets.capMax(this.pieceType.numPiecesNoBuffer / 2 * 3 + this.pieceType.numPiecesNoBuffer % 2)
+        this.targets.capMax(this.pieceType.maxTargets)
 
         // pre-solved
         // mis-orient
@@ -71,9 +71,9 @@ class ConditionsBundle(val pieceType: PieceType) {
 
     private fun balanceBreakIns() {
         // C=7 E=11 W=23 XC=23 TC=23
-        this.breakIns.capMin(Math.max(if (this.bufferSolved.negative) 1 else 0, this.targets.getMin() - this.pieceType.numPiecesNoBuffer))
+        this.breakIns.capMin(Math.max(if (this.bufferSolved.negative) 1 else 0, this.targets.getMin() - this.pieceType.permutationsNoBuffer))
         // C=3 E=5 W=11 XC=11 TC=11
-        this.breakIns.capMax(this.pieceType.numPiecesNoBuffer / 2)
+        this.breakIns.capMax(this.pieceType.permutationsNoBuffer / 2)
 
         // targets
     }
@@ -90,16 +90,16 @@ class ConditionsBundle(val pieceType: PieceType) {
 
     private fun balanceSolvedMisOriented() {
         // C=7 E=11 W=23 XC=23 TC=23
-        val leftOverMin = Math.max(0, this.pieceType.numPiecesNoBuffer + this.breakIns.getMax() - this.targets.getMax())
-        val leftOverMax = Math.min(this.pieceType.numPiecesNoBuffer, this.pieceType.numPiecesNoBuffer + this.breakIns.getMin() - this.targets.getMin())
+        val leftOverMin = Math.max(0, this.pieceType.permutationsNoBuffer + this.breakIns.getMax() - this.targets.getMax())
+        val leftOverMax = Math.min(this.pieceType.permutationsNoBuffer, this.pieceType.permutationsNoBuffer + this.breakIns.getMin() - this.targets.getMin())
 
         this.preSolved.capMin(0)
         this.misOriented.capMin(0)
 
         // C=8 E=12 W=? XC=? TC=?
-        this.preSolved.capMax(pieceType.numPieces)
+        this.preSolved.capMax(pieceType.permutations)
         // C=8 E=12 W=? XC=? TC=?
-        this.misOriented.capMax(pieceType.numPieces)
+        this.misOriented.capMax(pieceType.permutations)
 
         val sumMin = this.preSolved.getMin() + this.misOriented.getMin()
         val sumMax = this.preSolved.getMax() + this.misOriented.getMax()
@@ -160,15 +160,17 @@ class ConditionsBundle(val pieceType: PieceType) {
         this.letterPairRegex = kleeneLP + joined + kleeneLP
     }
 
-    fun setPredicateRegex(algSource: AlgSource, filter: (Algorithm) -> Boolean) {
+    fun setPredicateRegex(algSource: AlgSource, reader: NotationReader, filter: (Algorithm) -> Boolean) {
         val matches = sortedSetOf<String>()
-        val possPairs = SpeffzUtil.FULL_SPEFFZ.permuteStr(2, false, false)
+        val alphabet = ('A'..'Z').map { it.toString() }.toList() // FIXME better permutation of actual targets instead of implicit derivation through lettering
+
+        val possPairs = alphabet.permute(2, inclusive = false, mayRepeat = false).map { it.joinToString("") }
 
         for (pair in possPairs) {
-            val targetIndices = pair.toCharStrings().map { SpeffzUtil.FULL_SPEFFZ.indexOf(it) }
+            val targetIndices = pair.toCharStrings().map { alphabet.indexOf(it) }
             val case = ThreeCycle(0, targetIndices[0], targetIndices[1]) // FIXME buffer
 
-            matches.addAll(algSource.getAlgorithms(this.pieceType, case)
+            matches.addAll(algSource.getAlgorithms(this.pieceType, reader, case)
                     .filter(filter)
                     .map { pair })
         }

@@ -1,8 +1,8 @@
-package com.suushiemaniac.cubing.bld.model.source
+package com.suushiemaniac.cubing.bld.model
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
+import com.suushiemaniac.cubing.alglib.lang.NotationReader
 import com.suushiemaniac.cubing.bld.model.cycle.PieceCycle
-import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
 
 import java.net.URI
 
@@ -11,29 +11,29 @@ interface AlgSource {
 
     val isWritable: Boolean
 
-    val sourceURI: URI
+    val uri: URI
 
     fun mayRead(): Boolean
 
-    fun getAlgorithms(type: PieceType, case: PieceCycle): Set<Algorithm> {
-        return this.getRawAlgorithms(type, case).map(type.reader::parse).toSet()
+    fun mayWrite(): Boolean
+
+    fun mayUpdate(): Boolean
+
+    fun mayDelete(): Boolean
+
+    fun getAlgorithms(type: PieceType, reader: NotationReader, case: PieceCycle): Set<Algorithm> {
+        return this.getRawAlgorithms(type, case).map(reader::parse).toSet()
     }
 
     fun getRawAlgorithms(type: PieceType, case: PieceCycle): Set<String>
 
-    fun mayWrite(): Boolean
-
     fun addAlgorithm(type: PieceType, case: PieceCycle, algorithm: Algorithm): Boolean
 
     fun addAlgorithms(type: PieceType, case: PieceCycle, algorithms: Set<Algorithm>): Boolean {
-        return algorithms.fold(true) { acc, alg -> acc && this.addAlgorithm(type, case, alg) }
+        return algorithms.all { this.addAlgorithm(type, case, it) }
     }
 
-    fun mayUpdate(): Boolean
-
     fun updateAlgorithm(type: PieceType, oldAlg: Algorithm, newAlg: Algorithm): Boolean
-
-    fun mayDelete(): Boolean
 
     fun deleteAlgorithm(type: PieceType, algorithm: Algorithm): Boolean
 

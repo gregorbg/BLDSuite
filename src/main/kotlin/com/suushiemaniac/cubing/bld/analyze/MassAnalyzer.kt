@@ -1,17 +1,14 @@
 package com.suushiemaniac.cubing.bld.analyze
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
-import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
-import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.TwistyPuzzle
+import com.suushiemaniac.cubing.bld.gsolve.GPuzzle
+import com.suushiemaniac.cubing.bld.model.PieceType
 
 import com.suushiemaniac.cubing.bld.util.MapUtil.increment
 import com.suushiemaniac.cubing.bld.util.MapUtil.sortedPrint
 import com.suushiemaniac.cubing.bld.util.MapUtil.freqAverage
-import java.io.File
 
-class MassAnalyzer(val model: TwistyPuzzle, gConfig: File) {
-    val analyzer = model.gPuzzle(gConfig)
-
+class MassAnalyzer(val analyzer: GPuzzle, val scrambler: () -> Algorithm) {
     fun analyzeProperties(scrambles: List<Algorithm>) {
         val parityCounts = mutableMapOf<PieceType, Int>()
         val solvedBufferCounts = mutableMapOf<PieceType, Int>()
@@ -44,7 +41,7 @@ class MassAnalyzer(val model: TwistyPuzzle, gConfig: File) {
 
         println("Total scrambles: $numCubes")
 
-        for (type in this.model.pieceTypes) {
+        for (type in this.analyzer.pieceTypes) {
             println()
             println("Parity: " + parityCounts[type])
             println("Average: " + parityCounts.getValue(type) / numCubes.toFloat())
@@ -143,6 +140,6 @@ class MassAnalyzer(val model: TwistyPuzzle, gConfig: File) {
     }
 
     fun generateRandom(numCubes: Int): List<Algorithm> {
-        return List(numCubes) { this.model.randomScramble }
+        return List(numCubes) { this.scrambler() }
     }
 }

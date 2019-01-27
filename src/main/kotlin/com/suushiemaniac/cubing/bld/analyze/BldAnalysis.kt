@@ -3,20 +3,20 @@ package com.suushiemaniac.cubing.bld.analyze
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg
 import com.suushiemaniac.cubing.alglib.lang.ImageStringReader
+import com.suushiemaniac.cubing.alglib.lang.NotationReader
 import com.suushiemaniac.cubing.bld.gsolve.GPuzzle
 import com.suushiemaniac.cubing.bld.model.cycle.*
-import com.suushiemaniac.cubing.bld.model.enumeration.piece.LetterPairImage
-import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
-import com.suushiemaniac.cubing.bld.model.source.AlgSource
-import com.suushiemaniac.cubing.bld.util.SpeffzUtil.targetToSticker
+import com.suushiemaniac.cubing.bld.model.PieceType
+import com.suushiemaniac.cubing.bld.model.AlgSource
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.countingArray
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.filledArray
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.randomOrNull
+import com.suushiemaniac.cubing.bld.util.CollectionUtil.mnemonic
 
 import kotlin.math.max
 import kotlin.math.pow
 
-class BldAnalysis(origin: GPuzzle,
+class BldAnalysis(private val origin: GPuzzle,
                   val scramble: Algorithm,
                   val orientationPreMoves: Algorithm, val solutionCycles: Map<PieceType, List<PieceCycle>>,
                   val letterSchemes: Map<PieceType, Array<String>>,
@@ -26,9 +26,9 @@ class BldAnalysis(origin: GPuzzle,
     val breakInCount = this.pieceTypes.associateWith { 0 } // TODO derive! (difficult??)
     val parities = this.pieceTypes.associateWith { false } // TODO derive! (easy??)
 
-    val prePermutedPieces = this.pieceTypes.associateWith { it.numPieces.filledArray(false) } // TODO derive!
-    val preSolvedPieces = this.pieceTypes.associateWith { it.numPieces.filledArray(false) } // TODO derive!
-    val misOrientedPieces = this.pieceTypes.associateWith { pt -> pt.targetsPerPiece.filledArray { pt.numPieces.filledArray(false) } } // TODO derive
+    val prePermutedPieces = this.pieceTypes.associateWith { it.permutations.filledArray(false) } // TODO derive!
+    val preSolvedPieces = this.pieceTypes.associateWith { it.permutations.filledArray(false) } // TODO derive!
+    val misOrientedPieces = this.pieceTypes.associateWith { pt -> pt.orientations.filledArray { pt.permutations.filledArray(false) } } // TODO derive
 
     val bufferFloats = this.pieceTypes.associateWith { mutableMapOf<Int, Int>() } // TODO pass or derive??
 
@@ -55,7 +55,8 @@ class BldAnalysis(origin: GPuzzle,
                 bufferAccu.add(cycle.buffer)
 
                 if (!mainBuffer) {
-                    val position = cycle.buffer.targetToSticker(type)
+                    val lettering = this.getLetteringScheme(type)
+                    val position = lettering[cycle.buffer]
                     accu.append(if (nice) "(float $position) " else "($position)")
                 }
             }
@@ -89,7 +90,7 @@ class BldAnalysis(origin: GPuzzle,
         return accu.toString().trim()
     }
 
-    fun getSolutionAlgorithms(type: PieceType, short: Boolean = false): List<Algorithm> {
+    fun getSolutionAlgorithms(type: PieceType, reader: NotationReader, short: Boolean = false): List<Algorithm> {
         if (this.algSource == null || !this.algSource.isReadable) {
             return listOf()
         }
@@ -97,17 +98,17 @@ class BldAnalysis(origin: GPuzzle,
         return this.solutionCycles.getValue(type).map {
             val lettering = this.getLetteringScheme(type)
             val letterTargets = it.getAllTargets().joinToString("-") { t -> lettering[t] }
-            val bufferSticker = it.buffer.targetToSticker(type)
+            val bufferSticker = lettering[it.buffer] // FIXME posNotation
 
             val backup = if (short) "[]" else "Not found: $bufferSticker>$letterTargets"
 
-            this.algSource.getAlgorithms(type, it).toList().randomOrNull()
+            this.algSource.getAlgorithms(type, reader, it).toList().randomOrNull()
                     ?: ImageStringReader().parse(backup)
         }
     }
 
-    fun getRawSolutionAlgorithm(type: PieceType): Algorithm {
-        return this.getSolutionAlgorithms(type).reduce(Algorithm::merge)
+    fun getRawSolutionAlgorithm(type: PieceType, reader: NotationReader): Algorithm {
+        return this.getSolutionAlgorithms(type, reader).reduce(Algorithm::merge)
     }
 
     fun getExplanationString(withRotation: Boolean = false, explain: (PieceType) -> String): String {
@@ -132,15 +133,15 @@ class BldAnalysis(origin: GPuzzle,
         return this.getExplanationString(withRotation) { this.getSolutionTargets(it, false) }
     }
 
-    fun getSolutionAlgorithms(withRotation: Boolean = false): String {
-        return this.getExplanationString(withRotation) { this.getSolutionAlgorithms(it).joinToString("\n", transform = Algorithm::toFormatString) }
+    fun getSolutionAlgorithms(reader: NotationReader, withRotation: Boolean = false): String {
+        return this.getExplanationString(withRotation) { this.getSolutionAlgorithms(it, reader).joinToString("\n", transform = Algorithm::toFormatString) }
     }
 
-    fun getRawSolutionAlgorithm(withRotation: Boolean = false): Algorithm {
+    fun getRawSolutionAlgorithm(reader: NotationReader, withRotation: Boolean = false): Algorithm {
         val basis = if (withRotation) this.getRotations() else SimpleAlg()
 
         val fullSolution = this.pieceTypes
-                .map(this::getRawSolutionAlgorithm)
+                .map { this.getRawSolutionAlgorithm(it, reader) }
                 .reduce(Algorithm::merge)
 
         return basis.merge(fullSolution)
@@ -170,7 +171,7 @@ class BldAnalysis(origin: GPuzzle,
         }
 
         if (orientation == null) {
-            return type.targetsPerPiece.countingArray()
+            return type.orientations.countingArray()
                     .sumBy { this.getMisOrientedCount(type, it) }
         }
 
@@ -179,30 +180,25 @@ class BldAnalysis(origin: GPuzzle,
     }
 
     fun getLetteringScheme(type: PieceType): Array<String> {
-        return if (type is LetterPairImage) {
-            this.pieceTypes
-                    .flatMap { this.getLetteringScheme(it).asIterable() }
-                    .toSortedSet()
-                    .toTypedArray()
-        } else this.letterSchemes.getValue(type).copyOf()
+        return this.letterSchemes.getValue(type).copyOf()
     }
 
     fun getScrambleScore(type: PieceType? = null): Float { // TODO refine
         if (type == null) {
-            val score = this.pieceTypes.sumByDouble { it.numPieces * this.getScrambleScore(it).toDouble() }
-            val weight = this.pieceTypes.sumBy(PieceType::numPieces)
+            val score = this.pieceTypes.sumByDouble { it.permutations * this.getScrambleScore(it).toDouble() }
+            val weight = this.pieceTypes.sumBy(PieceType::permutations)
 
             return score.toFloat() / weight
         }
 
         val scoreBase = mutableListOf<Float>()
 
-        scoreBase.add(type.numPieces.toFloat().pow(2))
+        scoreBase.add(type.permutations.toFloat().pow(2))
 
         scoreBase.add(-this.getTargetCount(type).toFloat())
         scoreBase.add(this.getPreSolvedCount(type).toFloat())
-        scoreBase.add(-(this.getMisOrientedCount(type) * type.targetsPerPiece).toFloat())
-        scoreBase.add(-(this.getBreakInCount(type) * type.numPiecesNoBuffer).toFloat())
+        scoreBase.add(-(this.getMisOrientedCount(type) * type.orientations).toFloat())
+        scoreBase.add(-(this.getBreakInCount(type) * type.orientations).toFloat())
 
         val scoreScale = mutableListOf<Float>()
 
@@ -224,7 +220,7 @@ class BldAnalysis(origin: GPuzzle,
                     .joinToString(" | ", transform = this::getStatString)
         }
 
-        val statString = StringBuilder("${type.mnemonic}: ")
+        val statString = StringBuilder("${this.pieceTypes.mnemonic(type)}: ")
 
         if (this.hasParity(type)) {
             statString.append("_")
@@ -338,12 +334,12 @@ class BldAnalysis(origin: GPuzzle,
                     .joinToString(" / ") { this.getNoahtation(it) }
         }
 
-        return "${type.mnemonic}: ${this.getTargetCount(type)}${"'".repeat(this.getMisOrientedCount(type))}"
+        return "${this.pieceTypes.mnemonic(type)}: ${this.getTargetCount(type)}${"'".repeat(this.getMisOrientedCount(type))}"
     }
 
-    fun matchesExecution(type: PieceType? = null, filter: (Algorithm) -> Boolean): Boolean {
+    fun matchesExecution(type: PieceType? = null, reader: NotationReader, filter: (Algorithm) -> Boolean): Boolean {
         if (type == null) {
-            return this.pieceTypes.all { this.matchesExecution(it, filter) }
+            return this.pieceTypes.all { this.matchesExecution(it, reader, filter) }
         }
 
         if (this.algSource == null) {
@@ -354,7 +350,7 @@ class BldAnalysis(origin: GPuzzle,
 
         return if (rawSolution == "Solved") true else this.solutionCycles.getValue(type)
                 .filter { it is ThreeCycle }
-                .all { this.algSource.getAlgorithms(type, it).any(filter) }
+                .all { this.algSource.getAlgorithms(type, reader, it).any(filter) }
     }
 
     fun getRotations(): Algorithm {

@@ -1,6 +1,6 @@
 package com.suushiemaniac.cubing.bld.util
 
-import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
+import com.suushiemaniac.cubing.bld.model.PieceType
 
 typealias PieceState = Pair<Array<Int>, Array<Int>>
 typealias PuzzleState = Map<PieceType, PieceState>

@@ -1,10 +1,6 @@
 package com.suushiemaniac.cubing.bld.util
 
 object ArrayUtil {
-    fun <S, T> Array<T>.applyIndex(element: T, dest: Array<S>): S {
-        return dest[this.indexOf(element)]
-    }
-
     fun <T> Array<T>.swap(from: Int, to: Int) {
         this[to] = this[from].also { this[from] = this[to] }
     }

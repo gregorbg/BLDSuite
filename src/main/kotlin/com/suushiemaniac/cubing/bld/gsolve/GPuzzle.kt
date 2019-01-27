@@ -2,17 +2,19 @@ package com.suushiemaniac.cubing.bld.gsolve
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg
+import com.suushiemaniac.cubing.alglib.lang.NotationReader
 import com.suushiemaniac.cubing.bld.analyze.BldAnalysis
 import com.suushiemaniac.cubing.bld.model.cycle.MisOrientPiece
 import com.suushiemaniac.cubing.bld.model.cycle.ParityCycle
 import com.suushiemaniac.cubing.bld.model.cycle.PieceCycle
 import com.suushiemaniac.cubing.bld.model.cycle.ThreeCycle
-import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
-import com.suushiemaniac.cubing.bld.model.source.AlgSource
+import com.suushiemaniac.cubing.bld.model.PieceType
+import com.suushiemaniac.cubing.bld.model.AlgSource
 import com.suushiemaniac.cubing.bld.optim.BreakInOptimizer
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.powerset
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.permutations
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.countingList
+import com.suushiemaniac.cubing.bld.util.CollectionUtil.topologicalSort
 import com.suushiemaniac.cubing.bld.util.StringUtil.splitAtWhitespace
 import com.suushiemaniac.cubing.bld.util.MathUtil.pMod
 import com.suushiemaniac.cubing.bld.util.PuzzleState
@@ -22,9 +24,9 @@ import com.suushiemaniac.cubing.bld.util.deepEquals
 
 import java.io.File
 
-open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private val commandMap: Map<String, Map<String, List<String>>>) : KPuzzle(kCommandMap) {
-    constructor(kCommandMap: Map<String, Map<String, List<String>>>, bldFile: File) : this(kCommandMap, groupByCommand(bldFile.readLines()))
-    constructor(defFile: File, bldFile: File) : this(groupByCommand(defFile.readLines()), groupByCommand(bldFile.readLines()))
+open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, List<String>>>, private val commandMap: Map<String, Map<String, List<String>>>) : KPuzzle(reader, kCommandMap) {
+    constructor(reader: NotationReader, kCommandMap: Map<String, Map<String, List<String>>>, bldFile: File) : this(reader, kCommandMap, groupByCommand(bldFile.readLines()))
+    constructor(reader: NotationReader, defFile: File, bldFile: File) : this(reader, groupByCommand(defFile.readLines()), groupByCommand(bldFile.readLines()))
 
     val letterSchemes = this.loadLetterSchemes()
 
@@ -35,8 +37,14 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
 
     val misOrientMethod = this.loadMisOrientMethod()
 
+    val parityDependents = this.loadParityDependents()
+    val parityDependencyFixes = this.loadParityDependencyFixes()
+
+    val parityFirstPieceTypes = this.loadParityFirstPieceTypes()
+    val executionPieceTypes = this.loadExecutionPieceTypes()
+
     var algSource: AlgSource? = null
-    val optimizer by lazy { BreakInOptimizer(this.algSource!!, *this.pieceTypes.toTypedArray(), fullCache = false) }
+    val optimizer by lazy { BreakInOptimizer(this.algSource!!, reader, *this.pieceTypes.toTypedArray(), fullCache = false) }
 
     val avoidBreakIns = this.pieceTypes.associateWith { true }
     val optimizeBreakIns = this.pieceTypes.associateWith { true }
@@ -73,7 +81,8 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
                 val bufferOrient = defScheme.last().toInt()
                 val bufferPerm = defScheme.dropLast(1).last().toInt()
 
-                collectionMap[pieceType] = this.pieceToTarget(pieceType, bufferPerm - 1, bufferOrient) // FIXME nasty perm - 1 hack
+                // FIXME nasty perm - 1 hack
+                collectionMap[pieceType] = this.pieceToTarget(pieceType, bufferPerm - 1, bufferOrient)
             }
         }
 
@@ -94,6 +103,34 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
         return this.commandMap.getValue("MisOrient").keys.first().splitAtWhitespace().last()
     }
 
+    fun loadParityDependents(): Map<PieceType, PieceType> {
+        val dependentHeaders = this.commandMap["ParityDependency"]?.keys ?: emptySet()
+
+        return dependentHeaders.map { it.splitAtWhitespace() }.map { this.findPieceTypeByName(it[1]) to this.findPieceTypeByName(it[2]) }.toMap()
+    }
+
+    fun loadParityDependencyFixes(): Map<PieceType, PuzzleState> {
+        val dependencyFixDescriptions = this.commandMap["ParityDependency"] ?: emptyMap()
+        val dependencyFixes = dependencyFixDescriptions.mapKeys { this.findPieceTypeByName(it.key.splitAtWhitespace()[1]) }
+
+        return dependencyFixes.mapValues { it.value.toMutableList().apply { this.add(0, it.key.name) } }
+                .mapValues { loadKPosition(this.pieceTypes, it.value) }
+    }
+
+    fun loadParityFirstPieceTypes(): List<PieceType> {
+        return this.commandMap["ParityFirst"]?.let {
+            it.keys.first().splitAtWhitespace().drop(1).map { st -> this.findPieceTypeByName(st) }
+        } ?: emptyList()
+    }
+
+    fun loadExecutionPieceTypes(): List<PieceType> {
+        return this.commandMap.getValue("Execution").keys.first().splitAtWhitespace().drop(1).map { this.findPieceTypeByName(it) }
+    }
+
+    private fun findPieceTypeByName(name: String): PieceType {
+        return this.pieceTypes.find { it.name == name }!!
+    }
+
     // CONVERSION METHODS
 
     fun pieceToTarget(type: PieceType, perm: Int, orient: Int) = (perm * type.orientations) + orient
@@ -108,7 +145,7 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
 
     // K-STYLE METHODS
 
-    protected fun currentlyAtTarget(type: PieceType, target: Int): Int { // FIXME is this working?
+    protected fun currentlyAtTarget(type: PieceType, target: Int): Int {
         val (lookupPerm, lookupOrient) = this.targetToPiece(type, target)
         val (statePerm, stateOrient) = this.puzzleState.getValue(type)
 
@@ -116,7 +153,7 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
         return this.pieceToTarget(type, statePerm[lookupPerm] - 1, (lookupOrient - stateOrient[lookupPerm]) pMod type.orientations)
     }
 
-    protected fun getSolutionSpots(type: PieceType, target: Int): List<Int> { // FIXME is this working?
+    protected fun getSolutionSpots(type: PieceType, target: Int): List<Int> {
         //val (currentPerm, currentOrient) = this.targetToPiece(type, this.currentlyAtTarget(type, target))
         val (currentPerm, currentOrient) = this.targetToPiece(type, target)
         val (refPerm, refOrient) = this.solvedState.getValue(type)
@@ -128,6 +165,11 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
     }
 
     protected fun targetCurrentlySolved(type: PieceType, target: Int) = target in this.getSolutionSpots(type, this.currentlyAtTarget(type, target))
+    protected fun targetCurrentlyPermuted(type: PieceType, target: Int) = target in this.getSolutionSpots(type, this.currentlyAtTarget(type, target))
+            .map { this.targetToPerm(type, it) }
+            .flatMap { this.permToTargets(type, it) }
+
+    protected fun currentPermOrientation(type: PieceType, perm: Int) = this.puzzleState.getValue(type).second[perm]
 
     // BUFFER HELPERS
 
@@ -142,31 +184,34 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
 
     // CYCLE BUILDERS
 
-    protected fun compileTargetChain(type: PieceType): List<Int> { // TODO beautify
-        val compiled = mutableListOf<Int>()
+    protected fun compileTargetChain(type: PieceType): List<Int> {
+        val accumulate = mutableListOf<Int>()
 
-        do {
-            val next = this.getNextTarget(type, *compiled.toIntArray())
-
-            if (next != null) {
-                compiled.add(next)
-            }
-        } while (next != null)
-
-        return compiled
+        return generateSequence {
+            this.getNextTarget(type, accumulate)?.also { accumulate.add(it) }
+        }.toList()
     }
 
     protected fun compileMisOrientedPieces(type: PieceType, orientation: Int): List<Int> {
-        return emptyList() // FIXME
+        val prePermuted = type.numTargets.countingList().filter { this.targetCurrentlyPermuted(type, it) }.map { this.targetToPerm(type, it) }.distinct()
+        val preSolved = type.numTargets.countingList().filter { this.targetCurrentlySolved(type, it) }.map { this.targetToPerm(type, it) }.distinct()
+
+        val misOriented = prePermuted - preSolved - this.getMainBufferPerm(type)
+
+        return misOriented.filter { this.currentPermOrientation(type, it) == orientation }
     }
 
     protected open fun compilePermuteSolutionCycles(type: PieceType): List<PieceCycle> {
-        val targets = this.compileTargetChain(type) // TODO allow for buffer floating?
+        val targets = this.compileTargetChain(type)
         val mainBuffer = this.getMainBufferTarget(type)
 
         val cycles = mutableListOf<PieceCycle>()
 
-        for (c in targets.chunked(2)) { // TODO allow for different cycle lengths?
+        val chunks = if (this.parityFirstPieceTypes.contains(type))
+            targets.reversed().chunked(2).reversed().map { it.reversed() } else
+            targets.chunked(2)
+
+        for (c in chunks) { // TODO allow for different cycle lengths? (M2/OP cycle length 1)
             if (c.size == 2) {
                 cycles.add(ThreeCycle(mainBuffer, c[0], c[1]))
             } else {
@@ -177,7 +222,7 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
         return cycles
     }
 
-    fun compileSolutionCycles(type: PieceType): List<PieceCycle> { // TODO!!
+    fun compileSolutionCycles(type: PieceType): List<PieceCycle> {
         val mainBuffer = this.getMainBufferTarget(type)
 
         val cycles = mutableListOf<PieceCycle>()
@@ -192,11 +237,11 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
                         val (perm, orient) = this.targetToPiece(type, piece)
                         val next = this.pieceToTarget(type, perm, (orient + i) % type.orientations)
 
-                        cycles.add(ThreeCycle(mainBuffer, piece, next))
+                        cycles += ThreeCycle(mainBuffer, piece, next)
                     }
                 }
                 "Compound" ->
-                    cycles.addAll(misOrients.map { MisOrientPiece(it, i) })
+                    cycles += misOrients.map { MisOrientPiece(this.pieceToTarget(type, it, i), i) }
             }
         }
 
@@ -204,7 +249,7 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
     }
 
     private fun dumpDebug(): Map<PieceType, List<String>> {
-        return this.letterSchemes.mapValues { (pt, _) ->
+        return this.letterSchemes.keys.associateWith { pt ->
             pt.permutations.countingList().map {
                 this.targetToLetter(pt, this.currentlyAtTarget(pt, this.pieceToTarget(pt, it, 0)))
             }
@@ -214,18 +259,31 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
     fun getAnalysis(scramble: Algorithm): BldAnalysis {
         this.applyScramble(scramble, true)
 
-        // TODO resolve parities (according to dependency definitions)
+        val reorient = this.getReorientationMoves().also { this.applyScramble(it) }
 
-        val reorient = this.getReorientationMoves().apply {
-            applyScramble(this)
+        val parityOrderPieceTypes = this.executionPieceTypes.associateWith { setOf(this.parityDependents[it]).filterNotNull().toSet() }.topologicalSort()
+
+        val collectedCycles = mutableMapOf<PieceType, List<PieceCycle>>()
+        val parities = mutableMapOf<PieceType, Boolean>()
+
+        for (type in parityOrderPieceTypes) {
+            if (this.parityDependents.keys.contains(type)
+                    && parities[this.parityDependents.getValue(type)] == true) {
+                movePuzzle(this.puzzleState, this.parityDependencyFixes.getValue(type))
+            }
+
+            val typeCycles = this.compileSolutionCycles(type)
+
+            parities[type] = typeCycles.any { it is ParityCycle }
+            collectedCycles[type] = typeCycles
         }
 
-        val cycles = this.mainBuffers.mapValues { this.compileSolutionCycles(it.key) } // FIXME Nasty-ish hack to avoid compilation of 3x3 CENTER cycles
+        val cycles = this.executionPieceTypes.associateWith { collectedCycles.getValue(it) }
 
         return BldAnalysis(this, scramble, reorient, cycles, this.letterSchemes, this.algSource)
     }
 
-    fun getNextTarget(type: PieceType, vararg previous: Int): Int? {
+    fun getNextTarget(type: PieceType, previous: List<Int>): Int? {
         val avoidBreakIns = this.avoidBreakIns.getValue(type)
 
         val lastTarget = previous.lastOrNull() ?: this.getMainBufferTarget(type)
@@ -239,11 +297,10 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
         val lastCycleCompleted = targetedPerms.count { it == lastTargetedPerm } > 1
 
         if (bufferSolved || lastCycleCompleted) {
-            val possNext = this.getBreakInTargetsAfter(type, lastTarget, *previous)
+            val possNext = this.getBreakInTargetsAfter(type, lastTarget, previous)
 
             // TODO mark buffer float?
             return possNext.find {
-                // FIXME don't shoot to twisted pieces (not in targetSlots but still permuted correctly)
                 val alternativeSolved = this.targetCurrentlySolved(type, it)
                 val alternativeSuitable = this.targetToPerm(type, it) !in targetedPerms
 
@@ -252,23 +309,24 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
         } else {
             val possNext = this.getSolutionSpots(type, currentlyInBuffer)
 
+            // TODO use "current" buffer (according to floats) instead of "main" buffer?
             return possNext.find {
-                // TODO use "current" buffer (according to floats) instead of "main" buffer?
                 val alternativeSolved = this.targetCurrentlySolved(type, it)
                 val alternativeSuitable = this.getMainBufferTarget(type) !in this.getSolutionSpots(type, it)
 
                 !alternativeSolved && (!avoidBreakIns || alternativeSuitable)
-            }
+            } ?: possNext.find { !this.targetCurrentlySolved(type, it) }
         }
     }
 
-    protected open fun getBreakInTargetsAfter(type: PieceType, target: Int, vararg targeted: Int): List<Int> {
-        // TODO only use/return unsolved by default
+    protected open fun getBreakInTargetsAfter(type: PieceType, target: Int, targeted: List<Int>): List<Int> {
+        val preSolved = type.numTargets.countingList().filter { this.targetCurrentlyPermuted(type, it) }
+
         if (this.algSource == null || !this.optimizeBreakIns.getValue(type)) {
-            return type.numTargets.countingList() - targeted.toList() - this.getMainBufferOrientationTargets(type)
+            return type.numTargets.countingList() - targeted - this.getMainBufferOrientationTargets(type) - preSolved
         }
 
-        return this.optimizer.optimizeBreakInTargetsAfter(target, type)
+        return this.optimizer.optimizeBreakInTargetsAfter(target, type) - preSolved
     }
 
     protected fun getReorientationMoves() = when {
@@ -279,7 +337,7 @@ open class GPuzzle(kCommandMap: Map<String, Map<String, List<String>>>, private 
             val solvedCenters = rotatedState.countEquals(this.solvedState)
             val solvedBadCenters = rotatedState.countEquals(this.reorientState)
 
-            2 * solvedCenters + 3 * solvedBadCenters // FIXME is this an appropriate / intuitive weighting?
+            2 * solvedCenters + 3 * solvedBadCenters // FIXME weighting?
         }
         else -> SimpleAlg()
     } ?: SimpleAlg()

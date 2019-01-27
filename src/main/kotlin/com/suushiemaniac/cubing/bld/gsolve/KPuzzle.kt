@@ -1,9 +1,9 @@
 package com.suushiemaniac.cubing.bld.gsolve
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
+import com.suushiemaniac.cubing.alglib.lang.NotationReader
 import com.suushiemaniac.cubing.alglib.move.Move
-import com.suushiemaniac.cubing.bld.model.enumeration.piece.CubicPieceType
-import com.suushiemaniac.cubing.bld.model.enumeration.piece.PieceType
+import com.suushiemaniac.cubing.bld.model.PieceType
 import com.suushiemaniac.cubing.bld.util.StringUtil.splitAtWhitespace
 import com.suushiemaniac.cubing.bld.util.ArrayUtil.filledArray
 import com.suushiemaniac.cubing.bld.util.PieceState
@@ -13,8 +13,8 @@ import com.suushiemaniac.cubing.bld.util.deepEquals
 
 import java.io.File
 
-open class KPuzzle(private val commandMap: Map<String, Map<String, List<String>>>) {
-    constructor(defFile: File) : this(groupByCommand(defFile.readLines()))
+open class KPuzzle(protected val reader: NotationReader, private val commandMap: Map<String, Map<String, List<String>>>) {
+    constructor(reader: NotationReader, defFile: File) : this(reader, groupByCommand(defFile.readLines()))
 
     val pieceTypes = this.loadPieceTypes()
 
@@ -29,12 +29,7 @@ open class KPuzzle(private val commandMap: Map<String, Map<String, List<String>>
 
         for (ptCmd in pieceTypeCommands) {
             val (_, title, perm, orient) = ptCmd.splitAtWhitespace()
-
-            val ptModel = CubicPieceType.valueOf(title.toUpperCase()) // FIXME shortcut, better link to TwistyPuzzle model supported PieceTypes
-
-            if (ptModel.numPieces == perm.toInt() && ptModel.targetsPerPiece == orient.toInt()) {
-                pieceTypes.add(ptModel)
-            } // TODO else throw error?
+            pieceTypes.add(PieceType(title, perm.toInt(), orient.toInt()))
         }
 
         return pieceTypes
@@ -55,13 +50,13 @@ open class KPuzzle(private val commandMap: Map<String, Map<String, List<String>>
             val moveBaseName = lnKey.splitAtWhitespace().last()
 
             val moveConfig = if (lnKey.startsWith("Composite")) {
-                val compositeDef = this.pieceTypes.random().reader.parse(moveDef.joinToString(" ")) // FIXME nasty reader hack
+                val compositeDef = reader.parse(moveDef.joinToString(" "))
                 scramblePuzzle(this.solvedState, compositeDef, moveDefs)
             } else {
                 loadKPosition(this.pieceTypes, moveDef)
             }
 
-            moveDefs += bruteForcePowerMoves(this.solvedState, moveConfig, moveBaseName)
+            moveDefs += bruteForcePowerMoves(this.solvedState, moveConfig, this.reader, moveBaseName)
         }
 
         return moveDefs
@@ -77,10 +72,6 @@ open class KPuzzle(private val commandMap: Map<String, Map<String, List<String>>
         scramblePuzzle(this.puzzleState, scramble, this.moveDefinitions)
     }
 
-    fun g(bldFile: File): GPuzzle { // TODO better name?
-        return GPuzzle(this.commandMap, bldFile)
-    }
-
     companion object {
         fun groupByCommand(lines: List<String>): Map<String, Map<String, List<String>>> { // TODO beautify return format
             val cmdGroups = mutableMapOf<String, MutableMap<String, List<String>>>()
@@ -91,8 +82,8 @@ open class KPuzzle(private val commandMap: Map<String, Map<String, List<String>>
                 val data = mutableListOf<String>()
 
                 when (cmd.toLowerCase()) {
-                    "name", "set", "buffer", "misorient", "execution" -> data.add(ln)
-                    "solved", "move", "paritydependents", "lettering", "orientation", "compositemove" -> data.addAll(untilNextEnd(usefulLines, i))
+                    "name", "set", "buffer", "misorient", "execution", "parityfirst" -> data.add(ln)
+                    "solved", "move", "paritydependency", "lettering", "orientation", "compositemove" -> data.addAll(untilNextEnd(usefulLines, i))
                 }
 
                 if (data.size > 0) {
@@ -147,23 +138,23 @@ open class KPuzzle(private val commandMap: Map<String, Map<String, List<String>>
             }
         }
 
-        protected fun movePuzzle(current: PuzzleState, moveDef: PuzzleState) {
+        @JvmStatic protected fun movePuzzle(current: PuzzleState, moveDef: PuzzleState) {
             for ((pt, m) in moveDef) {
                 movePieces(pt, current.getValue(pt), m)
             }
         }
 
-        protected fun movePieces(type: PieceType, current: PieceState, moveDef: PieceState) {
-            val permTargets = Array(type.numPieces) { current.first[moveDef.first[it] - 1] }
-            val orientTargets = Array(type.numPieces) { current.second[moveDef.first[it] - 1] }
+        @JvmStatic protected fun movePieces(type: PieceType, current: PieceState, moveDef: PieceState) {
+            val permTargets = Array(type.permutations) { current.first[moveDef.first[it] - 1] }
+            val orientTargets = Array(type.permutations) { current.second[moveDef.first[it] - 1] }
 
-            for (i in 0 until type.numPieces) {
+            for (i in 0 until type.permutations) {
                 current.first[i] = permTargets[i]
-                current.second[i] = (orientTargets[i] + moveDef.second[i]) % type.targetsPerPiece
+                current.second[i] = (orientTargets[i] + moveDef.second[i]) % type.orientations
             }
         }
 
-        fun bruteForcePowerMoves(solved: PuzzleState, moveDef: PuzzleState, moveBaseName: String): Map<Move, PuzzleState> {
+        fun bruteForcePowerMoves(solved: PuzzleState, moveDef: PuzzleState, reader: NotationReader, moveBaseName: String): Map<Move, PuzzleState> {
             val movePowers = mutableListOf<PuzzleState>()
             val execState = solved.clone()
 
@@ -183,7 +174,6 @@ open class KPuzzle(private val commandMap: Map<String, Map<String, List<String>>
                     if (i < movePowers.size - 1) "$moveBaseName${movePowers.size - i}'" else "$moveBaseName'"
                 } // TODO more concise notation?
 
-                val reader = pow.keys.random().reader // FIXME nasty hack
                 val modelMove = reader.parse(powerMoveStr).firstMove()
 
                 moveDefs[modelMove] = pow

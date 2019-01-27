@@ -8,20 +8,21 @@ import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.Companion.
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition.Companion.EXACT
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition.Companion.MAX
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition.Companion.MIN
-import com.suushiemaniac.cubing.bld.model.enumeration.puzzle.TwistyPuzzle
+import com.suushiemaniac.cubing.bld.gsolve.GPuzzle
 
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.find
+import kotlinx.coroutines.channels.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
-import java.io.File
-
-class BldScramble(val model: TwistyPuzzle, gConfig: File, vararg val conditions: ConditionsBundle) {
-    val analyzer = model.gPuzzle(gConfig)
-
+class BldScramble(val analyzer: GPuzzle, val scrambler: () -> Algorithm, vararg val conditions: ConditionsBundle) {
     val statString: String
         get() = this.conditions.joinToString(" | ") { it.statString }
+
+    val scrambleSupplier: Sequence<Algorithm>
+        get() = generateSequence(this.scrambler)
 
     fun balanceConditions() {
         this.conditions.forEach(ConditionsBundle::balanceProperties)
@@ -30,23 +31,20 @@ class BldScramble(val model: TwistyPuzzle, gConfig: File, vararg val conditions:
     fun findScrambleOnThread(): Algorithm {
         this.balanceConditions()
 
-        val supplier = model.independentScrambleSupplier()
-        return supplier.find { this.matchingConditions(this.analyzer.getAnalysis(it)) }!!
+        return this.scrambleSupplier.find { this.matchingConditions(this.analyzer.getAnalysis(it)) }!!
     }
 
-    fun findScramblesOnThread(num: Int): List<Algorithm> {
-        return List(num) { this.findScrambleOnThread() }
+    fun findScramblesOnThread(numScrambles: Int): List<Algorithm> {
+        return List(numScrambles) { this.findScrambleOnThread() }
     }
 
-    fun findScramblesThreadModel(numScrambles: Int, feedbackFunction: (Int) -> Unit = {}): List<Algorithm> {
+    fun findScramblesThreadModel(numScrambles: Int): List<Algorithm> {
         val numThreads = Runtime.getRuntime().availableProcessors() + 1
         val scrambleQueue = Channel<Algorithm>(numScrambles * numThreads * numThreads)
 
         for (i in 0 until numThreads) {
             GlobalScope.launch {
-                val supplier = model.independentScrambleSupplier()
-
-                for (scramble in supplier) {
+                for (scramble in scrambleSupplier) {
                     scrambleQueue.send(scramble)
                 }
             }
@@ -63,7 +61,6 @@ class BldScramble(val model: TwistyPuzzle, gConfig: File, vararg val conditions:
 
                 if (matchingConditions(analysis)) {
                     algList.add(scramble)
-                    feedbackFunction(algList.size)
                 }
             } while (algList.size < numScrambles)
 
@@ -98,7 +95,7 @@ class BldScramble(val model: TwistyPuzzle, gConfig: File, vararg val conditions:
 
         // TODO for the below two cloning methods: cleverly "infer" where this gConfig comes from?
 
-        fun cloneFrom(refCube: TwistyPuzzle, gConfig: File, analysis: BldAnalysis, isStrict: Boolean = false): BldScramble {
+        fun cloneFrom(analysis: BldAnalysis, gPuzzle: GPuzzle, scrambler: () -> Algorithm, isStrict: Boolean = false): BldScramble {
             val conditions = mutableListOf<ConditionsBundle>()
 
             for (type in analysis.pieceTypes) {
@@ -116,17 +113,17 @@ class BldScramble(val model: TwistyPuzzle, gConfig: File, vararg val conditions:
                 conditions.add(condition)
             }
 
-            return BldScramble(refCube, gConfig, *conditions.toTypedArray())
+            return BldScramble(gPuzzle, scrambler, *conditions.toTypedArray())
         }
 
-        fun fromStatString(statString: String, refCube: TwistyPuzzle, gConfig: File, isStrict: Boolean = false): BldScramble {
+        fun fromStatString(statString: String, gPuzzle: GPuzzle, scrambler: () -> Algorithm, isStrict: Boolean = false): BldScramble {
             val conditions = mutableListOf<ConditionsBundle>()
 
             for (pieceStatString in statString.split("\\|".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
                 "([A-Za-z]+?):(_?)(0|[1-9][0-9]*)(\\*?)(#*)(~*)(\\+*)".toRegex()
                         .matchEntire(pieceStatString.replace("\\s".toRegex(), ""))?.let {
                     val mnemonic = it.groupValues[1]
-                    val type = refCube.pieceTypes.find { type -> type.mnemonic.equals(mnemonic, true) }
+                    val type = gPuzzle.pieceTypes.find { type -> type.humanName.equals(mnemonic, true) }
 
                     val condition = ConditionsBundle(type!!)
 
@@ -148,7 +145,7 @@ class BldScramble(val model: TwistyPuzzle, gConfig: File, vararg val conditions:
                 }
             }
 
-            return BldScramble(refCube, gConfig, *conditions.toTypedArray())
+            return BldScramble(gPuzzle, scrambler, *conditions.toTypedArray())
         }
     }
 }
