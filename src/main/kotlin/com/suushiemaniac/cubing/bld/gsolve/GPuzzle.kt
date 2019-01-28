@@ -34,7 +34,6 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
 
     val misOrientMethod = this.loadMisOrientMethod()
 
-    val parityDependents = this.loadParityDependents()
     val parityDependencyFixes = this.loadParityDependencyFixes()
 
     val parityFirstPieceTypes = this.loadParityFirstPieceTypes()
@@ -93,17 +92,10 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
         return this.commandMap.getValue("MisOrient").keys.first().splitAtWhitespace().last()
     }
 
-    fun loadParityDependents(): Map<PieceType, PieceType> {
-        val dependentHeaders = this.commandMap["ParityDependency"]?.keys ?: emptySet()
-
-        return dependentHeaders.map { it.splitAtWhitespace() }.map { this.findPieceTypeByName(it[1]) to this.findPieceTypeByName(it[2]) }.toMap()
-    }
-
     fun loadParityDependencyFixes(): Map<PieceType, PuzzleState> {
         val dependencyFixDescriptions = this.commandMap["ParityDependency"] ?: emptyMap()
-        val dependencyFixes = dependencyFixDescriptions.mapKeys { this.findPieceTypeByName(it.key.splitAtWhitespace()[1]) }
 
-        return dependencyFixes.mapValues { it.value.toMutableList().apply { this.add(0, it.key.name) } }
+        return dependencyFixDescriptions.mapKeys { this.findPieceTypeByName(it.key.splitAtWhitespace()[1]) }
                 .mapValues { loadKPosition(this.pieceTypes, it.value) }
     }
 
@@ -239,16 +231,20 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
 
         val reorient = this.getReorientationMoves().also { this.applyScramble(it) }
 
-        val paritySolvingOrder = this.parityDependents.mapValues { setOf(it.value) }.topologicalSort()
+        val parityDependents = this.parityDependencyFixes.flatMap { it.value.keys.map { k -> k to it.key } }
+                .groupBy(Pair<PieceType, PieceType>::first, Pair<PieceType, PieceType>::second)
+
+        val paritySortingOrder = parityDependents.mapValues { it.value.toSet() }.topologicalSort()
         val parityRelevantCycles = mutableMapOf<PieceType, List<PieceCycle>>()
 
-        for (type in paritySolvingOrder) {
-            val fixNecessary = this.parityDependents[type]?.let {
-                parityRelevantCycles.getValue(it).any { c -> c is ParityCycle }
-            } ?: false
+        for (type in paritySortingOrder) {
+            parityDependents[type]?.forEach {
+                val fixNecessary = parityRelevantCycles.getValue(it).any { c -> c is ParityCycle }
 
-            if (fixNecessary) {
-                movePuzzle(this.solvedState, this.parityDependencyFixes.getValue(type))
+                if (fixNecessary) {
+                    val currentFix = this.parityDependencyFixes.getValue(it).filterKeys { k -> k == type }
+                    movePuzzle(this.solvedState, currentFix)
+                }
             }
 
             parityRelevantCycles[type] = this.compileSolutionCycles(type)
@@ -273,16 +269,17 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
         val nextTargetChoice = if (currentCycleStart.last()) {
             this.getBreakInTargetsAfter(type, buffer, cycleShift.last(), previous)
         } else {
-            this.getSolutionSpots(type, this.currentlyAtTarget(type, cycleShift.last()))
-                    .sortedBy { this.targetToLetter(type, it) }
+            val inBuffer = this.currentlyAtTarget(type, cycleShift.last())
+            this.getSolutionSpots(type, inBuffer).sortedBy { this.targetToLetter(type, it) }
         }
 
         val unsolvedTargets = nextTargetChoice.filter { !this.targetCurrentlySolved(type, it) }
 
-        val lastBreakPerm = currentCycleStart.indices.drop(1).lastOrNull { currentCycleStart[it - 1] }
-                ?.let { targetToPerm(type, cycleShift[it]) }?.takeUnless { targetedPerms.count { t -> t == it } > 1 }
+        val openBreakInPerms = currentCycleStart.indices.drop(1).filter { currentCycleStart[it - 1] }
+                .map { targetToPerm(type, cycleShift[it]) }
+                .filter { targetedPerms.count { t -> t == it } == 1 }
 
-        val notTargeted = unsolvedTargets.filter { targetToPerm(type, it) !in (targetedPerms - listOfNotNull(lastBreakPerm)) }
+        val notTargeted = unsolvedTargets.filter { targetToPerm(type, it) !in (targetedPerms - openBreakInPerms) }
         val favorableTargets = notTargeted.filter { buffer !in this.getSolutionSpots(type, this.currentlyAtTarget(type, it)) }
 
         return favorableTargets.firstOrNull() ?: notTargeted.firstOrNull()
