@@ -1,0 +1,47 @@
+Name 6x6x6
+
+Buffer CORNER 3 0
+Buffer WING 17 0
+Buffer INNER_WING 17 0
+Buffer X_CENTER 3 0
+Buffer INNER_X_CENTER 3 0
+Buffer CW_OBLIQUE 21 0
+Buffer CCW_OBLIQUE 21 0
+
+Orientation Dynamic
+X_CENTER
+? ? ? ? ? ? ? ? 5 5 ? ? ? ? ? ? 5 5 ? ? 6 6 6 6
+INNER_X_CENTER
+? ? ? ? ? ? ? ? 5 5 ? ? ? ? ? ? 5 5 ? ? 6 6 6 6
+CW_OBLIQUE
+? ? ? ? ? ? 5 ? ? ? 5 ? ? ? 5 ? ? ? 5 ? 6 6 6 6
+CCW_OBLIQUE
+? ? ? ? ? ? 5 ? ? ? 5 ? ? ? 5 ? ? ? 5 ? 6 6 6 6
+End
+
+Lettering
+CORNER
+C J M D F I A R E B N Q V P K U L G X H S W T O
+WING
+I E Q M C D A B P L H T J F R N U X W V K G S O
+INNER_WING
+I E Q M C D A B P L H T J F R N U X W V K G S O
+X_CENTER
+C D A B J I F E R Q N M K L G H S T O P V U X W
+INNER_X_CENTER
+C D A B J I F E R Q N M K L G H S T O P V U X W
+CW_OBLIQUE
+C D A B I E Q M L H T P J F R N K G S O U X W V
+CCW_OBLIQUE
+C D A B I E Q M J F R N L H T P K G S O U X W V
+End
+
+ParityDependency CORNER
+WING
+1 3 2 4 5 7 6 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
+INNER_WING
+1 3 2 4 5 7 6 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
+End
+
+MisOrient Compound
+Execution X_CENTER INNER_X_CENTER CW_OBLIQUE CCW_OBLIQUE WING INNER_WING CORNER

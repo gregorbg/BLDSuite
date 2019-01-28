@@ -12,11 +12,11 @@ fun main() {
     //println(analysis.scramble)
     //println(analysis.getSolutionPairs(true))
 
-    val defFile = File("/home/suushie_maniac/jvdocs/BLDSuite/src/main/resources/kpuzzle/555.def")
-    val bldFile = File("/home/suushie_maniac/jvdocs/BLDSuite/src/main/resources/gpuzzle/gregor/555.bld")
+    val defFile = File("/home/suushie_maniac/jvdocs/BLDSuite/src/main/resources/kpuzzle/777.def")
+    val bldFile = File("/home/suushie_maniac/jvdocs/BLDSuite/src/main/resources/gpuzzle/gregor/777.bld")
 
     val reader = CubicAlgorithmReader()
-    val scrambler = NoInspectionFiveByFiveCubePuzzle()
+    val scrambler = CubePuzzle(7)
 
     val testCube = GPuzzle(reader, defFile, bldFile)
 
