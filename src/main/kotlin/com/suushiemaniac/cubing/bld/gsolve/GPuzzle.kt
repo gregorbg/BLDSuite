@@ -13,6 +13,7 @@ import com.suushiemaniac.cubing.bld.util.CollectionUtil.permutations
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.countingList
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.topologicalSort
 import com.suushiemaniac.cubing.bld.util.StringUtil.splitAtWhitespace
+import com.suushiemaniac.cubing.bld.util.StringUtil.splitLines
 import com.suushiemaniac.cubing.bld.util.MathUtil.pMod
 import com.suushiemaniac.cubing.bld.util.Piece
 import com.suushiemaniac.cubing.bld.util.PuzzleState
@@ -21,8 +22,8 @@ import com.suushiemaniac.cubing.bld.util.deepEquals
 
 import java.io.File
 
-open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, List<String>>>, private val commandMap: Map<String, Map<String, List<String>>>) : KPuzzle(reader, kCommandMap) {
-    constructor(reader: NotationReader, kCommandMap: Map<String, Map<String, List<String>>>, bldFile: File) : this(reader, kCommandMap, groupByCommand(bldFile.readLines()))
+open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, List<String>>, private val commandMap: Map<String, List<String>>) : KPuzzle(reader, kCommandMap) {
+    constructor(reader: NotationReader, kCommandMap: Map<String, List<String>>, bldFile: File) : this(reader, kCommandMap, groupByCommand(bldFile.readLines()))
     constructor(reader: NotationReader, defFile: File, bldFile: File) : this(reader, groupByCommand(defFile.readLines()), groupByCommand(bldFile.readLines()))
 
     val letterSchemes = this.loadLetterSchemes()
@@ -53,8 +54,8 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
     // FILE LOADING
 
     fun loadLetterSchemes(): Map<PieceType, Array<String>> {
-        val letterLines = this.commandMap.getValue("Lettering").getValue("Lettering")
-        return loadFilePosition(this.pieceTypes, letterLines) { it.first }
+        val letterLines = this.commandMap.getValue("Lettering").first().splitLines()
+        return loadFilePosition(this.pieceTypes, letterLines.drop(1)) { it.first }
     }
 
     fun loadBuffers(): Map<PieceType, List<Int>> {
@@ -62,7 +63,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
 
         val collectionMap = mutableListOf<Pair<PieceType, Int>>()
 
-        for (bufferDef in bufferCommands.keys) {
+        for (bufferDef in bufferCommands) {
             val defScheme = bufferDef.splitAtWhitespace().drop(1)
             val ptName = defScheme.first()
 
@@ -78,34 +79,35 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
     }
 
     fun loadReorientMethod(): String {
-        return this.commandMap.getValue("Orientation").keys.first().splitAtWhitespace().last()
+        return this.commandMap.getValue("Orientation").first().splitLines().first().splitAtWhitespace().last()
     }
 
     fun loadReorientState(): PuzzleState {
-        val stateLines = this.commandMap.getValue("Orientation").values.first()
+        val stateLines = this.commandMap.getValue("Orientation").first().splitLines()
 
-        return loadKPosition(this.pieceTypes, stateLines)
+        return loadKPosition(this.pieceTypes, stateLines.drop(1))
     }
 
     fun loadMisOrientMethod(): String {
-        return this.commandMap.getValue("MisOrient").keys.first().splitAtWhitespace().last()
+        return this.commandMap.getValue("MisOrient").first().splitAtWhitespace().last()
     }
 
     fun loadParityDependencyFixes(): Map<PieceType, PuzzleState> {
-        val dependencyFixDescriptions = this.commandMap["ParityDependency"] ?: emptyMap()
+        val dependencyFixDescriptions = this.commandMap["ParityDependency"] ?: emptyList()
 
-        return dependencyFixDescriptions.mapKeys { this.findPieceTypeByName(it.key.splitAtWhitespace()[1]) }
+        return dependencyFixDescriptions.map { it.splitLines() }.map { it[0].splitAtWhitespace()[1] to it.drop(1) }
+                .toMap().mapKeys { this.findPieceTypeByName(it.key) }
                 .mapValues { loadKPosition(this.pieceTypes, it.value) }
     }
 
     fun loadParityFirstPieceTypes(): List<PieceType> {
-        return this.commandMap["ParityFirst"]?.let {
-            it.keys.first().splitAtWhitespace().drop(1).map { st -> this.findPieceTypeByName(st) }
-        } ?: emptyList()
+        val firstPieceTypes = this.commandMap["ParityFirst"]?.first()?.splitAtWhitespace() ?: emptyList()
+
+        return firstPieceTypes.drop(1).map { this.findPieceTypeByName(it) }
     }
 
     fun loadExecutionPieceTypes(): List<PieceType> {
-        return this.commandMap.getValue("Execution").keys.first().splitAtWhitespace().drop(1).map { this.findPieceTypeByName(it) }
+        return this.commandMap.getValue("Execution").first().splitAtWhitespace().drop(1).map { this.findPieceTypeByName(it) }
     }
 
     private fun findPieceTypeByName(name: String): PieceType {

@@ -6,11 +6,12 @@ import com.suushiemaniac.cubing.alglib.move.Move
 import com.suushiemaniac.cubing.bld.model.PieceType
 import com.suushiemaniac.cubing.bld.util.*
 import com.suushiemaniac.cubing.bld.util.StringUtil.splitAtWhitespace
+import com.suushiemaniac.cubing.bld.util.StringUtil.splitLines
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.filledList
 
 import java.io.File
 
-open class KPuzzle(protected val reader: NotationReader, private val commandMap: Map<String, Map<String, List<String>>>) {
+open class KPuzzle(protected val reader: NotationReader, private val commandMap: Map<String, List<String>>) {
     constructor(reader: NotationReader, defFile: File) : this(reader, groupByCommand(defFile.readLines()))
 
     val pieceTypes = this.loadPieceTypes()
@@ -22,7 +23,7 @@ open class KPuzzle(protected val reader: NotationReader, private val commandMap:
 
     private fun loadPieceTypes(): Set<PieceType> {
         val pieceTypes = mutableSetOf<PieceType>()
-        val pieceTypeCommands = this.commandMap.getValue("Set").keys
+        val pieceTypeCommands = this.commandMap["Set"] ?: emptyList()
 
         for (ptCmd in pieceTypeCommands) {
             val (_, title, perm, orient) = ptCmd.splitAtWhitespace()
@@ -33,29 +34,30 @@ open class KPuzzle(protected val reader: NotationReader, private val commandMap:
     }
 
     protected fun loadSolvedState(): PuzzleState {
-        val solvedCommand = this.commandMap.getValue("Solved").getValue("Solved")
+        val solvedCommand = this.commandMap.getValue("Solved").first().splitLines()
 
-        return loadKPosition(this.pieceTypes, solvedCommand)
+        return loadKPosition(this.pieceTypes, solvedCommand.drop(1))
     }
 
     private fun loadMoves(): Map<Move, PuzzleState> {
         val moveDefs = mutableMapOf<Move, PuzzleState>()
-        val moveCommands = this.commandMap.getOrDefault("Move", emptyMap()) +
-                this.commandMap.getOrDefault("CompositeMove", emptyMap())
+        val moveCommands = this.commandMap.getOrDefault("Move", emptyList()) +
+                this.commandMap.getOrDefault("CompositeMove", emptyList())
 
-        for ((lnKey, moveDef) in moveCommands) {
-            val moveBaseName = lnKey.splitAtWhitespace().last()
+        for (moveDef in moveCommands) {
+            val moveLines = moveDef.splitLines()
+            val moveHeader = moveLines.first().splitAtWhitespace()
 
-            val moveConfig = if (lnKey.startsWith("Composite")) {
-                val compositeDef = this.reader.parse(moveDef.joinToString(" "))
+            val moveConfig = if (moveHeader.first().startsWith("Composite")) {
+                val compositeDef = this.reader.parse(moveLines.drop(1).joinToString(""))
                 val identityMove = computeIdentityMove(this.solvedState)
 
                 compositeDef.mapNotNull(moveDefs::get).map { it.deepCopy() }.fold(identityMove, ::movePuzzle)
             } else {
-                loadKPosition(this.pieceTypes, moveDef)
+                loadKPosition(this.pieceTypes, moveLines.drop(1))
             }
 
-            moveDefs += bruteForcePowerMoves(this.solvedState, moveConfig, this.reader, moveBaseName)
+            moveDefs += bruteForcePowerMoves(this.solvedState, moveConfig, this.reader, moveHeader.last())
         }
 
         return moveDefs
@@ -65,22 +67,19 @@ open class KPuzzle(protected val reader: NotationReader, private val commandMap:
     protected fun hypotheticalScramble(scramble: Algorithm) = scramblePuzzle(this.puzzleState.deepCopy(), scramble, this.moveDefinitions)
 
     companion object {
-        fun groupByCommand(lines: List<String>): Map<String, Map<String, List<String>>> { // TODO beautify return format
-            val cmdGroups = mutableMapOf<String, MutableMap<String, List<String>>>()
+        fun groupByCommand(lines: List<String>): Map<String, List<String>> {
+            val cmdGroups = mutableMapOf<String, MutableList<String>>()
             val usefulLines = lines.filter { it.isNotBlank() }
 
             for ((i, ln) in usefulLines.withIndex()) {
                 val cmd = ln.splitAtWhitespace().first()
-                val data = mutableListOf<String>()
 
-                when (cmd.toLowerCase()) {
-                    "name", "set", "buffer", "misorient", "execution", "parityfirst" -> data.add(ln)
-                    "solved", "move", "paritydependency", "lettering", "orientation", "compositemove" -> data.addAll(untilNextEnd(usefulLines, i))
+                val data = when (cmd.toLowerCase()) {
+                    "solved", "move", "paritydependency", "lettering", "orientation", "compositemove" -> untilNextEnd(usefulLines, i).joinToString("\n")
+                    else -> ln
                 }
 
-                if (data.size > 0) {
-                    cmdGroups.getOrPut(cmd) { mutableMapOf() }[ln] = data
-                }
+                cmdGroups.getOrPut(cmd) { mutableListOf() }.add(data)
             }
 
             return cmdGroups
@@ -89,7 +88,7 @@ open class KPuzzle(protected val reader: NotationReader, private val commandMap:
         private fun untilNextEnd(lines: List<String>, currPointer: Int): List<String> {
             for ((i, ln) in lines.withIndex()) {
                 if (i > currPointer && ln.trim().toLowerCase() == "end") {
-                    return lines.subList(currPointer + 1, i)
+                    return lines.subList(currPointer, i)
                 }
             }
 
@@ -170,13 +169,18 @@ open class KPuzzle(protected val reader: NotationReader, private val commandMap:
             val moveDefs = mutableMapOf<Move, PuzzleState>()
 
             for ((i, pow) in movePowers.withIndex()) {
-                val powerMoveStr = if (i <= movePowers.size / 2) {
-                    if (i > 0) "$moveBaseName${i + 1}" else moveBaseName
-                } else {
-                    if (i < movePowers.size - 1) "$moveBaseName${movePowers.size - i}'" else "$moveBaseName'"
-                } // TODO more concise notation?
+                val powerMove = StringBuilder(moveBaseName)
+                val shortCount = if (i <= movePowers.size / 2) i + 1 else movePowers.size - i
 
-                val modelMove = reader.parse(powerMoveStr).firstMove()
+                if (shortCount > 1) {
+                    powerMove.append(shortCount)
+                }
+
+                if (i > movePowers.size / 2) {
+                    powerMove.append("'")
+                }
+
+                val modelMove = reader.parse(powerMove.toString()).firstMove()
 
                 moveDefs[modelMove] = pow
             }

@@ -3,6 +3,7 @@ import com.suushiemaniac.cubing.bld.gsolve.GPuzzle
 import puzzle.*
 
 import java.io.File
+import kotlin.system.exitProcess
 
 fun main() {
     //val analysis = CubicPuzzle.THREE_BLD.scrambleAnalysis

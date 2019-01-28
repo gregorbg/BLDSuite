@@ -29,6 +29,10 @@ object StringUtil {
         return this.split(WS_REGEX)
     }
 
+    fun String.splitLines(): List<String> {
+        return this.split("\n")
+    }
+
     fun String.contentSetEquals(that: String): Boolean {
         return this.toCharStrings().containsAll(that.toCharStrings())
                 && that.toCharStrings().containsAll(this.toCharStrings())
