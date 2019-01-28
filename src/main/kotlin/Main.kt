@@ -21,7 +21,7 @@ fun main() {
 
     val testCube = GPuzzle(reader, defFile, bldFile)
 
-    val scr = reader.parse("B' Fw' R Rw' D F' Bw R2 U D' R2 Lw2 Rw D' R2 D2 Uw F2 Uw2 D Rw R' U' L Lw F Fw' D' Rw Lw2 Uw' F2 Dw F Dw' B2 F' D2 Rw Fw2 F R' D2 R2 U Bw2 R' U Dw D' Bw2 L Lw2 B2 L Lw Uw Lw' B2 D2 3Rw")
+    val scr = reader.parse(scrambler.generateScramble())
     val analysis = testCube.getAnalysis(scr)
 
     println(scr.toFormatString())

@@ -26,6 +26,14 @@ object CollectionUtil {
         return List(this) { it + offset }
     }
 
+    inline fun <reified T> Int.filledList(value: T): List<T> {
+        return List(this) { value }
+    }
+
+    inline fun <reified T> Int.filledList(value: () -> T): List<T> {
+        return List(this) { value() }
+    }
+
     fun <T> Collection<T>.findByMnemonic(mnemonic: String): List<T> {
         return this.filter { it.toString().startsWith(mnemonic) }
     }
@@ -69,7 +77,6 @@ object CollectionUtil {
         else -> dropLast(size - index) + element + drop(index)
     }
 
-    // TODO use library instead (is there any?)
     fun <T> Map<T, Set<T>>.topologicalSort(): List<T> {
         // remove self-dependencies
         val data = this.mapValues { it.value - it.key }.toMutableMap()

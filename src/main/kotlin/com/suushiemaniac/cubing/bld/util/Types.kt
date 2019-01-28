@@ -1,30 +1,32 @@
 package com.suushiemaniac.cubing.bld.util
 
 import com.suushiemaniac.cubing.bld.model.PieceType
+import com.suushiemaniac.cubing.bld.util.MathUtil.toInt
 
-typealias PieceState = Pair<Array<Int>, Array<Int>>
+data class Piece(val permutation: Int, val orientation: Int = 0)
+typealias PieceState = Array<Piece>
 typealias PuzzleState = Map<PieceType, PieceState>
 
-fun PieceState.clone(): PieceState {
-    return this.first.copyOf() to this.second.copyOf()
+fun PieceState.deepCopy(): PieceState {
+    return this.map { it.copy() }.toTypedArray()
 }
 
-fun PuzzleState.clone(): PuzzleState {
-    return this.mapValues { it.value.clone() }
+fun PuzzleState.deepCopy(): PuzzleState {
+    return this.mapValues { it.value.deepCopy() }
 }
 
 fun PieceState.deepEquals(other: PieceState, allowWildcard: Boolean = false): Boolean {
     val toCmp = this.clone()
     
     if (allowWildcard) {
-        for (i in toCmp.first.indices) { // FIXME for orientation (.second) as well?
-            if (toCmp.first[i] == -1) {
-                toCmp.first[i] = other.first[i]
+        for (i in toCmp.indices) { // FIXME for orientation (.second) as well?
+            if (toCmp[i].permutation == -1) {
+                toCmp[i] = toCmp[i].copy(permutation = other[i].permutation)
             }
         }
     }
 
-    return other.first.contentEquals(toCmp.first) && other.second.contentEquals(toCmp.second)
+    return other.contentEquals(toCmp)
 }
 
 fun PuzzleState.deepEquals(other: PuzzleState, allowWildcard: Boolean = false): Boolean {
@@ -37,8 +39,8 @@ fun PieceState.countEquals(other: PieceState?): Int {
         return 0
     }
 
-    val bigZip = this.first.zip(other.first).zip(this.second.zip(other.second))
-    return bigZip.sumBy { (p, o) -> if (p.first == p.second && o.first == o.second) 1 else 0 }
+    val bigZip = this.zip(other)
+    return bigZip.sumBy { (t, o) -> (t == o).toInt() }
 }
 
 fun PuzzleState.countEquals(other: PuzzleState): Int {

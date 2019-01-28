@@ -14,6 +14,7 @@ import com.suushiemaniac.cubing.bld.util.CollectionUtil.countingList
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.topologicalSort
 import com.suushiemaniac.cubing.bld.util.StringUtil.splitAtWhitespace
 import com.suushiemaniac.cubing.bld.util.MathUtil.pMod
+import com.suushiemaniac.cubing.bld.util.Piece
 import com.suushiemaniac.cubing.bld.util.PuzzleState
 import com.suushiemaniac.cubing.bld.util.countEquals
 import com.suushiemaniac.cubing.bld.util.deepEquals
@@ -53,9 +54,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
 
     fun loadLetterSchemes(): Map<PieceType, Array<String>> {
         val letterLines = this.commandMap.getValue("Lettering").getValue("Lettering")
-        val parsed = loadFilePosition(this.pieceTypes, letterLines, "") { it.splitAtWhitespace().toTypedArray() }
-
-        return parsed.mapValues { it.value.first }
+        return loadFilePosition(this.pieceTypes, letterLines) { it.first }
     }
 
     fun loadBuffers(): Map<PieceType, List<Int>> {
@@ -121,21 +120,21 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
     // K-STYLE METHODS
 
     protected fun currentlyAtTarget(type: PieceType, target: Int): Int {
+        val state = this.puzzleState.getValue(type)
         val (lookupPerm, lookupOrient) = targetToPiece(type, target)
-        val (statePerm, stateOrient) = this.puzzleState.getValue(type)
 
-        val possiblePermSpot = this.solvedState.getValue(type).first.indexOfFirst { it == statePerm[lookupPerm] }
+        val possiblePermSpot = this.solvedState.getValue(type).indexOfFirst { it.permutation == state[lookupPerm].permutation }
 
-        return pieceToTarget(type, possiblePermSpot, (lookupOrient - stateOrient[lookupPerm]) pMod type.orientations)
+        return pieceToTarget(type, possiblePermSpot, (lookupOrient - state[lookupPerm].orientation) pMod type.orientations)
     }
 
     protected fun getSolutionSpots(type: PieceType, target: Int): List<Int> {
+        val ref = this.solvedState.getValue(type)
         val (currentPerm, currentOrient) = targetToPiece(type, target)
-        val (refPerm, refOrient) = this.solvedState.getValue(type)
 
-        val possiblePermSpots = refPerm.indices.filter { refPerm[it] == refPerm[currentPerm] }
+        val possiblePermSpots = ref.indices.filter { ref[it].permutation == ref[currentPerm].permutation }
 
-        return possiblePermSpots.map { pieceToTarget(type, it, (refOrient[it] + currentOrient) % type.orientations) }
+        return possiblePermSpots.map { pieceToTarget(type, it, (ref[it].orientation + currentOrient) % type.orientations) }
     }
 
     protected fun targetCurrentlySolved(type: PieceType, target: Int) = target in this.getSolutionSpots(type, this.currentlyAtTarget(type, target))
@@ -143,7 +142,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
             .map { targetToPerm(type, it) }
             .flatMap { permToTargets(type, it) }
 
-    protected fun currentPermOrientation(type: PieceType, perm: Int) = this.puzzleState.getValue(type).second[perm]
+    protected fun currentPermOrientation(type: PieceType, perm: Int) = this.puzzleState.getValue(type)[perm].orientation
 
     // BUFFER HELPERS
 
@@ -231,23 +230,21 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
 
         val reorient = this.getReorientationMoves().also { this.applyScramble(it) }
 
-        val parityDependents = this.parityDependencyFixes.flatMap { it.value.keys.map { k -> k to it.key } }
-                .groupBy(Pair<PieceType, PieceType>::first, Pair<PieceType, PieceType>::second)
+        val parityDepKeys = this.parityDependencyFixes.mapValues { it.value.keys }
+        val parityDependents = parityDepKeys.values.flatten().associateWith { parityDepKeys.filterValues { v -> it in v }.keys }
 
-        val paritySortingOrder = parityDependents.mapValues { it.value.toSet() }.topologicalSort()
         val parityRelevantCycles = mutableMapOf<PieceType, List<PieceCycle>>()
 
-        for (type in paritySortingOrder) {
-            parityDependents[type]?.forEach {
-                val fixNecessary = parityRelevantCycles.getValue(it).any { c -> c is ParityCycle }
+        for (type in parityDependents.topologicalSort()) {
+            val solutionCycles = this.compileSolutionCycles(type)
 
-                if (fixNecessary) {
-                    val currentFix = this.parityDependencyFixes.getValue(it).filterKeys { k -> k == type }
-                    movePuzzle(this.solvedState, currentFix)
+            if (solutionCycles.any { it is ParityCycle }) {
+                if (type in this.parityDependencyFixes) {
+                    movePuzzle(this.solvedState, this.parityDependencyFixes.getValue(type))
                 }
             }
 
-            parityRelevantCycles[type] = this.compileSolutionCycles(type)
+            parityRelevantCycles[type] = solutionCycles
         }
 
         val cycles = this.executionPieceTypes.associateWith { parityRelevantCycles.getOrDefault(it, this.compileSolutionCycles(it)) }
@@ -322,9 +319,9 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
     
     companion object {
         fun pieceToTarget(type: PieceType, perm: Int, orient: Int) = (perm * type.orientations) + orient
-        fun targetToPiece(type: PieceType, target: Int) = target / type.orientations to target % type.orientations
+        fun targetToPiece(type: PieceType, target: Int) = Piece(target / type.orientations, target % type.orientations)
 
-        fun targetToPerm(type: PieceType, target: Int) = targetToPiece(type, target).first
+        fun targetToPerm(type: PieceType, target: Int) = targetToPiece(type, target).permutation
         fun permToTargets(type: PieceType, perm: Int) = type.orientations.countingList().map { pieceToTarget(type, perm, it) }
 
         fun adjacentTargets(type: PieceType, target: Int) = permToTargets(type, targetToPerm(type, target))
