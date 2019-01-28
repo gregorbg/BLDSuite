@@ -287,7 +287,9 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
 
         if (this.algSource == null) {
             val selection = type.numTargets.countingList() - targeted - adjacentTargets(type, buffer) - preSolved
-            return selection.sortedBy { this.targetToLetter(type, it) }
+            val (buf, rem) = selection.partition { it in this.getSolutionSpots(type, buffer) }
+
+            return buf.sortedBy { this.targetToLetter(type, it) } + rem.sortedBy { this.targetToLetter(type, it) }
         }
 
         return this.optimizer.optimizeBreakInTargetsAfter(target, type) - preSolved
@@ -298,10 +300,10 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, Map<String, 
         this.reorientMethod == "Dynamic" -> this.bruteForceRotations.maxBy {
             val rotatedState = this.hypotheticalScramble(it)
 
-            val solvedCenters = rotatedState.countEquals(this.solvedState.filterKeys { pt -> pt in reorientState.keys })
-            val solvedBadCenters = rotatedState.countEquals(this.reorientState)
+            val solvedPieces = rotatedState.countEquals(this.solvedState.filterKeys { pt -> pt in reorientState.keys })
+            val solvedPrefPieces = rotatedState.countEquals(this.reorientState)
 
-            2 * solvedCenters + 3 * solvedBadCenters
+            2 * solvedPieces + 3 * solvedPrefPieces
         }
         else -> SimpleAlg()
     } ?: SimpleAlg()

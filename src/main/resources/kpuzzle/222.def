@@ -1,0 +1,35 @@
+Name 2x2x2
+
+Set CORNER 8 3
+
+Solved
+CORNER
+1 2 3 4 5 6 7 8
+End
+
+Move R
+CORNER
+5 2 3 1 8 6 7 4
+1 0 0 2 2 0 0 1
+End
+
+Move y
+CORNER
+4 1 2 3 8 5 6 7
+End
+
+CompositeMove x
+R y2 R' y2
+End
+
+CompositeMove z
+x y x'
+End
+
+CompositeMove U
+z R z'
+End
+
+CompositeMove F
+y' R y
+End

@@ -1,8 +1,6 @@
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader
 import com.suushiemaniac.cubing.bld.gsolve.GPuzzle
-import puzzle.NoInspectionFiveByFiveCubePuzzle
-import puzzle.NoInspectionFourByFourCubePuzzle
-import puzzle.NoInspectionThreeByThreeCubePuzzle
+import puzzle.*
 
 import java.io.File
 
