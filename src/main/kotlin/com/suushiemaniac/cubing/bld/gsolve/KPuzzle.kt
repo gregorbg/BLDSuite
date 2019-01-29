@@ -11,7 +11,7 @@ import com.suushiemaniac.cubing.bld.util.CollectionUtil.filledList
 
 import java.io.File
 
-open class KPuzzle(protected val reader: NotationReader, private val commandMap: Map<String, List<String>>) {
+open class KPuzzle(val reader: NotationReader, val commandMap: Map<String, List<String>>) {
     constructor(reader: NotationReader, defFile: File) : this(reader, groupByCommand(defFile.readLines()))
 
     val pieceTypes = this.loadPieceTypes()
@@ -187,5 +187,7 @@ open class KPuzzle(protected val reader: NotationReader, private val commandMap:
 
             return moveDefs
         }
+
+        fun preInstalledConfig(tag: String) = File(KPuzzle::class.java.classLoader.getResource("kpuzzle/$tag.def").toURI())
     }
 }

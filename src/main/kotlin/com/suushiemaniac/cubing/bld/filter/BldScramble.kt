@@ -9,6 +9,7 @@ import com.suushiemaniac.cubing.bld.filter.condition.IntCondition.Companion.EXAC
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition.Companion.MAX
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition.Companion.MIN
 import com.suushiemaniac.cubing.bld.gsolve.GPuzzle
+import com.suushiemaniac.cubing.bld.model.puzzle.TwistyPuzzle
 
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.Channel
@@ -16,13 +17,16 @@ import kotlinx.coroutines.channels.find
 import kotlinx.coroutines.channels.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import java.io.File
 
-class BldScramble(val analyzer: GPuzzle, val scrambler: () -> Algorithm, vararg val conditions: ConditionsBundle) {
+class BldScramble(val puzzle: TwistyPuzzle, config: File, vararg val conditions: ConditionsBundle) {
+    val analyzer = this.puzzle.gPuzzle(config)
+
     val statString: String
         get() = this.conditions.joinToString(" | ") { it.statString }
 
     val scrambleSupplier: Sequence<Algorithm>
-        get() = generateSequence(this.scrambler)
+        get() = generateSequence(this.puzzle::randomScramble)
 
     fun balanceConditions() {
         this.conditions.forEach(ConditionsBundle::balanceProperties)
@@ -95,7 +99,7 @@ class BldScramble(val analyzer: GPuzzle, val scrambler: () -> Algorithm, vararg 
 
         // TODO for the below two cloning methods: cleverly "infer" where this gConfig comes from?
 
-        fun cloneFrom(analysis: BldAnalysis, gPuzzle: GPuzzle, scrambler: () -> Algorithm, isStrict: Boolean = false): BldScramble {
+        fun cloneFrom(analysis: BldAnalysis, puzzle: TwistyPuzzle, config: File, isStrict: Boolean = false): BldScramble {
             val conditions = mutableListOf<ConditionsBundle>()
 
             for (type in analysis.pieceTypes) {
@@ -113,17 +117,17 @@ class BldScramble(val analyzer: GPuzzle, val scrambler: () -> Algorithm, vararg 
                 conditions.add(condition)
             }
 
-            return BldScramble(gPuzzle, scrambler, *conditions.toTypedArray())
+            return BldScramble(puzzle, config, *conditions.toTypedArray())
         }
 
-        fun fromStatString(statString: String, gPuzzle: GPuzzle, scrambler: () -> Algorithm, isStrict: Boolean = false): BldScramble {
+        fun fromStatString(statString: String, puzzle: TwistyPuzzle, config: File, isStrict: Boolean = false): BldScramble {
             val conditions = mutableListOf<ConditionsBundle>()
 
-            for (pieceStatString in statString.split("\\|".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
+            for (pieceStatString in statString.split("\\|".toRegex()).dropLastWhile { it.isEmpty() }) {
                 "([A-Za-z]+?):(_?)(0|[1-9][0-9]*)(\\*?)(#*)(~*)(\\+*)".toRegex()
                         .matchEntire(pieceStatString.replace("\\s".toRegex(), ""))?.let {
                     val mnemonic = it.groupValues[1]
-                    val type = gPuzzle.pieceTypes.find { type -> type.humanName.equals(mnemonic, true) }
+                    val type = puzzle.kPuzzle.pieceTypes.find { type -> type.humanName.equals(mnemonic, true) }
 
                     val condition = ConditionsBundle(type!!)
 
@@ -145,7 +149,7 @@ class BldScramble(val analyzer: GPuzzle, val scrambler: () -> Algorithm, vararg 
                 }
             }
 
-            return BldScramble(gPuzzle, scrambler, *conditions.toTypedArray())
+            return BldScramble(puzzle, config, *conditions.toTypedArray())
         }
     }
 }

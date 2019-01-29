@@ -12,6 +12,7 @@ import com.suushiemaniac.cubing.bld.util.CollectionUtil.powerset
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.permutations
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.countingList
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.topologicalSort
+import com.suushiemaniac.cubing.bld.util.CollectionUtil.countOf
 import com.suushiemaniac.cubing.bld.util.StringUtil.splitAtWhitespace
 import com.suushiemaniac.cubing.bld.util.StringUtil.splitLines
 import com.suushiemaniac.cubing.bld.util.MathUtil.pMod
@@ -22,7 +23,7 @@ import com.suushiemaniac.cubing.bld.util.deepEquals
 
 import java.io.File
 
-open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, List<String>>, private val commandMap: Map<String, List<String>>) : KPuzzle(reader, kCommandMap) {
+open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, List<String>>, val bldCommandMap: Map<String, List<String>>) : KPuzzle(reader, kCommandMap) {
     constructor(reader: NotationReader, kCommandMap: Map<String, List<String>>, bldFile: File) : this(reader, kCommandMap, groupByCommand(bldFile.readLines()))
     constructor(reader: NotationReader, defFile: File, bldFile: File) : this(reader, groupByCommand(defFile.readLines()), groupByCommand(bldFile.readLines()))
 
@@ -42,7 +43,6 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, List<String>
     val executionPieceTypes = this.loadExecutionPieceTypes()
 
     var algSource: AlgSource? = null
-    val optimizer by lazy { BreakInOptimizer(this.algSource!!, reader, *this.pieceTypes.toTypedArray(), fullCache = false) }
 
     private val bruteForceRotations by lazy {
         val reOrientations = this.moveDefinitions.keys.filter { it.plane.isRotation }.toSet().powerset().filter { it.size in 1..2 }
@@ -54,12 +54,12 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, List<String>
     // FILE LOADING
 
     fun loadLetterSchemes(): Map<PieceType, Array<String>> {
-        val letterLines = this.commandMap.getValue("Lettering").first().splitLines()
+        val letterLines = this.bldCommandMap.getValue("Lettering").first().splitLines()
         return loadFilePosition(this.pieceTypes, letterLines.drop(1)) { it.first }
     }
 
     fun loadBuffers(): Map<PieceType, List<Int>> {
-        val bufferCommands = this.commandMap.getValue("Buffer")
+        val bufferCommands = this.bldCommandMap.getValue("Buffer")
 
         val collectionMap = mutableListOf<Pair<PieceType, Int>>()
 
@@ -79,21 +79,21 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, List<String>
     }
 
     fun loadReorientMethod(): String {
-        return this.commandMap.getValue("Orientation").first().splitLines().first().splitAtWhitespace().last()
+        return this.bldCommandMap.getValue("Orientation").first().splitLines().first().splitAtWhitespace().last()
     }
 
     fun loadReorientState(): PuzzleState {
-        val stateLines = this.commandMap.getValue("Orientation").first().splitLines()
+        val stateLines = this.bldCommandMap.getValue("Orientation").first().splitLines()
 
         return loadKPosition(this.pieceTypes, stateLines.drop(1))
     }
 
     fun loadMisOrientMethod(): String {
-        return this.commandMap.getValue("MisOrient").first().splitAtWhitespace().last()
+        return this.bldCommandMap.getValue("MisOrient").first().splitAtWhitespace().last()
     }
 
     fun loadParityDependencyFixes(): Map<PieceType, PuzzleState> {
-        val dependencyFixDescriptions = this.commandMap["ParityDependency"] ?: emptyList()
+        val dependencyFixDescriptions = this.bldCommandMap["ParityDependency"] ?: emptyList()
 
         return dependencyFixDescriptions.map { it.splitLines() }.map { it[0].splitAtWhitespace()[1] to it.drop(1) }
                 .toMap().mapKeys { this.findPieceTypeByName(it.key) }
@@ -101,13 +101,13 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, List<String>
     }
 
     fun loadParityFirstPieceTypes(): List<PieceType> {
-        val firstPieceTypes = this.commandMap["ParityFirst"]?.first()?.splitAtWhitespace() ?: emptyList()
+        val firstPieceTypes = this.bldCommandMap["ParityFirst"]?.first()?.splitAtWhitespace() ?: emptyList()
 
         return firstPieceTypes.drop(1).map { this.findPieceTypeByName(it) }
     }
 
     fun loadExecutionPieceTypes(): List<PieceType> {
-        return this.commandMap.getValue("Execution").first().splitAtWhitespace().drop(1).map { this.findPieceTypeByName(it) }
+        return this.bldCommandMap.getValue("Execution").first().splitAtWhitespace().drop(1).map { this.findPieceTypeByName(it) }
     }
 
     private fun findPieceTypeByName(name: String): PieceType {
@@ -262,7 +262,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, List<String>
 
         val currentCycleStart = cycleShift.mapIndexed { i, t ->
             this.currentlyAtTarget(type, t) in bufferAdjacency
-                    || targetedPerms.subList(0, i).count { it == targetToPerm(type, t) } > 1
+                    || targetedPerms.subList(0, i).countOf(targetToPerm(type, t)) > 1
         }
 
         val nextTargetChoice = if (currentCycleStart.last()) {
@@ -276,7 +276,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, List<String>
 
         val openBreakInPerms = currentCycleStart.indices.drop(1).filter { currentCycleStart[it - 1] }
                 .map { targetToPerm(type, cycleShift[it]) }
-                .filter { targetedPerms.count { t -> t == it } == 1 }
+                .filter { targetedPerms.countOf(it) == 1 }
 
         val notTargeted = unsolvedTargets.filter { targetToPerm(type, it) !in (targetedPerms - openBreakInPerms) }
         val favorableTargets = notTargeted.filter { buffer !in this.getSolutionSpots(type, this.currentlyAtTarget(type, it)) }
@@ -294,7 +294,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, List<String>
             return buf.sortedBy { this.targetToLetter(type, it) } + rem.sortedBy { this.targetToLetter(type, it) }
         }
 
-        return this.optimizer.optimizeBreakInTargetsAfter(target, type) - preSolved
+        return BreakInOptimizer(this.algSource!!, this.reader).optimizeBreakInTargetsAfter(target, buffer, type) - preSolved
     }
 
     protected fun getReorientationMoves() = when {
@@ -329,5 +329,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: Map<String, List<String>
         fun permToTargets(type: PieceType, perm: Int) = type.orientations.countingList().map { pieceToTarget(type, perm, it) }
 
         fun adjacentTargets(type: PieceType, target: Int) = permToTargets(type, targetToPerm(type, target))
+
+        fun preInstalledConfig(tag: String, person: String) = File(GPuzzle::class.java.classLoader.getResource("gpuzzle/$person/$tag.bld").toURI())
     }
 }

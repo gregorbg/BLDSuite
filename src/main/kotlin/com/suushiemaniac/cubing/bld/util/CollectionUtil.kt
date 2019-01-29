@@ -34,6 +34,10 @@ object CollectionUtil {
         return List(this) { value() }
     }
 
+    fun <T> List<T>.countOf(elem: T): Int {
+        return this.count { it == elem }
+    }
+
     fun <T> Collection<T>.findByMnemonic(mnemonic: String): List<T> {
         return this.filter { it.toString().startsWith(mnemonic) }
     }

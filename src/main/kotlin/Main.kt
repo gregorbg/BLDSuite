@@ -1,9 +1,5 @@
-import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader
 import com.suushiemaniac.cubing.bld.gsolve.GPuzzle
-import puzzle.*
-
-import java.io.File
-import kotlin.system.exitProcess
+import com.suushiemaniac.cubing.bld.model.puzzle.WCAPuzzle
 
 fun main() {
     //val analysis = CubicPuzzle.THREE_BLD.scrambleAnalysis
@@ -12,15 +8,12 @@ fun main() {
     //println(analysis.scramble)
     //println(analysis.getSolutionPairs(true))
 
-    val defFile = File("/home/suushie_maniac/jvdocs/BLDSuite/src/main/resources/kpuzzle/777.def")
-    val bldFile = File("/home/suushie_maniac/jvdocs/BLDSuite/src/main/resources/gpuzzle/gregor/777.bld")
+    val puzzle = WCAPuzzle.THREE_BLD
 
-    val reader = CubicAlgorithmReader()
-    val scrambler = CubePuzzle(7)
+    val bldFile = GPuzzle.preInstalledConfig(puzzle.kConfigTag, "gregor")
+    val testCube = puzzle.gPuzzle(bldFile)
 
-    val testCube = GPuzzle(reader, defFile, bldFile)
-
-    val scr = reader.parse(scrambler.generateScramble())
+    val scr = puzzle.randomScramble
     val analysis = testCube.getAnalysis(scr)
 
     println(scr.toFormatString())

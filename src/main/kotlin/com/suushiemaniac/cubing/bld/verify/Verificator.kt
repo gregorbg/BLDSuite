@@ -6,7 +6,6 @@ import com.suushiemaniac.cubing.alglib.alg.SubGroup
 import com.suushiemaniac.cubing.alglib.alg.commutator.Commutator
 import com.suushiemaniac.cubing.alglib.alg.commutator.PureComm
 import com.suushiemaniac.cubing.alglib.alg.commutator.SetupComm
-import com.suushiemaniac.cubing.alglib.lang.NotationReader
 import com.suushiemaniac.cubing.alglib.move.CubicMove
 import com.suushiemaniac.cubing.alglib.move.Move
 import com.suushiemaniac.cubing.alglib.move.modifier.CubicModifier
@@ -17,7 +16,10 @@ import com.suushiemaniac.cubing.bld.model.PieceType
 import com.suushiemaniac.cubing.bld.model.AlgSource
 import com.suushiemaniac.cubing.bld.util.MapUtil.denullify
 
-class Verificator(val analyzer: GPuzzle, val source: AlgSource, val reader: NotationReader) {
+class Verificator(val analyzer: GPuzzle, val source: AlgSource) {
+    val reader
+        get() = this.analyzer.reader
+
     fun verifyAll(type: PieceType): Map<PieceCycle, Map<String, Boolean>> {
         return fullCycles(type).associateWith { this.verifySingleCase(type, it) }
     }

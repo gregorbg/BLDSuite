@@ -1,14 +1,17 @@
 package com.suushiemaniac.cubing.bld.analyze
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
-import com.suushiemaniac.cubing.bld.gsolve.GPuzzle
 import com.suushiemaniac.cubing.bld.model.PieceType
+import com.suushiemaniac.cubing.bld.model.puzzle.TwistyPuzzle
 
 import com.suushiemaniac.cubing.bld.util.MapUtil.increment
 import com.suushiemaniac.cubing.bld.util.MapUtil.sortedPrint
 import com.suushiemaniac.cubing.bld.util.MapUtil.freqAverage
+import java.io.File
 
-class MassAnalyzer(val analyzer: GPuzzle, val scrambler: () -> Algorithm) {
+class MassAnalyzer(val puzzle: TwistyPuzzle, config: File) {
+    val analyzer = this.puzzle.gPuzzle(config)
+
     fun analyzeProperties(scrambles: List<Algorithm>) {
         val parityCounts = mutableMapOf<PieceType, Int>()
         val solvedBufferCounts = mutableMapOf<PieceType, Int>()
@@ -140,6 +143,6 @@ class MassAnalyzer(val analyzer: GPuzzle, val scrambler: () -> Algorithm) {
     }
 
     fun generateRandom(numCubes: Int): List<Algorithm> {
-        return List(numCubes) { this.scrambler() }
+        return List(numCubes) { this.puzzle.randomScramble }
     }
 }
