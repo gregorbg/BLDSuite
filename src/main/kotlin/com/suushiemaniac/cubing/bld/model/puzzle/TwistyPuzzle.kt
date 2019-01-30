@@ -8,8 +8,6 @@ import net.gnehzr.tnoodle.scrambles.Puzzle
 import java.io.File
 
 interface TwistyPuzzle {
-    val kPuzzle: KPuzzle
-
     val tPuzzle: Puzzle
 
     val reader: NotationReader
@@ -17,5 +15,11 @@ interface TwistyPuzzle {
     val randomScramble: Algorithm
         get() = reader.parse(tPuzzle.generateScramble())
 
-    fun gPuzzle(bldFile: File) = GPuzzle(reader, kPuzzle.commandMap, bldFile)
+    val kTag: String
+
+    val kPuzzle: KPuzzle
+        get() = KPuzzle(this.reader, KPuzzle.preInstalledConfig(this.kTag))
+
+    fun gPuzzle(bldFile: File) = GPuzzle(this.reader, KPuzzle.preInstalledConfig(this.kTag), KPuzzle.loadCommandMap(bldFile))
+    fun gPuzzle(personTag: String) = GPuzzle(this.reader, KPuzzle.preInstalledConfig(this.kTag), GPuzzle.preInstalledConfig(this.kTag, personTag))
 }

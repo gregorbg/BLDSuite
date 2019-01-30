@@ -6,6 +6,7 @@ import com.suushiemaniac.cubing.bld.util.MathUtil.toInt
 data class Piece(val permutation: Int, val orientation: Int = 0)
 typealias PieceState = Array<Piece>
 typealias PuzzleState = Map<PieceType, PieceState>
+typealias CommandMap = Map<String, List<List<String>>>
 
 fun PieceState.deepCopy(): PieceState {
     return this.map { it.copy() }.toTypedArray()

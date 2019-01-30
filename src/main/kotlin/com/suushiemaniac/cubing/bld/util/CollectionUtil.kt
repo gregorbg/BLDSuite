@@ -38,6 +38,18 @@ object CollectionUtil {
         return this.count { it == elem }
     }
 
+    fun <T> List<T>.takeWithTail(n: Int): Pair<List<T>, List<T>> {
+        return this.take(n) to this.drop(n)
+    }
+
+    fun <T> List<T>.headWithTail(): Pair<T, List<T>> {
+        return this.first() to this.drop(1)
+    }
+
+    fun <T> List<T>.headOrNullWithTail(): Pair<T?, List<T>> {
+        return this.firstOrNull() to this.drop(1)
+    }
+
     fun <T> Collection<T>.findByMnemonic(mnemonic: String): List<T> {
         return this.filter { it.toString().startsWith(mnemonic) }
     }

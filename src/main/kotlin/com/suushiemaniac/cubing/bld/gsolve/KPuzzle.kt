@@ -8,12 +8,11 @@ import com.suushiemaniac.cubing.bld.util.*
 import com.suushiemaniac.cubing.bld.util.StringUtil.splitAtWhitespace
 import com.suushiemaniac.cubing.bld.util.StringUtil.splitLines
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.filledList
+import com.suushiemaniac.cubing.bld.util.CollectionUtil.headWithTail
 
 import java.io.File
 
-open class KPuzzle(val reader: NotationReader, val commandMap: Map<String, List<String>>) {
-    constructor(reader: NotationReader, defFile: File) : this(reader, groupByCommand(defFile.readLines()))
-
+open class KPuzzle(val reader: NotationReader, val commandMap: CommandMap) {
     val pieceTypes = this.loadPieceTypes()
 
     val solvedState = this.loadSolvedState().toMutableMap()
@@ -22,42 +21,36 @@ open class KPuzzle(val reader: NotationReader, val commandMap: Map<String, List<
     val moveDefinitions = this.loadMoves()
 
     private fun loadPieceTypes(): Set<PieceType> {
-        val pieceTypes = mutableSetOf<PieceType>()
         val pieceTypeCommands = this.commandMap["Set"] ?: emptyList()
 
-        for (ptCmd in pieceTypeCommands) {
-            val (_, title, perm, orient) = ptCmd.splitAtWhitespace()
-            pieceTypes.add(PieceType(title, perm.toInt(), orient.toInt()))
-        }
-
-        return pieceTypes
+        return pieceTypeCommands.map { PieceType(it[0], it[1].toInt(), it[2].toInt()) }.toSet()
     }
 
     protected fun loadSolvedState(): PuzzleState {
-        val solvedCommand = this.commandMap.getValue("Solved").first().splitLines()
+        val solvedCommand = this.commandMap.getValue("Solved").first()
 
-        return loadKPosition(this.pieceTypes, solvedCommand.drop(1))
+        return loadKPosition(this.pieceTypes, solvedCommand[0].splitLines())
     }
 
     private fun loadMoves(): Map<Move, PuzzleState> {
         val moveDefs = mutableMapOf<Move, PuzzleState>()
-        val moveCommands = this.commandMap.getOrDefault("Move", emptyList()) +
-                this.commandMap.getOrDefault("CompositeMove", emptyList())
+        val moveCommands = this.commandMap["Move"] ?: emptyList()
 
-        for (moveDef in moveCommands) {
-            val moveLines = moveDef.splitLines()
-            val moveHeader = moveLines.first().splitAtWhitespace()
+        for ((moveBaseName, moveDef) in moveCommands) {
+            val moveConfig = loadKPosition(this.pieceTypes, moveDef.splitLines())
 
-            val moveConfig = if (moveHeader.first().startsWith("Composite")) {
-                val compositeDef = this.reader.parse(moveLines.drop(1).joinToString(""))
-                val identityMove = computeIdentityMove(this.solvedState)
+            moveDefs += bruteForcePowerMoves(this.solvedState, moveConfig, this.reader, moveBaseName)
+        }
 
-                compositeDef.mapNotNull(moveDefs::get).map { it.deepCopy() }.fold(identityMove, ::movePuzzle)
-            } else {
-                loadKPosition(this.pieceTypes, moveLines.drop(1))
-            }
+        val compositeCommands = this.commandMap["CompositeMove"] ?: emptyList()
 
-            moveDefs += bruteForcePowerMoves(this.solvedState, moveConfig, this.reader, moveHeader.last())
+        for ((moveBaseName, moveSeq) in compositeCommands) {
+            val compositeDef = this.reader.parse(moveSeq)
+            val identityMove = computeIdentityMove(this.solvedState)
+
+            val moveConfig = compositeDef.mapNotNull(moveDefs::get).map(PuzzleState::deepCopy).fold(identityMove, ::movePuzzle)
+
+            moveDefs += bruteForcePowerMoves(this.solvedState, moveConfig, this.reader, moveBaseName)
         }
 
         return moveDefs
@@ -67,16 +60,18 @@ open class KPuzzle(val reader: NotationReader, val commandMap: Map<String, List<
     protected fun hypotheticalScramble(scramble: Algorithm) = scramblePuzzle(this.puzzleState.deepCopy(), scramble, this.moveDefinitions)
 
     companion object {
-        fun groupByCommand(lines: List<String>): Map<String, List<String>> {
-            val cmdGroups = mutableMapOf<String, MutableList<String>>()
+        private val EXTRA_COMMANDS = listOf("Solved", "Move", "ParityDependency", "Lettering", "Orientation", "CompositeMove")
+
+        fun groupByCommand(lines: List<String>): Map<String, List<List<String>>> {
+            val cmdGroups = mutableMapOf<String, MutableList<List<String>>>()
             val usefulLines = lines.filter { it.isNotBlank() }
 
             for ((i, ln) in usefulLines.withIndex()) {
-                val cmd = ln.splitAtWhitespace().first()
+                val (cmd, args) = ln.splitAtWhitespace().headWithTail()
+                val data = args.toMutableList()
 
-                val data = when (cmd.toLowerCase()) {
-                    "solved", "move", "paritydependency", "lettering", "orientation", "compositemove" -> untilNextEnd(usefulLines, i).joinToString("\n")
-                    else -> ln
+                if (cmd in EXTRA_COMMANDS) {
+                    data.add(untilNextEnd(usefulLines, i + 1).joinToString("\n"))
                 }
 
                 cmdGroups.getOrPut(cmd) { mutableListOf() }.add(data)
@@ -95,7 +90,7 @@ open class KPuzzle(val reader: NotationReader, val commandMap: Map<String, List<
             return lines.drop(currPointer)
         }
 
-        inline fun <reified T> loadFilePosition(pieceTypes: Set<PieceType>, defLines: List<String>, lineTransform: (Pair<String, String>) -> T): Map<PieceType, Array<T>> {
+        inline fun <reified T> loadFilePosition(pieceTypes: Set<PieceType>, defLines: List<String>, lineTransform: (Pair<String, Int>) -> T): Map<PieceType, Array<T>> {
             val configurationMap = mutableMapOf<PieceType, Array<T>>()
             val pieceTypeNames = pieceTypes.map { it.name to it }.toMap() // Help for parsing
 
@@ -108,7 +103,7 @@ open class KPuzzle(val reader: NotationReader, val commandMap: Map<String, List<
 
                     val orientCanString = if (i + 2 in defLines.indices) defLines[i + 2] else "End"
                     val orientArray = if (orientCanString in pieceTypeNames.keys || orientCanString == "End")
-                        permArray.size.filledList("0") else orientCanString.splitAtWhitespace()
+                        permArray.size.filledList(0) else orientCanString.splitAtWhitespace().map { it.toInt() }
 
                     configurationMap[currType] = permArray.zip(orientArray).map(lineTransform).toTypedArray()
                 }
@@ -119,7 +114,7 @@ open class KPuzzle(val reader: NotationReader, val commandMap: Map<String, List<
 
         fun loadKPosition(pieceTypes: Set<PieceType>, defLines: List<String>): PuzzleState {
             return loadFilePosition(pieceTypes, defLines) {
-                Piece(it.first.toIntOrNull() ?: -1, it.second.toInt())
+                Piece(it.first.toIntOrNull() ?: -1, it.second)
             }
         }
 
@@ -188,6 +183,7 @@ open class KPuzzle(val reader: NotationReader, val commandMap: Map<String, List<
             return moveDefs
         }
 
-        fun preInstalledConfig(tag: String) = File(KPuzzle::class.java.classLoader.getResource("kpuzzle/$tag.def").toURI())
+        fun loadCommandMap(kFile: File) = groupByCommand(kFile.readLines())
+        fun preInstalledConfig(tag: String) = loadCommandMap(File(KPuzzle::class.java.classLoader.getResource("kpuzzle/$tag.def").toURI()))
     }
 }

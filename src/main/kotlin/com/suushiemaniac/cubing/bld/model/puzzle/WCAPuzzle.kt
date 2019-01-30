@@ -2,11 +2,10 @@ package com.suushiemaniac.cubing.bld.model.puzzle
 
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader
 import com.suushiemaniac.cubing.alglib.lang.NotationReader
-import com.suushiemaniac.cubing.bld.gsolve.KPuzzle
 import net.gnehzr.tnoodle.scrambles.Puzzle
 import puzzle.*
 
-enum class WCAPuzzle(val kConfigTag: String, val parser: () -> NotationReader, val scrambler: () -> Puzzle) : TwistyPuzzle {
+enum class WCAPuzzle(override val kTag: String, val parser: () -> NotationReader, val scrambler: () -> Puzzle) : TwistyPuzzle {
     TWO("222", ::CubicAlgorithmReader, ::TwoByTwoCubePuzzle),
     THREE("333", ::CubicAlgorithmReader, ::ThreeByThreeCubePuzzle),
     THREE_BLD(THREE, ::NoInspectionThreeByThreeCubePuzzle),
@@ -19,12 +18,7 @@ enum class WCAPuzzle(val kConfigTag: String, val parser: () -> NotationReader, v
     SIX("666", ::CubicAlgorithmReader, { CubePuzzle(6) }),
     SEVEN("777", ::CubicAlgorithmReader, { CubePuzzle(7) });
     
-    constructor(parent: WCAPuzzle, scrambler: () -> Puzzle) : this(parent.kConfigTag, parent.parser, scrambler)
-
-    protected val defFile = KPuzzle.preInstalledConfig(this.kConfigTag)
-
-    override val kPuzzle
-        get() = KPuzzle(this.reader, this.defFile)
+    constructor(parent: WCAPuzzle, scrambler: () -> Puzzle) : this(parent.kTag, parent.parser, scrambler)
 
     override val tPuzzle
         get() = this.scrambler()
