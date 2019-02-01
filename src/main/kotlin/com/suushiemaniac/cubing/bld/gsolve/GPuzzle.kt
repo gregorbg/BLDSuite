@@ -40,7 +40,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
         val reOrientations = this.moveDefinitions.keys.filter { it.plane.isRotation }.toSet().powerset().filter { it.size in 1..2 }
         val nonCancelling = reOrientations.map { SimpleAlg(it.toList()) }.toSet()
 
-        nonCancelling.flatMap { it.allMoves().permutations() }.map(::SimpleAlg).toSet().sortedBy { it.algLength() }
+        nonCancelling.flatMap { it.allMoves().permutations() }.map { SimpleAlg(it) }.toSet().sortedBy { it.algLength() }
     }
 
     // FILE LOADING
@@ -66,7 +66,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
     fun loadReorientState(): PuzzleState {
         val stateLines = this.bldCommandMap.getValue("Orientation").first()
 
-        return loadKPosition(this.pieceTypes, stateLines[0].splitLines())
+        return loadKPosition(this.pieceTypes, stateLines[1].splitLines())
     }
 
     fun loadMisOrientMethod(): String {

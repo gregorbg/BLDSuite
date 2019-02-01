@@ -107,7 +107,7 @@ class BldAnalysis(private val reader: NotationReader,
         val explanations = mutableListOf<String>()
 
         if (withRotation) {
-            val formatRotations = this.getRotations().toFormatString()
+            val formatRotations = this.getRotations().toString()
             explanations.add("Rotations: ${if (formatRotations.isNotBlank()) formatRotations else "/"}")
         }
 
@@ -126,7 +126,7 @@ class BldAnalysis(private val reader: NotationReader,
     }
 
     fun getSolutionAlgorithms(withRotation: Boolean = false): String {
-        return this.getExplanationString(withRotation) { this.getSolutionAlgorithms(it).joinToString("\n", transform = Algorithm::toFormatString) }
+        return this.getExplanationString(withRotation) { this.getSolutionAlgorithms(it).joinToString("\n") }
     }
 
     fun getRawSolutionAlgorithm(withRotation: Boolean = false): Algorithm {
