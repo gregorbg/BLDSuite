@@ -8,13 +8,10 @@ import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.Companion.
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition.Companion.EXACT
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition.Companion.MAX
 import com.suushiemaniac.cubing.bld.filter.condition.IntCondition.Companion.MIN
-import com.suushiemaniac.cubing.bld.gsolve.GPuzzle
 import com.suushiemaniac.cubing.bld.model.puzzle.TwistyPuzzle
 
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.find
-import kotlinx.coroutines.channels.first
+import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -35,7 +32,7 @@ class BldScramble(val puzzle: TwistyPuzzle, config: File, vararg val conditions:
     fun findScrambleOnThread(): Algorithm {
         this.balanceConditions()
 
-        return this.scrambleSupplier.find { this.matchingConditions(this.analyzer.getAnalysis(it)) }!!
+        return this.scrambleSupplier.find(this::matchingConditions)!!
     }
 
     fun findScramblesOnThread(numScrambles: Int): List<Algorithm> {
@@ -44,7 +41,7 @@ class BldScramble(val puzzle: TwistyPuzzle, config: File, vararg val conditions:
 
     fun findScramblesThreadModel(numScrambles: Int): List<Algorithm> {
         val numThreads = Runtime.getRuntime().availableProcessors() + 1
-        val scrambleQueue = Channel<Algorithm>(numScrambles * numThreads * numThreads)
+        val scrambleQueue = Channel<Algorithm>(Channel.UNLIMITED)
 
         for (i in 0 until numThreads) {
             GlobalScope.launch {
@@ -57,26 +54,17 @@ class BldScramble(val puzzle: TwistyPuzzle, config: File, vararg val conditions:
         this.balanceConditions()
 
         return runBlocking {
-            val algList = mutableListOf<Algorithm>() // TODO use sequences instead?
-
-            do {
-                val scramble = scrambleQueue.receive()
-                val analysis = analyzer.getAnalysis(scramble)
-
-                if (matchingConditions(analysis)) {
-                    algList.add(scramble)
-                }
-            } while (algList.size < numScrambles)
-
-            algList
+            scrambleQueue.filter { matchingConditions(it) }.take(numScrambles).toList()
         }
     }
 
-    fun matchingConditions(inCube: BldAnalysis): Boolean {
+    fun matchingConditions(scramble: Algorithm): Boolean {
+        val analysis = this.analyzer.getAnalysis(scramble)
+
         for (bundle in this.conditions) {
-            if (!bundle.matchingConditions(inCube)) {
+            if (!bundle.matchingConditions(analysis)) {
                 if (SHOW_DISCARDED) {
-                    println("Discarded " + inCube.getStatString())
+                    println("Discarded " + analysis.getStatString())
                 }
 
                 return false

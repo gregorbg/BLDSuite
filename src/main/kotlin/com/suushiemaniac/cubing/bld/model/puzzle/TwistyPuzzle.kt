@@ -13,7 +13,7 @@ interface TwistyPuzzle {
     val reader: NotationReader
 
     val randomScramble: Algorithm
-        get() = reader.parse(tPuzzle.generateScramble())
+        get() = this.reader.parse(this.tPuzzle.generateScramble())
 
     val kTag: String
 

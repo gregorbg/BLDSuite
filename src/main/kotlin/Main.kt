@@ -1,13 +1,35 @@
-import com.suushiemaniac.cubing.bld.model.puzzle.WCAPuzzle
+import com.suushiemaniac.cubing.bld.model.puzzle.TwistyPuzzle
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlin.random.Random
+import kotlin.system.measureTimeMillis
 
 fun main() {
-    //val analysis = CubicPuzzle.THREE_BLD.scrambleAnalysis
-    //analysis.setBuffer(CubicPieceType.EDGE, 2)
+    val dummyChannel = Channel<Int>(Channel.UNLIMITED)
 
-    //println(analysis.scramble)
-    //println(analysis.getSolutionPairs(true))
+    repeat(5) {
+        GlobalScope.launch {
+            while (true) {
+                delay(1000)
+                dummyChannel.send(Random.nextInt(0, 25) + 1)
+            }
+        }
+    }
 
-    val puzzle = WCAPuzzle.THREE_BLD
+    val runtime = measureTimeMillis {
+        runBlocking {
+            dummyChannel.filter { it % 5 == 0 }.take(5).toList()
+        }
+    }
+
+    println(runtime / 1000f)
+
+}
+
+fun randAnalysis(puzzle: TwistyPuzzle) {
     val testCube = puzzle.gPuzzle("gregor")
 
     val scr = puzzle.randomScramble
