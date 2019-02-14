@@ -8,7 +8,6 @@ import com.suushiemaniac.cubing.bld.gsolve.GPuzzle
 import com.suushiemaniac.cubing.bld.model.cycle.*
 import com.suushiemaniac.cubing.bld.model.PieceType
 import com.suushiemaniac.cubing.bld.model.AlgSource
-import com.suushiemaniac.cubing.bld.util.ArrayUtil.filledArray
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.countingList
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.randomOrNull
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.mnemonic
@@ -19,7 +18,7 @@ import kotlin.math.pow
 class BldAnalysis(private val reader: NotationReader,
                   val orientationPreMoves: Algorithm,
                   val solutionCycles: Map<PieceType, List<PieceCycle>>,
-                  val mainBuffers: Map<PieceType, Int>,
+                  val mainBuffers: Map<PieceType, List<Int>>,
                   val letterSchemes: Map<PieceType, Array<String>>,
                   val algSource: AlgSource? = null) {
     val pieceTypes = this.solutionCycles.keys
@@ -140,7 +139,7 @@ class BldAnalysis(private val reader: NotationReader,
     }
 
     fun getMainBuffer(type: PieceType): Int {
-        return this.mainBuffers.getValue(type)
+        return this.mainBuffers.getValue(type).first() // FIXME
     }
 
     fun getMainBufferPerm(type: PieceType): Int {
