@@ -43,12 +43,10 @@ open class KPuzzle(val reader: NotationReader, val commandMap: CommandMap) {
         }
 
         val compositeCommands = this.commandMap["CompositeMove"] ?: emptyList()
+        val identityMove = computeIdentityMove(this.solvedState)
 
         for ((moveBaseName, moveSeq) in compositeCommands) {
-            val compositeDef = this.reader.parse(moveSeq)
-            val identityMove = computeIdentityMove(this.solvedState)
-
-            val moveConfig = compositeDef.mapNotNull(moveDefs::get).map(PuzzleState::deepCopy).fold(identityMove, ::movePuzzle)
+            val moveConfig = this.reader.parse(moveSeq).mapNotNull(moveDefs::get).fold(identityMove.deepCopy(), ::movePuzzle)
 
             moveDefs += bruteForcePowerMoves(this.solvedState, moveConfig, this.reader, moveBaseName)
         }
@@ -56,8 +54,11 @@ open class KPuzzle(val reader: NotationReader, val commandMap: CommandMap) {
         return moveDefs
     }
 
-    protected fun applyScramble(scramble: Algorithm) = scramblePuzzle(this.puzzleState, scramble, this.moveDefinitions)
-    protected fun hypotheticalScramble(scramble: Algorithm) = scramblePuzzle(this.puzzleState.deepCopy(), scramble, this.moveDefinitions)
+    fun applyScramble(scramble: Algorithm) = scramblePuzzle(this.puzzleState, scramble, this.moveDefinitions).let { this }
+    fun hypotheticalScramble(scramble: Algorithm) = scramblePuzzle(this.puzzleState.deepCopy(), scramble, this.moveDefinitions)
+
+    fun dumpMoves() = this.moveDefinitions.mapValues { it.value.toDefLines() }
+    fun dumpState(): List<String> = this.puzzleState.toDefLines()
 
     companion object {
         private val EXTRA_COMMANDS = listOf("Solved", "Move", "ParityDependency", "Lettering", "Orientation", "CompositeMove")
@@ -92,7 +93,7 @@ open class KPuzzle(val reader: NotationReader, val commandMap: CommandMap) {
 
         inline fun <reified T> loadFilePosition(pieceTypes: Set<PieceType>, defLines: List<String>, lineTransform: (Pair<String, Int>) -> T): Map<PieceType, Array<T>> {
             val configurationMap = mutableMapOf<PieceType, Array<T>>()
-            val pieceTypeNames = pieceTypes.map { it.name to it }.toMap() // Help for parsing
+            val pieceTypeNames = pieceTypes.associateBy { it.name }
 
             for ((i, ln) in defLines.withIndex()) {
                 if (ln in pieceTypeNames.keys) {

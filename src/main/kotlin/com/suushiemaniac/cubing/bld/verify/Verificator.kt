@@ -65,7 +65,7 @@ class Verificator(val analyzer: GPuzzle, val source: AlgSource) {
                     reparations = currentReparations
                 }
 
-                return reparations.map(::SimpleAlg)
+                return reparations.map { SimpleAlg(it) }
             }
             is Commutator -> {
                 val firstPart: Algorithm
@@ -113,7 +113,7 @@ class Verificator(val analyzer: GPuzzle, val source: AlgSource) {
         return if (original is CubicMove)
             CubicModifier.values()
                 .filter { it != original.modifier }
-                .map { CubicMove( original.plane, it, original.depth) }
+                .map { CubicMove( original.plane, it, original.depth, original.fromDepth) }
         else emptyList()
     }
 

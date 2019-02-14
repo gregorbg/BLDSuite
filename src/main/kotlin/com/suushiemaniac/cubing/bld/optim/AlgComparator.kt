@@ -18,11 +18,11 @@ class AlgComparator private constructor() : Comparator<Algorithm> {
     }
 
     fun rotationScore(alg: Algorithm): Int {
-        return -5 * alg.rotationGroup.size() + 10
+        return -5 * alg.rotationGroup.size + 10
     }
 
     fun subGroupScore(alg: Algorithm): Int {
-        return -5 * alg.subGroup.size() + 25
+        return -5 * alg.subGroup.size + 25
     }
 
     companion object {

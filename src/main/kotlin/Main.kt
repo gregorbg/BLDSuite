@@ -1,3 +1,4 @@
+import com.suushiemaniac.cubing.alglib.alg.Algorithm
 import com.suushiemaniac.cubing.bld.model.puzzle.TwistyPuzzle
 import com.suushiemaniac.cubing.bld.model.puzzle.WCAPuzzle
 
@@ -5,12 +6,15 @@ fun main() {
     randAnalysis(WCAPuzzle.THREE_BLD)
 }
 
-fun randAnalysis(puzzle: TwistyPuzzle) {
+fun gAnalysis(puzzle: TwistyPuzzle, scramble: Algorithm) {
     val testCube = puzzle.gPuzzle("gregor")
 
-    val scr = puzzle.randomScramble
-    val analysis = testCube.getAnalysis(scr)
+    val analysis = testCube.getAnalysis(scramble)
 
-    println(scr.toString())
+    println(scramble.toString())
     println(analysis.getSolutionPairs(true))
+}
+
+fun randAnalysis(puzzle: TwistyPuzzle) {
+    gAnalysis(puzzle, puzzle.randomScramble)
 }

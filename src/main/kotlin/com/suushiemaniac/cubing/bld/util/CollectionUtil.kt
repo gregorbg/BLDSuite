@@ -68,6 +68,14 @@ object CollectionUtil {
         return representation
     }
 
+    infix fun <T, V> Collection<T>.allTo(v: V): List<Pair<T, V>> {
+        return this.map { it to v }
+    }
+
+    infix fun <T, V> T.toEach(collect: Collection<V>): List<Pair<T, V>> {
+        return collect.map { this to it }
+    }
+
     // TODO use library instead?
     fun <T> Collection<T>.powerset(): Set<Set<T>> = powerset(this, setOf(setOf()))
 

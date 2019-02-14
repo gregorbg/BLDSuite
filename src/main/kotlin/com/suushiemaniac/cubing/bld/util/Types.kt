@@ -7,6 +7,7 @@ data class Piece(val permutation: Int, val orientation: Int = 0)
 typealias PieceState = Array<Piece>
 typealias PuzzleState = Map<PieceType, PieceState>
 typealias CommandMap = Map<String, List<List<String>>>
+data class StickerTarget(val target: Int, val buffer: Int, val isCycleBreak: Boolean = false)
 
 fun PieceState.deepCopy(): PieceState {
     return this.map { it.copy() }.toTypedArray()
@@ -46,4 +47,12 @@ fun PieceState.countEquals(other: PieceState?): Int {
 
 fun PuzzleState.countEquals(other: PuzzleState): Int {
     return other.entries.sumBy { (pt, st) -> st.countEquals(this[pt]) }
+}
+
+fun PuzzleState.toDefLines(): List<String> {
+    return this.entries.flatMap {
+        listOfNotNull(it.key.name,
+                it.value.joinToString(" ") { p -> p.permutation.toString() },
+                it.value.map { p -> p.orientation }.takeIf { l -> l.any { o -> o != 0 } }?.joinToString(" ") { p -> p.toString() })
+    }
 }

@@ -7,6 +7,7 @@ import com.suushiemaniac.cubing.bld.model.PieceType
 import com.suushiemaniac.cubing.bld.model.AlgSource
 import com.suushiemaniac.cubing.bld.model.cycle.PieceCycle
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.countingList
+import com.suushiemaniac.cubing.bld.util.CollectionUtil.toEach
 
 class BreakInOptimizer(val source: AlgSource, val reader: NotationReader) {
     fun optimizeBreakInTargetsAfter(target: Int, buffer: Int, type: PieceType): List<Int> {
@@ -19,7 +20,7 @@ class BreakInOptimizer(val source: AlgSource, val reader: NotationReader) {
 
     fun optimizeBreakInChoicesAfter(target: Int, buffer: Int, type: PieceType): List<Pair<PieceCycle, Algorithm>> {
         return type.numTargets.countingList().map { ThreeCycle(buffer, target, it) }.flatMap {
-            this.source.getAlgorithms(type, this.reader, it).map { a -> it to a }
+            it toEach this.source.getAlgorithms(type, this.reader, it)
         }.sortedByDescending { AlgComparator.scoreAlg(it.second) }
     }
 }

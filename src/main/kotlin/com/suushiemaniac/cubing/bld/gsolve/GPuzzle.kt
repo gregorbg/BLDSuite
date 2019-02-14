@@ -40,7 +40,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
         val reOrientations = this.moveDefinitions.keys.filter { it.plane.isRotation }.toSet().powerset().filter { it.size in 1..2 }
         val nonCancelling = reOrientations.map { SimpleAlg(it.toList()) }.toSet()
 
-        nonCancelling.flatMap { it.allMoves().permutations() }.map { SimpleAlg(it) }.toSet().sortedBy { it.algLength() }
+        nonCancelling.flatMap { it.permutations() }.map { SimpleAlg(it) }.toMutableList().apply { add(SimpleAlg()) }.toSet().sortedBy { it.size }
     }
 
     // FILE LOADING
@@ -122,6 +122,8 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
         return possiblePermSpots.map { pieceToTarget(type, it, (ref[it].orientation + currentOrient) % type.orientations) }
     }
 
+    protected fun getSolutionAdjacency(type: PieceType, target: Int) = this.getSolutionSpots(type, target).flatMap { adjacentTargets(type, it) }
+
     protected fun targetCurrentlySolved(type: PieceType, target: Int) = target in this.getSolutionSpots(type, this.currentlyAtTarget(type, target))
     protected fun targetCurrentlyPermuted(type: PieceType, target: Int) = target in this.getSolutionSpots(type, this.currentlyAtTarget(type, target))
             .map { targetToPerm(type, it) }
@@ -136,12 +138,17 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
 
     // CYCLE BUILDERS
 
-    protected fun compileTargetChain(type: PieceType): List<Int> {
-        val accumulate = mutableListOf<Int>()
-
+    protected fun compileTargetChain(type: PieceType): List<StickerTarget> {
         // TODO mark/use buffer float?
+        val buffer = this.getMainBufferTarget(type)
+
+        val bufferPreSolved = this.currentlyAtTarget(type, buffer) in this.getSolutionAdjacency(type, buffer)
+        val defaultTarget = StickerTarget(buffer, buffer, bufferPreSolved)
+
+        val accumulate = mutableListOf(defaultTarget)
+
         return generateSequence {
-            this.getNextTarget(type, this.getMainBufferTarget(type), accumulate)?.also { accumulate.add(it) }
+            this.getNextTarget(type, buffer, accumulate)?.also { accumulate.add(it) }
         }.toList()
     }
 
@@ -166,9 +173,9 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
 
         for (c in chunks) {
             if (c.size == 2) {
-                cycles.add(ThreeCycle(mainBuffer, c[0], c[1]))
+                cycles.add(ThreeCycle(mainBuffer, c[0].target, c[1].target))
             } else {
-                cycles.add(ParityCycle(mainBuffer, c[0]))
+                cycles.add(ParityCycle(mainBuffer, c[0].target))
             }
         }
 
@@ -199,7 +206,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
         return cycles
     }
 
-    private fun dumpDebug(): Map<PieceType, List<String>> {
+    fun dumpTargets(): Map<PieceType, List<String>> {
         return this.letterSchemes.keys.associateWith { pt ->
             pt.permutations.countingList().map {
                 this.targetToLetter(pt, this.currentlyAtTarget(pt, pieceToTarget(pt, it, 0)))
@@ -237,47 +244,46 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
         return BldAnalysis(this.reader, reorient, cycles, this.mainBuffers, this.letterSchemes, this.algSource)
     }
 
-    fun getNextTarget(type: PieceType, buffer: Int, previous: List<Int>): Int? {
-        val bufferAdjacency = this.getSolutionSpots(type, buffer).flatMap { adjacentTargets(type, it) }
-        val targetedPerms = previous.map { targetToPerm(type, it) }
+    fun getNextTarget(type: PieceType, buffer: Int, previous: List<StickerTarget>): StickerTarget? {
+        val targetedPerms = previous.map { targetToPerm(type, it.target) }
 
-        val cycleShift = listOf(this.getMainBufferTarget(type)) + previous
-
-        val currentCycleStart = cycleShift.mapIndexed { i, t ->
-            this.currentlyAtTarget(type, t) in bufferAdjacency
-                    || targetedPerms.subList(0, i).countOf(targetToPerm(type, t)) > 1
-        }
-
-        val nextTargetChoice = if (currentCycleStart.last()) {
-            this.getBreakInTargetsAfter(type, buffer, cycleShift.last(), previous)
+        val nextTargetChoice = if (previous.last().isCycleBreak) {
+            this.getBreakInTargetsAfter(type, buffer, previous)
         } else {
-            val inBuffer = this.currentlyAtTarget(type, cycleShift.last())
+            val inBuffer = this.currentlyAtTarget(type, previous.last().target)
             this.getSolutionSpots(type, inBuffer).sortedBy { this.targetToLetter(type, it) }
         }
 
         val unsolvedTargets = nextTargetChoice.filter { !this.targetCurrentlySolved(type, it) }
 
-        val openBreakInPerms = currentCycleStart.indices.drop(1).filter { currentCycleStart[it - 1] }
-                .map { targetToPerm(type, cycleShift[it]) }
+        val openBreakInPerms = previous.zipWithNext().filter { it.first.isCycleBreak }
+                .map { targetToPerm(type, it.second.target) }
                 .filter { targetedPerms.countOf(it) == 1 }
 
         val notTargeted = unsolvedTargets.filter { targetToPerm(type, it) !in (targetedPerms - openBreakInPerms) }
         val favorableTargets = notTargeted.filter { buffer !in this.getSolutionSpots(type, this.currentlyAtTarget(type, it)) }
 
-        return favorableTargets.firstOrNull() ?: notTargeted.firstOrNull()
+        val nextTarget = favorableTargets.firstOrNull() ?: notTargeted.firstOrNull()
+
+        return nextTarget?.let {
+            val targetingBuffer = this.currentlyAtTarget(type, it) in this.getSolutionAdjacency(type, buffer)
+            val closingCycle = targetToPerm(type, it) in targetedPerms
+
+            StickerTarget(it, buffer, targetingBuffer || closingCycle)
+        }
     }
 
-    protected open fun getBreakInTargetsAfter(type: PieceType, buffer: Int, target: Int, targeted: List<Int>): List<Int> {
+    protected open fun getBreakInTargetsAfter(type: PieceType, buffer: Int, history: List<StickerTarget>): List<Int> {
         val preSolved = type.numTargets.countingList().filter { this.targetCurrentlyPermuted(type, it) }
 
         if (this.algSource == null) {
-            val selection = type.numTargets.countingList() - targeted - adjacentTargets(type, buffer) - preSolved
+            val selection = type.numTargets.countingList() - history.map { it.target } - adjacentTargets(type, buffer) - preSolved
             val (buf, rem) = selection.partition { it in this.getSolutionSpots(type, buffer) }
 
             return buf.sortedBy { this.targetToLetter(type, it) } + rem.sortedBy { this.targetToLetter(type, it) }
         }
 
-        return BreakInOptimizer(this.algSource!!, this.reader).optimizeBreakInTargetsAfter(target, buffer, type) - preSolved
+        return BreakInOptimizer(this.algSource!!, this.reader).optimizeBreakInTargetsAfter(history.last().target, buffer, type) - preSolved
     }
 
     protected fun getReorientationMoves() = when {
