@@ -11,6 +11,7 @@ import com.suushiemaniac.cubing.bld.model.AlgSource
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.countingList
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.randomOrNull
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.mnemonic
+import com.suushiemaniac.cubing.bld.util.StringUtil.alignWhitespaces
 
 import kotlin.math.max
 import kotlin.math.pow
@@ -236,9 +237,10 @@ class BldAnalysis(private val reader: NotationReader,
             return this.pieceTypes
                     .reversed()
                     .joinToString(" | ", transform = this::getStatString)
+                    .alignWhitespaces("\t", " | ")
         }
 
-        val statString = StringBuilder("${this.pieceTypes.mnemonic(type)}: ")
+        val statString = StringBuilder("${this.pieceTypes.mnemonic(type) { name }}: ")
 
         if (this.hasParity(type)) {
             statString.append("_")
@@ -355,7 +357,7 @@ class BldAnalysis(private val reader: NotationReader,
                     .joinToString(" / ") { this.getNoahtation(it) }
         }
 
-        return "${this.pieceTypes.mnemonic(type)}: ${this.getTargetCount(type)}${"'".repeat(this.getMisOrientedCount(type))}"
+        return "${this.pieceTypes.mnemonic(type) { name }}: ${this.getTargetCount(type)}${"'".repeat(this.getMisOrientedCount(type))}"
     }
 
     fun matchesExecution(type: PieceType? = null, filter: (Algorithm) -> Boolean): Boolean {

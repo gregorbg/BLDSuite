@@ -1,6 +1,7 @@
 package com.suushiemaniac.cubing.bld.util
 
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.zip
+import com.suushiemaniac.cubing.bld.util.CollectionUtil.filledList
 
 object StringUtil {
     private val WS_REGEX = "\\s+".toRegex()
@@ -22,7 +23,7 @@ object StringUtil {
     }
 
     fun String.repeatWithGap(times: Int, gap: String = " "): String {
-        return List(times) { this }.joinToString(gap)
+        return times.filledList { this }.joinToString(gap)
     }
 
     fun String.splitAtWhitespace(): List<String> {
@@ -38,18 +39,20 @@ object StringUtil {
                 && that.toCharStrings().containsAll(this.toCharStrings())
     }
 
-    fun String.alignWhitespaces(delimiter: String = "\t"): String {
-        val lines = this.split("\n")
-        val cells = lines.map { it.split(delimiter) }
+    fun String.alignWhitespaces(wsDelimiter: String = "\t", lnDelimiter: String = "\n"): String {
+        val lines = this.split(lnDelimiter)
+        val cells = lines.map { it.split(wsDelimiter) }
 
         val lineLengths = cells.map { it.map(String::length) }
 
-        val maxLengthPerColumn = zip(*lineLengths.toTypedArray()).map { it.max() ?: 0 }
+        val foo = lineLengths.zip()
+
+        val maxLengthPerColumn = lineLengths.zip().map { it.max() ?: 0 }
 
         val paddedLines = cells.map {
             it.mapIndexed { i, str -> str.padEnd(maxLengthPerColumn[i], ' ') }.joinToString("")
         }
 
-        return paddedLines.joinToString("\n")
+        return paddedLines.joinToString(lnDelimiter)
     }
 }

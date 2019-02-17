@@ -1,37 +1,34 @@
 package com.suushiemaniac.cubing.bld.util
 
-import java.security.SecureRandom
+import kotlin.random.Random
 
 object CollectionUtil {
-    private val secRandom = SecureRandom()
-
     fun <T> List<T>.randomOrNull(): T? {
-        if (this.isEmpty()) return null
-
-        return this[secRandom.nextInt(this.size)]
+        return this.takeUnless { it.isEmpty() }
+                ?.get(Random.nextInt(this.size))
     }
 
-    fun <T> zip(vararg lists: List<T>): List<List<T>> {
-        val minSize = lists.map { it.size }.min() ?: return emptyList()
-        val list = mutableListOf<List<T>>()
+    fun <T> List<List<T>>.zip(): List<List<T>> {
+        val (head, tail) = this.sortedByDescending { it.size }.headOrNullWithTail()
+        val foldBase = listOf(head ?: listOf())
 
-        for (i in 0 until minSize) {
-            list.add(lists.map { it[i] })
+        return tail.fold(foldBase) { acc, list ->
+            acc.zip(list) { a, b ->
+                a + b
+            }
         }
-
-        return list
     }
 
     fun Int.countingList(offset: Int = 0): List<Int> {
-        return List(this) { it + offset }
+        return this.filledList { it + offset }
     }
 
     inline fun <reified T> Int.filledList(value: T): List<T> {
-        return List(this) { value }
+        return this.filledList { value }
     }
 
-    inline fun <reified T> Int.filledList(value: () -> T): List<T> {
-        return List(this) { value() }
+    inline fun <reified T> Int.filledList(value: (Int) -> T): List<T> {
+        return List(this) { value(it) }
     }
 
     fun <T> List<T>.countOf(elem: T): Int {
@@ -51,16 +48,24 @@ object CollectionUtil {
     }
 
     fun <T> Collection<T>.findByMnemonic(mnemonic: String): List<T> {
-        return this.filter { it.toString().startsWith(mnemonic) }
+        return this.findByMnemonic(mnemonic) { toString() }
+    }
+
+    fun <T> Collection<T>.findByMnemonic(mnemonic: String, mapping: T.() -> String): List<T> {
+        return this.filter { it.mapping().startsWith(mnemonic) }
     }
 
     fun <T> Collection<T>.mnemonic(value: T): String {
-        val representation = value.toString()
+        return this.mnemonic(value) { toString() }
+    }
+
+    fun <T> Collection<T>.mnemonic(value: T, mapping: T.() -> String): String {
+        val representation = value.mapping()
 
         for (i in 1 until representation.length) {
-            val candidatePrefix = value.toString().substring(0, i)
+            val candidatePrefix = representation.substring(0, i)
 
-            if (this.findByMnemonic(candidatePrefix).size == 1) {
+            if (this.findByMnemonic(candidatePrefix, mapping).size == 1) {
                 return candidatePrefix
             }
         }

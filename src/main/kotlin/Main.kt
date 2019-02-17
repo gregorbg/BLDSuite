@@ -3,8 +3,7 @@ import com.suushiemaniac.cubing.bld.model.puzzle.TwistyPuzzle
 import com.suushiemaniac.cubing.bld.model.puzzle.WCAPuzzle
 
 fun main() {
-    randAnalysis(WCAPuzzle.FOUR_BLD)
-    //gAnalysis(WCAPuzzle.THREE_BLD, "D' L2 U B2 F2 R2 B2 U2 B2 R2 F' U F' L R F' U R' B' R2 U' Rw'")
+    randAnalysis(WCAPuzzle.THREE_BLD)
 }
 
 fun gAnalysis(puzzle: TwistyPuzzle, scramble: Algorithm) {
@@ -14,6 +13,7 @@ fun gAnalysis(puzzle: TwistyPuzzle, scramble: Algorithm) {
 
     println(scramble.toString())
     println(analysis.getSolutionPairs(true))
+    println(analysis.getStatString())
 }
 
 fun gAnalysis(puzzle: TwistyPuzzle, scramble: String) = gAnalysis(puzzle, puzzle.reader.parse(scramble))
