@@ -7,10 +7,14 @@ import com.suushiemaniac.cubing.bld.model.puzzle.TwistyPuzzle
 import com.suushiemaniac.cubing.bld.util.MapUtil.increment
 import com.suushiemaniac.cubing.bld.util.MapUtil.sortedPrint
 import com.suushiemaniac.cubing.bld.util.MapUtil.freqAverage
-import java.io.File
+import com.suushiemaniac.cubing.bld.util.CollectionUtil.asyncList
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 
-class MassAnalyzer(val puzzle: TwistyPuzzle, config: File) {
-    val analyzer = this.puzzle.gPuzzle(config)
+class MassAnalyzer(val puzzle: TwistyPuzzle, configTag: String) {
+    val analyzer = this.puzzle.gPuzzle(configTag)
 
     fun analyzeProperties(scrambles: List<Algorithm>) {
         val parityCounts = mutableMapOf<PieceType, Int>()
@@ -47,7 +51,7 @@ class MassAnalyzer(val puzzle: TwistyPuzzle, config: File) {
         for (type in this.analyzer.pieceTypes) {
             println()
             println("Parity: " + parityCounts[type])
-            println("Average: " + parityCounts.getValue(type) / numCubes.toFloat())
+            println("Average: " + (parityCounts[type] ?: 0) / numCubes.toFloat())
 
             println()
             println("Buffer preSolved: " + solvedBufferCounts[type])
@@ -143,6 +147,6 @@ class MassAnalyzer(val puzzle: TwistyPuzzle, config: File) {
     }
 
     fun generateRandom(numCubes: Int): List<Algorithm> {
-        return List(numCubes) { this.puzzle.randomScramble }
+        return numCubes.asyncList { puzzle.randomScramble }
     }
 }

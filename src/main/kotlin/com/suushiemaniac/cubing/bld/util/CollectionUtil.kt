@@ -1,5 +1,9 @@
 package com.suushiemaniac.cubing.bld.util
 
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
 import kotlin.random.Random
 
 object CollectionUtil {
@@ -9,14 +13,14 @@ object CollectionUtil {
     }
 
     fun <T> List<List<T>>.zip(): List<List<T>> {
-        val (head, tail) = this.sortedByDescending { it.size }.headOrNullWithTail()
-        val foldBase = listOf(head ?: listOf())
+        val nonEmpty = this.filter { it.isNotEmpty() }
 
-        return tail.fold(foldBase) { acc, list ->
-            acc.zip(list) { a, b ->
-                a + b
-            }
+        if (nonEmpty.isEmpty()) {
+            return emptyList()
         }
+
+        val zipHead = nonEmpty.map { it.first() }
+        return listOf(zipHead) + nonEmpty.map { it.drop(1) }.zip()
     }
 
     fun Int.countingList(offset: Int = 0): List<Int> {
@@ -131,5 +135,15 @@ object CollectionUtil {
         }
 
         return resGroups
+    }
+
+    fun <E> Int.asyncList(block: (Int) -> E): List<E> {
+        return runBlocking {
+            List(this@asyncList) {
+                GlobalScope.async {
+                    block(it)
+                }
+            }.awaitAll()
+        }
     }
 }

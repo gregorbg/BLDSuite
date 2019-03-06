@@ -17,7 +17,7 @@ dependencies {
     runtime(kotlin("stdlib"))
 
     compile("com.suushiemaniac:cubing.alglib:2.0+")
-    compile("net.gnehzr:tnoodle-scrambles:0.13.5")
+    compile("net.gnehzr:tnoodle.scrambles:0.14.0")
 
     compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.0")
 }
@@ -28,7 +28,7 @@ tasks {
     }
 
     create<Jar>("sourcesJar") {
-        classifier = "sources"
+        archiveClassifier.set("sources")
         from(sourceSets["main"].allSource)
         dependsOn("classes")
     }

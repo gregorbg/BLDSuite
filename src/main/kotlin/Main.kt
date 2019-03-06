@@ -1,9 +1,11 @@
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
+import com.suushiemaniac.cubing.bld.analyze.MassAnalyzer
 import com.suushiemaniac.cubing.bld.model.puzzle.TwistyPuzzle
 import com.suushiemaniac.cubing.bld.model.puzzle.WCAPuzzle
 
 fun main() {
     randAnalysis(WCAPuzzle.THREE_BLD)
+    MassAnalyzer(WCAPuzzle.THREE_BLD, "gregor").analyzeProperties(10)
 }
 
 fun gAnalysis(puzzle: TwistyPuzzle, scramble: Algorithm) {

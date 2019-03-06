@@ -43,16 +43,16 @@ object StringUtil {
         val lines = this.split(lnDelimiter)
         val cells = lines.map { it.split(wsDelimiter) }
 
-        val lineLengths = cells.map { it.map(String::length) }
-
-        val foo = lineLengths.zip()
-
-        val maxLengthPerColumn = lineLengths.zip().map { it.max() ?: 0 }
+        val cellLengths = cells.map { it.map(String::length) }
+        val maxLengthPerColumn = cellLengths.zip().map { it.max() ?: 0 }
 
         val paddedLines = cells.map {
             it.mapIndexed { i, str -> str.padEnd(maxLengthPerColumn[i], ' ') }.joinToString("")
         }
 
-        return paddedLines.joinToString(lnDelimiter)
+        val lineLengths = paddedLines.map(String::length)
+        val maxLength = lineLengths.max() ?: 0
+
+        return paddedLines.joinToString(lnDelimiter) { it.padEnd(maxLength, ' ') }
     }
 }
