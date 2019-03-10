@@ -1,6 +1,6 @@
 package com.suushiemaniac.cubing.bld.util
 
-import com.suushiemaniac.cubing.bld.util.CollectionUtil.zip
+import com.suushiemaniac.cubing.bld.util.CollectionUtil.transpose
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.filledList
 
 object StringUtil {
@@ -44,7 +44,7 @@ object StringUtil {
         val cells = lines.map { it.split(wsDelimiter) }
 
         val cellLengths = cells.map { it.map(String::length) }
-        val maxLengthPerColumn = cellLengths.zip().map { it.max() ?: 0 }
+        val maxLengthPerColumn = cellLengths.transpose().map { it.max() ?: 0 }
 
         val paddedLines = cells.map {
             it.mapIndexed { i, str -> str.padEnd(maxLengthPerColumn[i], ' ') }.joinToString("")

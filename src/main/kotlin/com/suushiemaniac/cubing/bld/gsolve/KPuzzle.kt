@@ -54,6 +54,10 @@ open class KPuzzle(val reader: NotationReader, val commandMap: CommandMap) {
         return moveDefs
     }
 
+    fun findPieceTypeByName(name: String): PieceType {
+        return this.pieceTypes.find { it.name == name }!!
+    }
+
     fun applyScramble(scramble: Algorithm) = scramblePuzzle(this.puzzleState, scramble, this.moveDefinitions).let { this }
     fun hypotheticalScramble(scramble: Algorithm) = scramblePuzzle(this.puzzleState.deepCopy(), scramble, this.moveDefinitions)
 

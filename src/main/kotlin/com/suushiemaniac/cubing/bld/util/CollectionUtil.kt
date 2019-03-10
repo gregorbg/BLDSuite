@@ -12,7 +12,7 @@ object CollectionUtil {
                 ?.get(Random.nextInt(this.size))
     }
 
-    fun <T> List<List<T>>.zip(): List<List<T>> {
+    fun <T> List<List<T>>.transpose(): List<List<T>> {
         val nonEmpty = this.filter { it.isNotEmpty() }
 
         if (nonEmpty.isEmpty()) {
@@ -20,7 +20,7 @@ object CollectionUtil {
         }
 
         val zipHead = nonEmpty.map { it.first() }
-        return listOf(zipHead) + nonEmpty.map { it.drop(1) }.zip()
+        return listOf(zipHead) + nonEmpty.map { it.drop(1) }.transpose()
     }
 
     fun Int.countingList(offset: Int = 0): List<Int> {

@@ -92,10 +92,6 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
         return this.bldCommandMap.getValue("Execution").first().map(this::findPieceTypeByName)
     }
 
-    private fun findPieceTypeByName(name: String): PieceType {
-        return this.pieceTypes.find { it.name == name }!!
-    }
-
     // LETTER SCHEME METHODS
 
     fun targetToLetter(type: PieceType, target: Int) = this.letterSchemes.getValue(type)[target]

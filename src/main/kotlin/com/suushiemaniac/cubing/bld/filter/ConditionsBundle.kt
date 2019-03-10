@@ -4,7 +4,7 @@ import com.suushiemaniac.cubing.alglib.alg.Algorithm
 import com.suushiemaniac.cubing.alglib.lang.NotationReader
 import com.suushiemaniac.cubing.bld.analyze.BldAnalysis
 import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition
-import com.suushiemaniac.cubing.bld.filter.condition.IntCondition
+import com.suushiemaniac.cubing.bld.filter.condition.IntegerCondition
 import com.suushiemaniac.cubing.bld.model.cycle.ThreeCycle
 import com.suushiemaniac.cubing.bld.model.PieceType
 import com.suushiemaniac.cubing.bld.model.AlgSource
@@ -12,33 +12,10 @@ import com.suushiemaniac.cubing.bld.util.StringUtil.guessRegExpRange
 import com.suushiemaniac.cubing.bld.util.StringUtil.toCharStrings
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil.permute
 
-class ConditionsBundle(val pieceType: PieceType) {
-    var targets: IntCondition = IntCondition.ANY()
-    var breakIns: IntCondition = IntCondition.ANY()
-    var preSolved: IntCondition = IntCondition.ANY()
-    var misOriented: IntCondition = IntCondition.ANY()
-
-    var parity: BooleanCondition = BooleanCondition.MAYBE()
-    var bufferSolved: BooleanCondition = BooleanCondition.MAYBE()
-
-    constructor(pieceType: PieceType,
-                targets: IntCondition = IntCondition.ANY(),
-                breakIns: IntCondition = IntCondition.ANY(),
-                preSolved: IntCondition = IntCondition.ANY(),
-                misOriented: IntCondition = IntCondition.ANY(),
-                parity: BooleanCondition = BooleanCondition.MAYBE(),
-                bufferSolved: BooleanCondition = BooleanCondition.MAYBE()): this(pieceType) {
-        this.targets = targets
-        this.breakIns = breakIns
-        this.preSolved = preSolved
-        this.misOriented = misOriented
-        this.parity = parity
-        this.bufferSolved = bufferSolved
-
+class ConditionsBundle(protected val pieceType: PieceType, val targets: IntegerCondition = IntegerCondition.ANY(), val breakIns: IntegerCondition = IntegerCondition.ANY(), val preSolved: IntegerCondition = IntegerCondition.ANY(), val misOriented: IntegerCondition = IntegerCondition.ANY(), val parity: BooleanCondition = BooleanCondition.MAYBE(), val bufferSolved: BooleanCondition = BooleanCondition.MAYBE(), val isAllowTwistedBuffer: Boolean = ALLOW_TWISTED_BUFFER) {
+    init {
         this.balanceProperties()
     }
-
-    var isAllowTwistedBuffer: Boolean = ALLOW_TWISTED_BUFFER
 
     protected var memoRegex: String = REGEX_UNIV
     protected var predicateRegex: String = REGEX_UNIV
@@ -62,7 +39,7 @@ class ConditionsBundle(val pieceType: PieceType) {
     private fun balanceTargets() {
         this.targets.capMin(0)
         // C=10 E=16 W=34 XC=34 TC=34
-        this.targets.capMax(this.pieceType.maxTargets)
+        this.targets.capMax(this.pieceType.permutationsNoBuffer / 2 * 3 + this.pieceType.permutationsNoBuffer % 2)
 
         // pre-solved
         // mis-orient
@@ -80,7 +57,7 @@ class ConditionsBundle(val pieceType: PieceType) {
 
     private fun balanceParity() {
         if (this.targets.isPrecise) {
-            this.parity.value = this.targets.getMax() % 2 == 1
+            this.parity.define(this.targets.getMax() % 2 == 1)
         }
     }
 
@@ -182,8 +159,8 @@ class ConditionsBundle(val pieceType: PieceType) {
 
     fun matchingConditions(inCube: BldAnalysis): Boolean {
         return (inCube.pieceTypes.contains(this.pieceType)
-                && this.parity.evaluatePositive(inCube.hasParity(this.pieceType))
-                && this.bufferSolved.evaluatePositive(inCube.isBufferSolved(this.pieceType, this.isAllowTwistedBuffer))
+                && this.parity.evaluate(inCube.hasParity(this.pieceType))
+                && this.bufferSolved.evaluate(inCube.isBufferSolved(this.pieceType, this.isAllowTwistedBuffer))
                 && this.breakIns.evaluate(inCube.getBreakInCount(this.pieceType))
                 && this.targets.evaluate(inCube.getTargetCount(this.pieceType))
                 && this.preSolved.evaluate(inCube.getPreSolvedCount(this.pieceType))
@@ -194,9 +171,7 @@ class ConditionsBundle(val pieceType: PieceType) {
                 && this.statisticalPredicate(inCube))
     }
 
-    override fun toString(): String {
-        return this.statString
-    }
+    override fun toString() = this.statString
 
     companion object {
         const val REGEX_UNIV = ".*"

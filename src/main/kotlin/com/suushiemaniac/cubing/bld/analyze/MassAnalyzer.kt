@@ -3,147 +3,30 @@ package com.suushiemaniac.cubing.bld.analyze
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
 import com.suushiemaniac.cubing.bld.model.PieceType
 import com.suushiemaniac.cubing.bld.model.puzzle.TwistyPuzzle
-
-import com.suushiemaniac.cubing.bld.util.MapUtil.increment
-import com.suushiemaniac.cubing.bld.util.MapUtil.sortedPrint
-import com.suushiemaniac.cubing.bld.util.MapUtil.freqAverage
+import com.suushiemaniac.cubing.bld.model.statistics.ScrambleStatistic
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.asyncList
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.runBlocking
 
 class MassAnalyzer(val puzzle: TwistyPuzzle, configTag: String) {
     val analyzer = this.puzzle.gPuzzle(configTag)
 
-    fun analyzeProperties(scrambles: List<Algorithm>) {
-        val parityCounts = mutableMapOf<PieceType, Int>()
-        val solvedBufferCounts = mutableMapOf<PieceType, Int>()
+    fun <T> analyzeProperty(scrambles: List<Algorithm>, stat: ScrambleStatistic<T>) = analyzeScrambles(scrambles) { stat.compute(it, this) }
 
-        val targets = mutableMapOf<PieceType, MutableMap<Int, Int>>()
-        val breakIns = mutableMapOf<PieceType, MutableMap<Int, Int>>()
-        val preSolved = mutableMapOf<PieceType, MutableMap<Int, Int>>()
-        val misOriented = mutableMapOf<PieceType, MutableMap<Int, Int>>()
+    fun analyzeStatStrings(scrambles: List<Algorithm>) = analyzeScrambles(scrambles) { this.getStatString(it) }
+    fun analyzeFullStatStrings(scrambles: List<Algorithm>) = analyzeScrambles(scrambles) { this.getStatString() }
 
-        for (scramble in scrambles) {
-            val analyze = this.analyzer.getAnalysis(scramble)
-
-            for (type in analyze.pieceTypes) {
-                if (analyze.hasParity(type)) {
-                    parityCounts.increment(type)
-                }
-
-                if (analyze.isBufferSolved(type)) {
-                    solvedBufferCounts.increment(type)
-                }
-
-                targets.getOrPut(type) { mutableMapOf() }.increment(analyze.getTargetCount(type))
-                breakIns.getOrPut(type) { mutableMapOf() }.increment(analyze.getBreakInCount(type))
-                preSolved.getOrPut(type) { mutableMapOf() }.increment(analyze.getPreSolvedCount(type))
-                misOriented.getOrPut(type) { mutableMapOf() }.increment(analyze.getMisOrientedCount(type))
-            }
-        }
-
-        val numCubes = scrambles.size
-
-        println("Total scrambles: $numCubes")
-
-        for (type in this.analyzer.pieceTypes) {
-            println()
-            println("Parity: " + parityCounts[type])
-            println("Average: " + (parityCounts[type] ?: 0) / numCubes.toFloat())
-
-            println()
-            println("Buffer preSolved: " + solvedBufferCounts[type])
-            println("Average: " + solvedBufferCounts.getValue(type) / numCubes.toFloat())
-
-            println()
-            println(type.humanName + " targets")
-            targets.getValue(type).sortedPrint()
-            println("Average: " + targets.getValue(type).freqAverage())
-
-            println()
-            println(type.humanName + " break-ins")
-            breakIns.getValue(type).sortedPrint()
-            println("Average: " + breakIns.getValue(type).freqAverage())
-
-            println()
-            println(type.humanName + " pre-solved")
-            preSolved.getValue(type).sortedPrint()
-            println("Average: " + preSolved.getValue(type).freqAverage())
-
-            println()
-            println(type.humanName + " mis-oriented")
-            misOriented.getValue(type).sortedPrint()
-            println("Average: " + misOriented.getValue(type).freqAverage())
-        }
+    fun analyzeLetterPairs(scrambles: List<Algorithm>, singleLetter: Boolean) = analyzeScramblesFlat(scrambles) {
+        this.getSolutionTargets(it)
+                .replace((if (singleLetter) "\\s+?" else "$.").toRegex(), "")
+                .split((if (singleLetter) "" else "\\s+").toRegex())
+                .dropLastWhile(String::isEmpty)
     }
 
-    fun analyzeProperties(numCubes: Int) {
-        this.analyzeProperties(this.generateRandom(numCubes))
+    private fun <T> analyzeScrambles(scrambles: List<Algorithm>, analysisMapping: BldAnalysis.(PieceType) -> T): Map<PieceType, Map<T, Int>> = this.analyzer.pieceTypes.associateWith { pt ->
+        scrambles.map { this.analyzer.getAnalysis(it) }.map { it.analysisMapping(pt) }.groupingBy { it }.eachCount()
     }
 
-    fun analyzeScrambleDist(scrambles: List<Algorithm>) {
-        val pieceTypeMap = mutableMapOf<PieceType, MutableMap<String, Int>>()
-
-        val overall = mutableMapOf<String, Int>()
-
-        for (scramble in scrambles) {
-            val analyze = this.analyzer.getAnalysis(scramble)
-
-            for (type in analyze.pieceTypes) {
-                pieceTypeMap.getOrPut(type) { mutableMapOf() }.increment(analyze.getStatString(type))
-            }
-
-            overall.increment(analyze.getStatString())
-        }
-
-        for ((type, subMap) in pieceTypeMap.entries) {
-            println()
-            println(type.humanName)
-
-            subMap.sortedPrint()
-        }
-
-        println()
-        println("Overall")
-        overall.sortedPrint()
-    }
-
-    fun analyzeScrambleDist(numCubes: Int) {
-        this.analyzeScrambleDist(this.generateRandom(numCubes))
-    }
-
-    fun analyzeLetterPairs(scrambles: List<Algorithm>, singleLetter: Boolean) {
-        val pieceTypeMap = mutableMapOf<PieceType, MutableMap<String, Int>>()
-
-        for (scramble in scrambles) {
-            val analyze = this.analyzer.getAnalysis(scramble)
-
-            for (type in analyze.pieceTypes) {
-                if (analyze.getTargetCount(type) > 0) {
-                    val solutionPairs = analyze.getSolutionTargets(type) // TODO
-                            .replace((if (singleLetter) "\\s+?" else "$.").toRegex(), "")
-                            .split((if (singleLetter) "" else "\\s+?").toRegex())
-                            .dropLastWhile { it.isEmpty() }
-
-                    for (pair in solutionPairs) {
-                        pieceTypeMap.getOrPut(type) { mutableMapOf() }.increment(pair)
-                    }
-                }
-            }
-        }
-
-        for ((type, subMap) in pieceTypeMap.entries) {
-            println()
-            println(type.humanName)
-
-            subMap.sortedPrint()
-        }
-    }
-
-    fun analyzeLetterPairs(numCubes: Int, singleLetter: Boolean = false) {
-        this.analyzeLetterPairs(this.generateRandom(numCubes), singleLetter)
+    private fun <T> analyzeScramblesFlat(scrambles: List<Algorithm>, analysisMapping: BldAnalysis.(PieceType) -> Iterable<T>): Map<PieceType, Map<T, Int>> = this.analyzer.pieceTypes.associateWith { pt ->
+        scrambles.map { this.analyzer.getAnalysis(it) }.flatMap { it.analysisMapping(pt) }.groupingBy { it }.eachCount()
     }
 
     fun generateRandom(numCubes: Int): List<Algorithm> {

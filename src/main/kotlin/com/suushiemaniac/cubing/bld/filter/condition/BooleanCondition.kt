@@ -1,6 +1,6 @@
 package com.suushiemaniac.cubing.bld.filter.condition
 
-data class BooleanCondition(var value: Boolean, var isImportant: Boolean) {
+data class BooleanCondition(private var value: Boolean, val isImportant: Boolean) : BaseConditional<Boolean> {
     val positive: Boolean
         get() = !this.isImportant || this.value
 
@@ -15,21 +15,22 @@ data class BooleanCondition(var value: Boolean, var isImportant: Boolean) {
         return this.isImportant && this.value == compareTo
     }
 
+    override fun evaluate(compareTo: Boolean): Boolean {
+        return this.evaluatePositive(compareTo)
+    }
+
+    fun define(value: Boolean) {
+        this.value = value
+    }
+
     companion object {
-        fun YES(): BooleanCondition {
-            return BooleanCondition(true, true)
-        }
+        fun YES() = BooleanCondition(true, true)
 
-        fun NO(): BooleanCondition {
-            return BooleanCondition(false, true)
-        }
+        fun NO(): BooleanCondition = BooleanCondition(false, true)
 
-        fun UNIMPORTANT(): BooleanCondition {
-            return BooleanCondition(false, false)
-        }
+        fun UNIMPORTANT() = BooleanCondition(false, false)
+        fun MAYBE() = BooleanCondition.UNIMPORTANT()
 
-        fun MAYBE(): BooleanCondition {
-            return BooleanCondition.UNIMPORTANT()
-        }
+        fun STRICT(value: Boolean, isStrict: Boolean = false) = if (value) if (isStrict) YES() else MAYBE() else NO()
     }
 }
