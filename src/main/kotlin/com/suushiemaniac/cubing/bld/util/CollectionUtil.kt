@@ -77,11 +77,11 @@ object CollectionUtil {
         return representation
     }
 
-    infix fun <T, V> Collection<T>.allTo(v: V): List<Pair<T, V>> {
+    infix fun <T, V> Iterable<T>.allTo(v: V): List<Pair<T, V>> {
         return this.map { it to v }
     }
 
-    infix fun <T, V> T.toEach(collect: Collection<V>): List<Pair<T, V>> {
+    infix fun <T, V> T.toEach(collect: Iterable<V>): List<Pair<T, V>> {
         return collect.map { this to it }
     }
 

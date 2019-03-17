@@ -21,9 +21,7 @@ data class IntegerCondition(private var min: Int, private var max: Int) : BaseCo
         if (this.max > maxCap) this.setMax(maxCap)
     }
 
-    override fun evaluate(compareTo: Int): Boolean {
-        return this.min <= compareTo && compareTo <= this.max
-    }
+    override fun evaluate(compareTo: Int) = this.min <= compareTo && compareTo <= this.max
 
     fun setMax(max: Int) {
         this.max = max

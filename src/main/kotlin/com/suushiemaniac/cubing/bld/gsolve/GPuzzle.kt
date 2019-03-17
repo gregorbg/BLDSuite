@@ -94,7 +94,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
 
     // LETTER SCHEME METHODS
 
-    fun targetToLetter(type: PieceType, target: Int) = this.letterSchemes.getValue(type)[target]
+    protected fun targetToLetter(type: PieceType, target: Int) = this.letterSchemes.getValue(type)[target]
     fun getLetterPairCorrespondants(type: PieceType, perm: Int) = permToTargets(type, perm).map { this.targetToLetter(type, it) }
 
     // TODO target/perm to posNotation conversion?!
@@ -122,11 +122,6 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
     protected fun getSolutionAdjacency(type: PieceType, target: Int) = this.getSolutionSpots(type, target).flatMap { adjacentTargets(type, it) }
 
     protected fun targetCurrentlySolved(type: PieceType, target: Int) = target in this.getSolutionSpots(type, this.currentlyAtTarget(type, target))
-    protected fun targetCurrentlyPermuted(type: PieceType, target: Int) = target in this.getSolutionSpots(type, this.currentlyAtTarget(type, target))
-            .map { targetToPerm(type, it) }
-            .flatMap { permToTargets(type, it) }
-
-    protected fun currentPermOrientation(type: PieceType, perm: Int) = this.puzzleState.getValue(type)[perm].orientation
 
     // BUFFER HELPERS
 
@@ -146,55 +141,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
 
         return generateSequence {
             this.getNextTarget(type, buffers.first(), accumulate)?.also { accumulate += it }
-        }.toList()
-    }
-
-    protected fun compileMisOrientedPieces(type: PieceType, orientation: Int): List<Int> {
-        val prePermuted = type.numTargets.countingList().filter { this.targetCurrentlyPermuted(type, it) }.map { targetToPerm(type, it) }.distinct()
-        val preSolved = type.numTargets.countingList().filter { this.targetCurrentlySolved(type, it) }.map { targetToPerm(type, it) }.distinct()
-
-        val misOriented = prePermuted - preSolved
-
-        return misOriented.filter { this.currentPermOrientation(type, it) == orientation }
-    }
-
-    protected open fun compilePermuteSolutionCycles(type: PieceType): List<PieceCycle> {
-        val targets = this.compileTargetChain(type)
-
-        val chunks = if (this.parityFirstPieceTypes.contains(type))
-            targets.reversed().chunked(2).reversed().map { it.reversed() } else
-            targets.chunked(2)
-
-        return chunks.map {
-            if (it.size == 2) {
-                ThreeCycle(it[0].buffer, it[0].target, it[1].target)
-            } else {
-                ParityCycle(it[0].buffer, it[0].target)
-            }
-        }
-    }
-
-    fun compileSolutionCycles(type: PieceType): List<PieceCycle> {
-        val cycles = this.compilePermuteSolutionCycles(type).toMutableList()
-
-        for (i in 1 until type.orientations) {
-            val misOrients = this.compileMisOrientedPieces(type, i)
-
-            when (this.misOrientMethod) {
-                "Single" -> {
-                    for (piece in misOrients) {
-                        val (perm, orient) = targetToPiece(type, piece)
-                        val next = pieceToTarget(type, perm, (orient + i) % type.orientations)
-
-                        cycles += SingleMisOrientCycle(i, piece, next)
-                    }
-                }
-                "Compound" ->
-                    cycles += misOrients.map { MisOrientPiece(pieceToTarget(type, it, i), i) }
-            }
-        }
-
-        return cycles
+        }.toList().mapIndexed { i, t -> t.copy(isCycleBreak = accumulate[i].isCycleBreak) } // FIXME (long-term) not shift isCycleBreak
     }
 
     fun dumpTargets(): Map<PieceType, List<String>> {
@@ -216,12 +163,12 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
         val parityDepKeys = this.parityDependencyFixes.mapValues { it.value.keys }
         val parityDependents = parityDepKeys.values.flatten().associateWith { parityDepKeys.filterValues { v -> it in v }.keys }
 
-        val parityRelevantCycles = mutableMapOf<PieceType, List<PieceCycle>>()
+        val parityRelevantCycles = mutableMapOf<PieceType, List<StickerTarget>>()
 
         for (type in parityDependents.topologicalSort()) {
-            val solutionCycles = this.compileSolutionCycles(type)
+            val solutionCycles = this.compileTargetChain(type)
 
-            if (solutionCycles.any { it is ParityCycle }) {
+            if (solutionCycles.size % 2 != 0) {
                 if (type in this.parityDependencyFixes) {
                     movePuzzle(this.solvedState, this.parityDependencyFixes.getValue(type))
                 }
@@ -230,9 +177,9 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
             parityRelevantCycles[type] = solutionCycles
         }
 
-        val cycles = this.executionPieceTypes.associateWith { parityRelevantCycles.getOrDefault(it, this.compileSolutionCycles(it)) }
+        val cycles = this.executionPieceTypes.associateWith { parityRelevantCycles.getOrDefault(it, this.compileTargetChain(it)) }
 
-        return BldAnalysis(this.reader, reorient, cycles, this.buffers, this.letterSchemes, this.algSource)
+        return BldAnalysis(this.reader, reorient, cycles, this.letterSchemes, this.algSource)
     }
 
     fun getNextTarget(type: PieceType, buffer: Int, previous: List<StickerTarget>): StickerTarget? {
@@ -265,7 +212,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
     }
 
     protected open fun getBreakInTargets(type: PieceType, buffer: Int, history: List<StickerTarget>): List<Int> {
-        val preSolved = type.numTargets.countingList().filter { this.targetCurrentlyPermuted(type, it) }
+        val preSolved = type.numTargets.countingList().filter { this.targetCurrentlySolved(type, it) }
 
         if (this.algSource == null) {
             val selection = type.numTargets.countingList() - history.map { it.target } - adjacentTargets(type, buffer) - preSolved
@@ -293,10 +240,10 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
     fun solves(type: PieceType, alg: Algorithm, case: List<PieceCycle>, pure: Boolean = true): Boolean {
         val analysis = this.getAnalysis(alg)
 
-        val solves = analysis.solutionCycles.getValue(type) == case
+        val solves = analysis.solutionTargets.getValue(type) == case
 
         val remainingTypes = this.executionPieceTypes - type
-        val remainingOkay = remainingTypes.all { !pure || analysis.solutionCycles.getValue(it).isEmpty() }
+        val remainingOkay = remainingTypes.all { !pure || analysis.solutionTargets.getValue(it).isEmpty() }
 
         return solves && remainingOkay
     }
@@ -307,6 +254,9 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
 
         fun targetToPerm(type: PieceType, target: Int) = targetToPiece(type, target).permutation
         fun permToTargets(type: PieceType, perm: Int) = type.orientations.countingList().map { pieceToTarget(type, perm, it) }
+
+        fun targetToOrient(type: PieceType, target: Int) = targetToPiece(type, target).orientation
+        fun orientToTargets(type: PieceType, orient: Int) = type.permutations.countingList().map { pieceToTarget(type, it, orient) }
 
         fun adjacentTargets(type: PieceType, target: Int) = permToTargets(type, targetToPerm(type, target))
 

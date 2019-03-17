@@ -165,9 +165,9 @@ class ConditionsBundle(protected val pieceType: PieceType, val targets: IntegerC
                 && this.targets.evaluate(inCube.getTargetCount(this.pieceType))
                 && this.preSolved.evaluate(inCube.getPreSolvedCount(this.pieceType))
                 && this.misOriented.evaluate(inCube.getMisOrientedCount(this.pieceType))
-                && inCube.getSolutionTargets(this.pieceType).matches(this.memoRegex.toRegex()) // TODO have regular expressions comply w/ buffer floats!
-                && inCube.getSolutionTargets(this.pieceType).matches(this.letterPairRegex.toRegex())
-                && inCube.getSolutionTargets(this.pieceType).matches(this.predicateRegex.toRegex())
+                && inCube.compileSolutionTargetString(this.pieceType).matches(this.memoRegex.toRegex()) // TODO have regular expressions comply w/ buffer floats!
+                && inCube.compileSolutionTargetString(this.pieceType).matches(this.letterPairRegex.toRegex())
+                && inCube.compileSolutionTargetString(this.pieceType).matches(this.predicateRegex.toRegex())
                 && this.statisticalPredicate(inCube))
     }
 

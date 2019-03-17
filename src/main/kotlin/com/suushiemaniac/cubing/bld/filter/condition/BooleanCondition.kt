@@ -7,28 +7,21 @@ data class BooleanCondition(private var value: Boolean, val isImportant: Boolean
     val negative: Boolean
         get() = this.isImportant && this.value
 
-    fun evaluatePositive(compareTo: Boolean): Boolean {
-        return !this.isImportant || this.value == compareTo
-    }
+    fun evaluatePositive(compareTo: Boolean) = !this.isImportant || this.value == compareTo
+    fun evaluateNegative(compareTo: Boolean) = this.isImportant && this.value == compareTo
 
-    fun evaluateNegative(compareTo: Boolean): Boolean {
-        return this.isImportant && this.value == compareTo
-    }
-
-    override fun evaluate(compareTo: Boolean): Boolean {
-        return this.evaluatePositive(compareTo)
-    }
+    override fun evaluate(compareTo: Boolean) = this.evaluatePositive(compareTo)
 
     fun define(value: Boolean) {
         this.value = value
     }
 
     companion object {
-        fun YES() = BooleanCondition(true, true)
+        fun YES() = BooleanCondition(value = true, isImportant = true)
 
-        fun NO(): BooleanCondition = BooleanCondition(false, true)
+        fun NO(): BooleanCondition = BooleanCondition(value = false, isImportant = true)
 
-        fun UNIMPORTANT() = BooleanCondition(false, false)
+        fun UNIMPORTANT() = BooleanCondition(value = false, isImportant = false)
         fun MAYBE() = BooleanCondition.UNIMPORTANT()
 
         fun STRICT(value: Boolean, isStrict: Boolean = false) = if (value) if (isStrict) YES() else MAYBE() else NO()

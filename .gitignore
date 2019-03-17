@@ -8,5 +8,4 @@
 *.class
 *.jar
 
-src/Main.kt
-src/META-INF/
+src/main/kotlin/Main.kt
