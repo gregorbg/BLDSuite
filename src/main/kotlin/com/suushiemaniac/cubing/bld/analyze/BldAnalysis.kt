@@ -287,7 +287,7 @@ class BldAnalysis(private val reader: NotationReader,
 
         val bufferSolved = this.solutionTargets.getValue(type).first().isCycleBreak
 
-        return bufferSolved && (acceptMisOrient == this.isBufferSolvedAndMisOriented(type))
+        return bufferSolved && (acceptMisOrient || !this.isBufferSolvedAndMisOriented(type))
     }
 
     fun isBufferSolvedAndMisOriented(type: PieceType? = null): Boolean {
@@ -295,7 +295,7 @@ class BldAnalysis(private val reader: NotationReader,
             return this.pieceTypes.any { this.isBufferSolvedAndMisOriented(it) }
         }
 
-        return this.getGroupedMisOrientPieces(type).map { it.key * it.value.size }.sum() % type.orientations != 0
+        return this.getGroupedMisOrientPieces(type).map { it.key * it.value.size }.sum() % type.orientations != 0 // FIXME account for re-closed break-ins
     }
 
     fun getBufferFloatNum(type: PieceType? = null): Int {
