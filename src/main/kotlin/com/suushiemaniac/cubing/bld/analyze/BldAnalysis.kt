@@ -285,7 +285,7 @@ class BldAnalysis(private val reader: NotationReader,
             return this.pieceTypes.any { this.isBufferSolved(it, acceptMisOrient) }
         }
 
-        val bufferSolved = this.solutionTargets.getValue(type).first().isCycleBreak
+        val bufferSolved = this.solutionTargets.getValue(type).firstOrNull()?.isCycleBreak ?: true
 
         return bufferSolved && (acceptMisOrient || !this.isBufferSolvedAndMisOriented(type))
     }
