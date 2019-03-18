@@ -34,6 +34,8 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
     val parityFirstPieceTypes = this.loadParityFirstPieceTypes()
     val executionPieceTypes = this.loadExecutionPieceTypes()
 
+    val skeletonReorientationMoves = this.loadSkeletonReorientationMoves()
+
     var algSource: AlgSource? = null
 
     private val bruteForceRotations by lazy {
@@ -90,6 +92,12 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
 
     fun loadExecutionPieceTypes(): List<PieceType> {
         return this.bldCommandMap.getValue("Execution").first().map(this::findPieceTypeByName)
+    }
+
+    fun loadSkeletonReorientationMoves(): Algorithm {
+        val skeletonOrientation = this.bldCommandMap["SkeletonOrientation"]?.first()?.joinToString(" ") ?: ""
+
+        return this.reader.parse(skeletonOrientation)
     }
 
     // LETTER SCHEME METHODS
@@ -155,6 +163,8 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
     fun getAnalysis(scramble: Algorithm): BldAnalysis {
         resetState(this.solvedState, this.loadSolvedState())
         resetState(this.puzzleState, this.solvedState)
+
+        scramblePuzzle(this.solvedState, this.skeletonReorientationMoves, this.moveDefinitions)
 
         this.applyScramble(scramble)
 
