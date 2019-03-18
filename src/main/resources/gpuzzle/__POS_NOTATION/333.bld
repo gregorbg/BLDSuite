@@ -1,0 +1,20 @@
+Name 3x3x3 // Nicht anrühren
+
+Buffer CORNER 3 0 // Hier Buffer-Sticker hinschreiben, ich konvertiere das dann:
+Buffer EDGE 9 0 // Hier Buffer-Sticker hinschreiben, ich konvertiere das dann:
+
+Orientation Fixed // Buchstaben ersetzen durch: 1-weiß 2-orange 3-grün 4-rot 5-blau 6-gelb
+CENTER
+U ? F ? ? ? // es reicht, wenn du die zwei Buchstaben ersetzt, der Rest ergibt sich dank Geometrie automatisch
+End
+
+Lettering // Sticker-Notation jeweils ersetzen durch den Buchstaben den du verwendest
+CORNER
+UFR RUF FRU ULF FUL LFU UBL LUB BLU URB BUR RBU DRF FDR RFD DFL LDF FLD DLB BDL LBD DBR BRD RDB
+EDGE
+UF FU UL LU UB BU UR RU FR RF FL LF BL LB BR RB DF FD DL LD DB BD DR RD
+End
+
+// Benutzt du für Parity den UB-UL Swap bei Edges? [ja/nein]:
+
+Execution EDGE CORNER // Hier einmal die Namen in GROßBUCHSTABEN entsprechend deiner Execution-Reihenfolge sortieren
