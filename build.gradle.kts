@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.3.21"
+    kotlin("jvm") version "1.3.31"
     `maven-publish`
 }
 
@@ -14,12 +14,12 @@ repositories {
 }
 
 dependencies {
-    runtime(kotlin("stdlib"))
+    implementation(kotlin("stdlib"))
 
-    compile("com.suushiemaniac:cubing.alglib:2.0+")
-    compile("net.gnehzr:tnoodle.scrambles:0.14.0")
+    api("com.suushiemaniac:cubing.alglib:2.0")
+    api("net.gnehzr:tnoodle.scrambles:0.14.0")
 
-    compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.1")
 }
 
 tasks {
