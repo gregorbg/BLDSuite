@@ -10,15 +10,16 @@ import com.suushiemaniac.cubing.alglib.move.modifier.CubicModifier
 import com.suushiemaniac.cubing.alglib.util.ParseUtils
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.headOrNullWithTail
 import com.suushiemaniac.cubing.bld.gsolve.GPuzzle
-import com.suushiemaniac.cubing.bld.model.cycle.PieceCycle
 import com.suushiemaniac.cubing.bld.model.PieceType
 import com.suushiemaniac.cubing.bld.model.AlgSource
+import com.suushiemaniac.cubing.bld.util.PieceCycle
+import com.suushiemaniac.cubing.bld.util.BruteForceUtil.fullCycles
 
 class Verificator(val analyzer: GPuzzle, val source: AlgSource) {
     val reader = this.analyzer.reader
 
     fun verifyAll(type: PieceType): Map<PieceCycle, Map<String, Boolean>> {
-        return fullCycles(type).associateWith { this.verifySingleCase(type, it) }
+        return type.fullCycles().associateWith { this.verifySingleCase(type, it) }
     }
 
     fun verifySingleCase(type: PieceType, letterPair: PieceCycle): Map<String, Boolean> {
@@ -41,7 +42,7 @@ class Verificator(val analyzer: GPuzzle, val source: AlgSource) {
     }
 
     fun findMatchingSubGroup(type: PieceType, group: SubGroup): Map<PieceCycle, List<String>> {
-        return fullCycles(type).associateWith {
+        return type.fullCycles().associateWith {
             this.source.getRawAlgorithms(type, it)
                     .filter { alg -> ParseUtils.isParseable(alg, this.reader) }
                     .filter { alg -> this.reader.parse(alg).subGroup.sameOrLargerSubGroup(group) }
@@ -49,7 +50,7 @@ class Verificator(val analyzer: GPuzzle, val source: AlgSource) {
     }
 
     fun checkParseable(type: PieceType): Map<PieceCycle, Set<String>> {
-        return fullCycles(type).associateWith {
+        return type.fullCycles().associateWith {
             this.source.getRawAlgorithms(type, it)
                     .filter { alg -> !ParseUtils.isParseable(alg, this.reader) }
                     .toSet()
@@ -57,10 +58,6 @@ class Verificator(val analyzer: GPuzzle, val source: AlgSource) {
     }
 
     companion object {
-        fun fullCycles(type: PieceType): List<PieceCycle> {
-            return emptyList() // TODO
-        }
-
         fun computePossibleReparations(alg: Algorithm): List<Algorithm> {
             when (alg) {
                 is SimpleAlg -> {

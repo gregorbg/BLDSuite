@@ -40,9 +40,3 @@ publishing.publications {
         artifact(tasks["sourcesJar"])
     }
 }
-
-kotlin.sourceSets {
-    forEach {
-        it.kotlin.exclude("Main.kt")
-    }
-}

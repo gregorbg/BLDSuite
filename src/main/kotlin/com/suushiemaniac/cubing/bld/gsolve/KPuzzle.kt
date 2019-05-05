@@ -11,6 +11,7 @@ import com.suushiemaniac.cubing.bld.util.CollectionUtil.filledList
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.headWithTail
 
 import java.io.File
+import java.io.InputStream
 
 open class KPuzzle(val reader: NotationReader, val commandMap: CommandMap) {
     val pieceTypes = this.loadPieceTypes()
@@ -188,7 +189,8 @@ open class KPuzzle(val reader: NotationReader, val commandMap: CommandMap) {
             return moveDefs
         }
 
+        fun loadCommandMap(kFile: InputStream) = groupByCommand(kFile.reader().readLines())
         fun loadCommandMap(kFile: File) = groupByCommand(kFile.readLines())
-        fun preInstalledConfig(tag: String) = loadCommandMap(File(KPuzzle::class.java.classLoader.getResource("kpuzzle/$tag.def").toURI()))
+        fun preInstalledConfig(tag: String) = loadCommandMap(KPuzzle::class.java.getResourceAsStream("kpuzzle/$tag.def"))
     }
 }

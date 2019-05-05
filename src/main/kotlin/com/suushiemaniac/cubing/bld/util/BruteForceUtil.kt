@@ -4,7 +4,6 @@ import com.suushiemaniac.cubing.alglib.alg.Algorithm
 import com.suushiemaniac.cubing.alglib.alg.SimpleAlg
 import com.suushiemaniac.cubing.alglib.move.Move
 import com.suushiemaniac.cubing.bld.gsolve.GPuzzle
-import com.suushiemaniac.cubing.bld.model.cycle.PieceCycle
 import com.suushiemaniac.cubing.bld.model.PieceType
 
 object BruteForceUtil {
@@ -34,9 +33,7 @@ object BruteForceUtil {
         }
     }
 
-    fun <T> Array<T>.permute(length: Int, inclusive: Boolean = false, mayRepeat: Boolean = false): Sequence<List<T>> {
-        return this.toList().permute(length, inclusive, mayRepeat)
-    }
+    fun <T> Array<T>.permute(length: Int, inclusive: Boolean = false, mayRepeat: Boolean = false) = this.toList().permute(length, inclusive, mayRepeat)
 
     fun bruteForceAlg(analyze: GPuzzle, cycles: List<PieceCycle>, type: PieceType, alphabet: Array<Move>, prune: Int = 21): List<Algorithm> {
         val accumulator = mutableListOf<Algorithm>()
@@ -52,5 +49,9 @@ object BruteForceUtil {
         }
 
         return accumulator
+    }
+
+    fun PieceType.fullCycles(): List<PieceCycle> {
+        return emptyList() // TODO
     }
 }

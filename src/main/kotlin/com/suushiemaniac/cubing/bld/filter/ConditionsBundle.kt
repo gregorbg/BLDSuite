@@ -5,12 +5,12 @@ import com.suushiemaniac.cubing.alglib.lang.NotationReader
 import com.suushiemaniac.cubing.bld.analyze.BldAnalysis
 import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition
 import com.suushiemaniac.cubing.bld.filter.condition.IntegerCondition
-import com.suushiemaniac.cubing.bld.model.cycle.ThreeCycle
 import com.suushiemaniac.cubing.bld.model.PieceType
 import com.suushiemaniac.cubing.bld.model.AlgSource
 import com.suushiemaniac.cubing.bld.util.StringUtil.guessRegExpRange
 import com.suushiemaniac.cubing.bld.util.StringUtil.toCharStrings
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil.permute
+import com.suushiemaniac.cubing.bld.util.StickerTarget
 
 class ConditionsBundle(protected val pieceType: PieceType, val targets: IntegerCondition = IntegerCondition.ANY(), val breakIns: IntegerCondition = IntegerCondition.ANY(), val preSolved: IntegerCondition = IntegerCondition.ANY(), val misOriented: IntegerCondition = IntegerCondition.ANY(), val parity: BooleanCondition = BooleanCondition.MAYBE(), val bufferSolved: BooleanCondition = BooleanCondition.MAYBE(), val isAllowTwistedBuffer: Boolean = ALLOW_TWISTED_BUFFER) {
     init {
@@ -145,7 +145,7 @@ class ConditionsBundle(protected val pieceType: PieceType, val targets: IntegerC
 
         for (pair in possPairs) {
             val targetIndices = pair.toCharStrings().map { alphabet.indexOf(it) }
-            val case = ThreeCycle(0, targetIndices[0], targetIndices[1]) // FIXME buffer
+            val case = targetIndices.map { StickerTarget(it, 0) } // TODO buffer!
 
             matches.addAll(algSource.getAlgorithms(this.pieceType, reader, case)
                     .filter(filter)

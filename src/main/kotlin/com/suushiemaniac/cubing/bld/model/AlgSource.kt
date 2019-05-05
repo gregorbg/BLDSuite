@@ -2,7 +2,7 @@ package com.suushiemaniac.cubing.bld.model
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
 import com.suushiemaniac.cubing.alglib.lang.NotationReader
-import com.suushiemaniac.cubing.bld.model.cycle.PieceCycle
+import com.suushiemaniac.cubing.bld.util.PieceCycle
 
 import java.net.URI
 

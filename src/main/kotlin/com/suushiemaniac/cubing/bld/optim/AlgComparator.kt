@@ -4,7 +4,7 @@ import com.suushiemaniac.cubing.alglib.alg.Algorithm
 
 class AlgComparator private constructor() : Comparator<Algorithm> {
     override fun compare(alg: Algorithm, otherAlg: Algorithm): Int {
-        return AlgComparator.scoreAlg(alg).compareTo(AlgComparator.scoreAlg(otherAlg))
+        return scoreAlg(alg).compareTo(scoreAlg(otherAlg))
     }
 
     fun score(alg: Algorithm): Float {
