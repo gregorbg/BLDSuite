@@ -5,7 +5,7 @@ import com.suushiemaniac.cubing.bld.model.puzzle.WCAPuzzle
 object BldSuitePlayground {
     @JvmStatic
     fun main(args: Array<String>) {
-        randAnalysis(WCAPuzzle.THREE_BLD)
+        randAnalysis(WCAPuzzle.FIVE_BLD)
     }
 
     fun gAnalysis(puzzle: TwistyPuzzle, scramble: Algorithm) {

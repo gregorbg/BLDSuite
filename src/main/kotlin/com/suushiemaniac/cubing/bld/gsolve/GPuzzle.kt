@@ -251,7 +251,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
 
     protected open fun getBreakInTargets(type: PieceType, buffer: Int, history: List<StickerTarget>): List<Int> {
         val preSolved = type.numTargets.countingList().filter { this.targetCurrentlySolved(type, it) }
-        val alreadyShot = history.flatMap { getSolutionAdjacency(type, it.target) }
+        val alreadyShot = history.flatMap { adjacentTargets(type, it.target) }.distinct()
 
         if (this.algSource == null || history.size % 2 == 1) {
             val selection = type.numTargets.countingList() - adjacentTargets(type, buffer) - alreadyShot - preSolved
