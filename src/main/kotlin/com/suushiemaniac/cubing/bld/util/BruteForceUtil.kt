@@ -5,6 +5,7 @@ import com.suushiemaniac.cubing.alglib.alg.SimpleAlg
 import com.suushiemaniac.cubing.alglib.move.Move
 import com.suushiemaniac.cubing.bld.gsolve.GPuzzle
 import com.suushiemaniac.cubing.bld.model.PieceType
+import com.suushiemaniac.cubing.bld.util.CollectionUtil.countingList
 
 object BruteForceUtil {
     fun <T> Iterable<T>.permute(length: Int, inclusive: Boolean = false, mayRepeat: Boolean = false): Sequence<List<T>> {
@@ -51,7 +52,15 @@ object BruteForceUtil {
         return accumulator
     }
 
-    fun PieceType.fullCycles(): List<PieceCycle> {
-        return emptyList() // TODO
+    fun PieceType.fullCycles(buffer: Int): List<PieceCycle> {
+        val singleTargets = this.permutations.countingList().flatMap { p ->
+            this.orientations.countingList().mapNotNull { o ->
+                val targetSticker = GPuzzle.pieceToTarget(this, p, o)
+
+                targetSticker.takeUnless { it == buffer }?.let { StickerTarget(it, buffer) }
+            }
+        }
+
+        return singleTargets.permute(2).toList()
     }
 }

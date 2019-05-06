@@ -18,8 +18,8 @@ import com.suushiemaniac.cubing.bld.util.BruteForceUtil.fullCycles
 class Verificator(val analyzer: GPuzzle, val source: AlgSource) {
     val reader = this.analyzer.reader
 
-    fun verifyAll(type: PieceType): Map<PieceCycle, Map<String, Boolean>> {
-        return type.fullCycles().associateWith { this.verifySingleCase(type, it) }
+    fun verifyAll(type: PieceType, buffer: Int): Map<PieceCycle, Map<String, Boolean>> {
+        return type.fullCycles(buffer).associateWith { this.verifySingleCase(type, it) }
     }
 
     fun verifySingleCase(type: PieceType, letterPair: PieceCycle): Map<String, Boolean> {
@@ -41,16 +41,16 @@ class Verificator(val analyzer: GPuzzle, val source: AlgSource) {
                 .firstOrNull { this.analyzer.solves(type, it, listOf(letterPair), true) }
     }
 
-    fun findMatchingSubGroup(type: PieceType, group: SubGroup): Map<PieceCycle, List<String>> {
-        return type.fullCycles().associateWith {
+    fun findMatchingSubGroup(type: PieceType, group: SubGroup, buffer: Int): Map<PieceCycle, List<String>> {
+        return type.fullCycles(buffer).associateWith {
             this.source.getRawAlgorithms(type, it)
                     .filter { alg -> ParseUtils.isParseable(alg, this.reader) }
                     .filter { alg -> this.reader.parse(alg).subGroup.sameOrLargerSubGroup(group) }
         }
     }
 
-    fun checkParseable(type: PieceType): Map<PieceCycle, Set<String>> {
-        return type.fullCycles().associateWith {
+    fun checkParseable(type: PieceType, buffer: Int): Map<PieceCycle, Set<String>> {
+        return type.fullCycles(buffer).associateWith {
             this.source.getRawAlgorithms(type, it)
                     .filter { alg -> !ParseUtils.isParseable(alg, this.reader) }
                     .toSet()
