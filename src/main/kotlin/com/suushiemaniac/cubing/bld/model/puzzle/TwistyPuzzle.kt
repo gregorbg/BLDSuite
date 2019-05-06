@@ -8,18 +8,20 @@ import net.gnehzr.tnoodle.scrambles.Puzzle
 import java.io.File
 
 interface TwistyPuzzle {
+    val tPuzzleSupply: () -> Puzzle
     val tPuzzle: Puzzle
 
-    val reader: NotationReader
+    val antlrReaderSupply: () -> NotationReader
+    val antlrReader: NotationReader
 
     val randomScramble: Algorithm
-        get() = this.reader.parse(this.tPuzzle.generateScramble())
+        get() = this.antlrReader.parse(this.tPuzzle.generateScramble())
 
     val kTag: String
 
     val kPuzzle: KPuzzle
-        get() = KPuzzle(this.reader, KPuzzle.preInstalledConfig(this.kTag))
+        get() = KPuzzle(this.antlrReader, KPuzzle.preInstalledConfig(this.kTag))
 
-    fun gPuzzle(bldFile: File) = GPuzzle(this.reader, KPuzzle.preInstalledConfig(this.kTag), KPuzzle.loadCommandMap(bldFile))
-    fun gPuzzle(personTag: String) = GPuzzle(this.reader, KPuzzle.preInstalledConfig(this.kTag), GPuzzle.preInstalledConfig(this.kTag, personTag))
+    fun gPuzzle(bldFile: File) = GPuzzle(this.antlrReader, KPuzzle.preInstalledConfig(this.kTag), KPuzzle.loadCommandMap(bldFile))
+    fun gPuzzle(personTag: String) = GPuzzle(this.antlrReader, KPuzzle.preInstalledConfig(this.kTag), GPuzzle.preInstalledConfig(this.kTag, personTag))
 }

@@ -20,9 +20,9 @@ enum class WCAPuzzle(override val kTag: String, val parser: () -> NotationReader
     
     constructor(parent: WCAPuzzle, scrambler: () -> Puzzle) : this(parent.kTag, parent.parser, scrambler)
 
-    override val tPuzzle
-        get() = this.scrambler()
+    override val tPuzzleSupply = this.scrambler
+    override val tPuzzle = this.scrambler()
 
-    override val reader
-        get() = this.parser()
+    override val antlrReaderSupply = this.parser
+    override val antlrReader = this.parser()
 }
