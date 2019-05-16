@@ -1,0 +1,27 @@
+Name 4x4x4
+
+Buffer CORNER 1 0
+Buffer WING 1 0
+Buffer X_CENTER 1 0
+
+Orientation Dynamic
+X_CENTER
+? ? ? ? ? ? ? ? 5 5 ? ? ? ? ? ? 5 5 ? ? 6 6 6 6
+End
+
+Lettering
+CORNER
+C M J D I F A E R B Q N V K P U G L X S H W O T
+WING
+I E Q M C D A B P L H T J F R N U X W V K G S O
+X_CENTER
+C D A B J I F E R Q N M K L G H S T O P V U X W
+End
+
+ParityDependency CORNER
+WING
+4 2 3 1 8 6 7 5 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
+End
+
+MisOrient Compound
+Execution X_CENTER WING CORNER
