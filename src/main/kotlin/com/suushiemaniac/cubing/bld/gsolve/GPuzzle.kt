@@ -239,6 +239,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
 
         val notTargeted = unsolvedTargets.filter { targetToPerm(type, it) !in (targetedPerms - openBreakInPerms) }
         val favorableTargets = notTargeted.filter { nextBuffer !in this.getSolutionSpots(type, this.currentlyAtTarget(type, it)) }
+                .filter { targetToPerm(type, it) !in openBreakInPerms }
 
         val nextTarget = favorableTargets.firstOrNull() ?: notTargeted.firstOrNull()
 
