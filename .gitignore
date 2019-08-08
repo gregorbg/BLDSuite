@@ -10,4 +10,4 @@
 
 !gradle/wrapper/gradle-wrapper.jar
 
-src/main/kotlin/Main.kt
+src/main/kotlin/BldSuitePlayground.kt
