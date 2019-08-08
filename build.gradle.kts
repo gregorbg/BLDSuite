@@ -17,7 +17,7 @@ dependencies {
     implementation(kotlin("stdlib"))
 
     api("com.suushiemaniac:cubing.alglib:2.0")
-    api("net.gnehzr:tnoodle.scrambles:0.14.0")
+    api("org.worldcubeassociation.tnoodle:tnoodle-scrambles:0.15.0")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.1")
 }
