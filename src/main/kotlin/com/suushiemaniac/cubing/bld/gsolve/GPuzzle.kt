@@ -144,7 +144,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
     // CYCLE BUILDERS
 
     protected fun compileTargetChain(type: PieceType, history: List<StickerTarget>? = null): List<StickerTarget> {
-        if (history == null || history.isEmpty()) {
+        if (history.isNullOrEmpty()) {
             val mainBuffer = this.getBufferTargets(type).first()
 
             val bufferCycleBreak = this.isCycleBreakTarget(type, mainBuffer, mainBuffer)
@@ -157,7 +157,13 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
         // TODO mark/use buffer float?
         val accumulate = history.toMutableList()
 
+        val maxTargets = type.permutationsNoBuffer / 2 * 3 + type.permutationsNoBuffer % 2
+
         return generateSequence {
+            if (accumulate.size > maxTargets) {
+                throw IllegalStateException("Accumulated more targets than mathematically possible for $type")
+            }
+
             this.getNextTarget(type, accumulate)?.also { accumulate += it }
         }.toList().mapIndexed { i, t -> t.copy(isCycleBreak = accumulate[i].isCycleBreak) } // FIXME (long-term) not shift isCycleBreak
     }
