@@ -157,7 +157,8 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
         // TODO mark/use buffer float?
         val accumulate = history.toMutableList()
 
-        val maxTargets = type.permutationsNoBuffer / 2 * 3 + type.permutationsNoBuffer % 2
+        // +1 at the end because the accu starts off with buffer pseudo-target
+        val maxTargets = ((type.permutationsNoBuffer / 2) * 3) + (type.permutationsNoBuffer % 2) + 1
 
         return generateSequence {
             if (accumulate.size > maxTargets) {
