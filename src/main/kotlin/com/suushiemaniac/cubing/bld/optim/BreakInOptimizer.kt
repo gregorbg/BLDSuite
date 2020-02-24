@@ -22,6 +22,6 @@ class BreakInOptimizer(val source: AlgSource, val reader: NotationReader) {
 
         return type.numTargets.countingList().map { StickerTarget(it, buffer) }.flatMap {
             it toEach this.source.getAlgorithms(type, this.reader, listOf(currentTarget, it))
-        }.sortedByDescending { AlgComparator.scoreAlg(it.second) }
+        }.sortedByDescending { AlgComparator.score(it.second) }
     }
 }

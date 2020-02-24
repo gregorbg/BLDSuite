@@ -13,7 +13,7 @@ object StringUtil {
     fun String.guessRegExpRange(): String {
         val init = this.first()
 
-        for (i in 0 until this.length) {
+        for (i in this.indices) {
             if ((init.toInt() + i).toChar() != this[i]) {
                 return this
             }

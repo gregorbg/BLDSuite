@@ -1,16 +1,13 @@
 package com.suushiemaniac.cubing.bld.optim
 
 import com.suushiemaniac.cubing.alglib.alg.Algorithm
+import com.suushiemaniac.cubing.bld.optim.AlgComparator.score
 
-class AlgComparator private constructor() : Comparator<Algorithm> {
-    override fun compare(alg: Algorithm, otherAlg: Algorithm): Int {
-        return scoreAlg(alg).compareTo(scoreAlg(otherAlg))
-    }
-
-    fun score(alg: Algorithm): Float {
+object AlgComparator : Comparator<Algorithm> by Comparator.comparingDouble<Algorithm>(::score) {
+    fun score(alg: Algorithm): Double {
         return (2 * this.lengthScore(alg)
                 + this.rotationScore(alg)
-                + this.subGroupScore(alg)) / 4f
+                + this.subGroupScore(alg)) / 4.toDouble()
     }
 
     fun lengthScore(alg: Algorithm): Int {
@@ -23,13 +20,5 @@ class AlgComparator private constructor() : Comparator<Algorithm> {
 
     fun subGroupScore(alg: Algorithm): Int {
         return -5 * alg.subGroup.size + 25
-    }
-
-    companion object {
-        val SINGLETON = AlgComparator()
-
-        fun scoreAlg(alg: Algorithm): Float {
-            return SINGLETON.score(alg)
-        }
     }
 }

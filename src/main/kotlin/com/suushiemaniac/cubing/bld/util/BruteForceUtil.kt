@@ -34,7 +34,7 @@ object BruteForceUtil {
         }
     }
 
-    fun <T> Array<T>.permute(length: Int, inclusive: Boolean = false, mayRepeat: Boolean = false) = this.toList().permute(length, inclusive, mayRepeat)
+    fun <T> Array<T>.permute(length: Int, inclusive: Boolean = false, mayRepeat: Boolean = false) = asList().permute(length, inclusive, mayRepeat)
 
     fun bruteForceAlg(analyze: GPuzzle, cycles: List<PieceCycle>, type: PieceType, alphabet: Array<Move>, prune: Int = 21): List<Algorithm> {
         val accumulator = mutableListOf<Algorithm>()

@@ -2,8 +2,8 @@ package com.suushiemaniac.cubing.bld.model.puzzle
 
 import com.suushiemaniac.cubing.alglib.lang.CubicAlgorithmReader
 import com.suushiemaniac.cubing.alglib.lang.NotationReader
-import net.gnehzr.tnoodle.scrambles.Puzzle
-import net.gnehzr.tnoodle.puzzle.*
+import org.worldcubeassociation.tnoodle.puzzle.*
+import org.worldcubeassociation.tnoodle.scrambles.Puzzle
 
 enum class WCAPuzzle(override val kTag: String, val parser: () -> NotationReader, val scrambler: () -> Puzzle) : TwistyPuzzle {
     TWO("222", ::CubicAlgorithmReader, ::TwoByTwoCubePuzzle),

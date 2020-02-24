@@ -94,7 +94,7 @@ class Verificator(val analyzer: GPuzzle, val source: AlgSource) {
 
         fun computePossibleAlternatives(original: Move): List<Move> {
             return if (original is CubicMove)
-                CubicModifier.values().map { CubicMove( original.plane, it, original.depth, original.fromDepth) }
+                CubicModifier.values().map { original.copy(modifier = it) }
             else emptyList()
         }
     }

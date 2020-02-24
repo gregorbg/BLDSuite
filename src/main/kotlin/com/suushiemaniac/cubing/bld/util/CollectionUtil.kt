@@ -1,6 +1,5 @@
 package com.suushiemaniac.cubing.bld.util
 
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
@@ -111,36 +110,40 @@ object CollectionUtil {
     }
 
     fun <T> Map<T, Set<T>>.topologicalSort(): List<T> {
-        // remove self-dependencies
-        val data = this.mapValues { it.value - it.key }.toMutableMap()
+        // remove reflexive self-dependencies
+        val noReflexive = this.mapValues { it.value - it.key }
 
         // explicitly add empty sets (no dependencies) for all items that only occur as passive dependencies
-        val extraItemsInDeps = data.values.flatten() - data.keys
-        data += extraItemsInDeps.associateWith { emptySet<T>() }
+        val extraItemsInDeps = noReflexive.values.flatten() - noReflexive.keys
+        val extrasWithEmptyDeps = extraItemsInDeps.associateWith { emptySet<T>() }
 
-        // result accumulator
-        val resGroups = mutableListOf<T>()
+        // compile graph search data
+        val data = noReflexive + extrasWithEmptyDeps
 
-        while (data.values.any { it.isEmpty() }) {
-            val noRemainingDependencies = data.filterValues { it.isEmpty() }.keys
+        return consumeByGroups(data, emptyList())
+                ?: error("A cyclic dependency exists amongst: ${data.toList().joinToString()}")
+    }
 
-            resGroups += noRemainingDependencies
+    private tailrec fun <T> consumeByGroups(graph: Map<T, Set<T>>, accu: List<T>): List<T>? {
+        val freeDepGroups = graph.filterValues { it.isEmpty() }
 
-            data.keys.removeAll(noRemainingDependencies)
-            data.entries.forEach { it.setValue(it.value - noRemainingDependencies) }
+        if (freeDepGroups.isEmpty()) {
+            return accu.takeUnless { graph.isNotEmpty() }
         }
 
-        if (data.isNotEmpty()) {
-            throw Exception("A cyclic dependency exists amongst: ${data.toList().joinToString()}")
-        }
+        val noRemainingDependencies = freeDepGroups.keys
+        val nextAccu = accu + noRemainingDependencies
 
-        return resGroups
+        val remainingEntries = graph - noRemainingDependencies
+        val remainingWithSortDeps = remainingEntries.mapValues { it.value - noRemainingDependencies }
+
+        return consumeByGroups(remainingWithSortDeps, nextAccu)
     }
 
     fun <E> Int.asyncList(block: (Int) -> E): List<E> {
         return runBlocking {
             List(this@asyncList) {
-                GlobalScope.async {
+                async {
                     block(it)
                 }
             }.awaitAll()
