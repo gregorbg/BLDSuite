@@ -31,7 +31,7 @@ object StringUtil {
     }
 
     fun String.splitLines(): List<String> {
-        return this.split("\n")
+        return this.lines()
     }
 
     fun String.contentSetEquals(that: String): Boolean {

@@ -38,22 +38,22 @@ data class IntegerCondition(private var min: Int, private var max: Int) : BaseCo
 
     companion object {
         fun EXACT(point: Int) = IntegerCondition(point, point)
-        fun POINT(point: Int) = IntegerCondition.EXACT(point)
+        fun POINT(point: Int) = EXACT(point)
 
         fun PLUSMINUS(point: Int, plusMinus: Int) = IntegerCondition(point - plusMinus, point + plusMinus)
 
         fun INTERVAL(min: Int, max: Int) = IntegerCondition(min, max)
-        fun BETWEEN(min: Int, max: Int) = IntegerCondition.INTERVAL(min, max)
+        fun BETWEEN(min: Int, max: Int) = INTERVAL(min, max)
 
         fun MINIMUM(min: Int) = IntegerCondition(min, Integer.MAX_VALUE)
-        fun MIN(min: Int) = IntegerCondition.MINIMUM(min)
+        fun MIN(min: Int) = MINIMUM(min)
 
         fun MAXIMUM(max: Int) = IntegerCondition(Integer.MIN_VALUE, max)
-        fun MAX(max: Int) = IntegerCondition.MAXIMUM(max)
+        fun MAX(max: Int) = MAXIMUM(max)
 
         fun ANY() = IntegerCondition(Integer.MIN_VALUE, Integer.MAX_VALUE)
 
-        fun NONE() = IntegerCondition.EXACT(0)
+        fun NONE() = EXACT(0)
 
         fun STRICT_MAX(point: Int, isStrict: Boolean = false) = if (isStrict) EXACT(point) else MAX(point)
         fun STRICT_MIN(point: Int, isStrict: Boolean = false) = if (isStrict) EXACT(point) else MIN(point)

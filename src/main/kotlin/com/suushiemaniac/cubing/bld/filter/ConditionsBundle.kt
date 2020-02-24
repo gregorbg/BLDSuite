@@ -11,6 +11,8 @@ import com.suushiemaniac.cubing.bld.util.StringUtil.guessRegExpRange
 import com.suushiemaniac.cubing.bld.util.StringUtil.toCharStrings
 import com.suushiemaniac.cubing.bld.util.BruteForceUtil.permute
 import com.suushiemaniac.cubing.bld.util.StickerTarget
+import kotlin.math.max
+import kotlin.math.min
 
 class ConditionsBundle(protected val pieceType: PieceType, val targets: IntegerCondition = IntegerCondition.ANY(), val breakIns: IntegerCondition = IntegerCondition.ANY(), val preSolved: IntegerCondition = IntegerCondition.ANY(), val misOriented: IntegerCondition = IntegerCondition.ANY(), val parity: BooleanCondition = BooleanCondition.MAYBE(), val bufferSolved: BooleanCondition = BooleanCondition.MAYBE(), val isAllowTwistedBuffer: Boolean = ALLOW_TWISTED_BUFFER) {
     init {
@@ -67,8 +69,8 @@ class ConditionsBundle(protected val pieceType: PieceType, val targets: IntegerC
 
     private fun balanceSolvedMisOriented() {
         // C=7 E=11 W=23 XC=23 TC=23
-        val leftOverMin = Math.max(0, this.pieceType.permutationsNoBuffer + this.breakIns.getMax() - this.targets.getMax())
-        val leftOverMax = Math.min(this.pieceType.permutationsNoBuffer, this.pieceType.permutationsNoBuffer + this.breakIns.getMin() - this.targets.getMin())
+        val leftOverMin = max(0, this.pieceType.permutationsNoBuffer + this.breakIns.getMax() - this.targets.getMax())
+        val leftOverMax = min(this.pieceType.permutationsNoBuffer, this.pieceType.permutationsNoBuffer + this.breakIns.getMin() - this.targets.getMin())
 
         this.preSolved.capMin(0)
         this.misOriented.capMin(0)
@@ -179,7 +181,7 @@ class ConditionsBundle(protected val pieceType: PieceType, val targets: IntegerC
         private var ALLOW_TWISTED_BUFFER = true
 
         fun setGlobalAllowTwistedBuffer(allowTwistedBuffer: Boolean) {
-            ConditionsBundle.ALLOW_TWISTED_BUFFER = allowTwistedBuffer
+            ALLOW_TWISTED_BUFFER = allowTwistedBuffer
         }
     }
 }

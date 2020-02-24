@@ -6,6 +6,8 @@ import com.suushiemaniac.cubing.alglib.lang.NotationReader
 import com.suushiemaniac.cubing.bld.analyze.BldAnalysis
 import com.suushiemaniac.cubing.bld.model.PieceType
 import com.suushiemaniac.cubing.bld.model.AlgSource
+import com.suushiemaniac.cubing.bld.model.puzzledef.GCommands
+import com.suushiemaniac.cubing.bld.model.puzzledef.KCommands
 import com.suushiemaniac.cubing.bld.optim.BreakInOptimizer
 import com.suushiemaniac.cubing.bld.util.*
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.powerset
@@ -13,25 +15,18 @@ import com.suushiemaniac.cubing.bld.util.CollectionUtil.permutations
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.countingList
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.topologicalSort
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.countOf
-import com.suushiemaniac.cubing.bld.util.StringUtil.splitLines
 import com.suushiemaniac.cubing.bld.util.MathUtil.pMod
 
-open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldCommandMap: CommandMap) : KPuzzle(reader, kCommandMap) {
-    val letterSchemes = this.loadLetterSchemes()
-
-    val buffers = this.loadBuffers()
-
-    val reorientMethod = this.loadReorientMethod()
-    val reorientState = this.loadReorientState()
-
-    val misOrientMethod = this.loadMisOrientMethod()
-
-    val parityDependencyFixes = this.loadParityDependencyFixes()
-
-    val parityFirstPieceTypes = this.loadParityFirstPieceTypes()
-    val executionPieceTypes = this.loadExecutionPieceTypes()
-
-    val skeletonReorientationMoves = this.loadSkeletonReorientationMoves()
+open class GPuzzle(reader: NotationReader, kCommands: KCommands, val gCommands: GCommands) : KPuzzle(reader, kCommands) {
+    val letterSchemes get() = gCommands.letterSchemes
+    val buffers get() = gCommands.buffers
+    val reorientMethod get() = gCommands.reorientMethod
+    val reorientState get() = gCommands.reorientState
+    val misOrientMethod get() = gCommands.misorientMethod
+    val parityDependencyFixes get() = gCommands.parityDependencyFixes
+    val parityFirstPieceTypes get() = gCommands.parityFirstPieceTypes
+    val executionPieceTypes get() = gCommands.executionPieceTypes
+    val skeletonReorientationMoves get() = gCommands.skeletonReorientationMoves
 
     var algSource: AlgSource? = null
 
@@ -40,61 +35,6 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
         val nonCancelling = reOrientations.map { SimpleAlg(it.toList()) }.toSet()
 
         nonCancelling.flatMap { it.permutations() }.map { SimpleAlg(it) }.toMutableList().apply { add(SimpleAlg()) }.toSet().sortedBy { it.size }
-    }
-
-    // FILE LOADING
-
-    fun loadLetterSchemes(): Map<PieceType, Array<String>> {
-        val letterLines = this.bldCommandMap.getValue("Lettering").first()
-
-        return loadFilePosition(this.pieceTypes, letterLines[0].splitLines()) { it.first }
-    }
-
-    fun loadBuffers(): Map<PieceType, List<Int>> {
-        val bufferCommands = this.bldCommandMap.getValue("Buffer")
-
-        return bufferCommands.groupBy(
-                { this.findPieceTypeByName(it[0]) },
-                { it.drop(1).map(String::toInt) })
-                .mapValues { it.value.map { b -> pieceToTarget(it.key, b[0] - 1, b[1]) } }
-    }
-
-    fun loadReorientMethod(): String {
-        return this.bldCommandMap.getValue("Orientation").first().first()
-    }
-
-    fun loadReorientState(): PuzzleState {
-        val stateLines = this.bldCommandMap.getValue("Orientation").first()
-
-        return loadKPosition(this.pieceTypes, stateLines[1].splitLines())
-    }
-
-    fun loadMisOrientMethod(): String {
-        return this.bldCommandMap.getValue("MisOrient").first().first()
-    }
-
-    fun loadParityDependencyFixes(): Map<PieceType, PuzzleState> {
-        val dependencyFixDescriptions = this.bldCommandMap["ParityDependency"] ?: emptyList()
-
-        return dependencyFixDescriptions.associateBy(
-                { this.findPieceTypeByName(it[0]) },
-                { loadKPosition(this.pieceTypes, it[1].splitLines()) })
-    }
-
-    fun loadParityFirstPieceTypes(): List<PieceType> {
-        val firstPieceTypes = this.bldCommandMap["ParityFirst"] ?: emptyList()
-
-        return firstPieceTypes.firstOrNull()?.map(this::findPieceTypeByName) ?: emptyList()
-    }
-
-    fun loadExecutionPieceTypes(): List<PieceType> {
-        return this.bldCommandMap.getValue("Execution").first().map(this::findPieceTypeByName)
-    }
-
-    fun loadSkeletonReorientationMoves(): Algorithm {
-        val skeletonOrientation = this.bldCommandMap["SkeletonOrientation"]?.first()?.joinToString(" ") ?: ""
-
-        return this.reader.parse(skeletonOrientation)
     }
 
     // LETTER SCHEME METHODS
@@ -162,7 +102,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
 
         return generateSequence {
             if (accumulate.size > maxTargets) {
-                throw IllegalStateException("Accumulated more targets than mathematically possible for $type")
+                error("Accumulated more targets than mathematically possible for $type")
             }
 
             this.getNextTarget(type, accumulate)?.also { accumulate += it }
@@ -279,9 +219,9 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
         return targetingBuffer && !targetHasAlternative
     }
 
-    protected fun getReorientationMoves() = when {
-        this.reorientMethod == "Fixed" -> this.bruteForceRotations.find { this.hypotheticalScramble(it).deepEquals(this.reorientState, true) }
-        this.reorientMethod == "Dynamic" -> this.bruteForceRotations.maxBy {
+    protected fun getReorientationMoves() = when (this.reorientMethod) {
+        "Fixed" -> this.bruteForceRotations.find { this.hypotheticalScramble(it).deepEquals(this.reorientState, true) }
+        "Dynamic" -> this.bruteForceRotations.maxBy {
             val rotatedState = this.hypotheticalScramble(it)
 
             val solvedPieces = rotatedState.countEquals(this.solvedState.filterKeys { pt -> pt in reorientState.keys })
@@ -302,7 +242,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
 
         return solves && remainingOkay
     }
-    
+
     companion object {
         fun pieceToTarget(type: PieceType, perm: Int, orient: Int) = (perm * type.orientations) + orient
         fun targetToPiece(type: PieceType, target: Int) = Piece(target / type.orientations, target % type.orientations)
@@ -315,6 +255,7 @@ open class GPuzzle(reader: NotationReader, kCommandMap: CommandMap, val bldComma
 
         fun adjacentTargets(type: PieceType, target: Int) = permToTargets(type, targetToPerm(type, target))
 
-        fun preInstalledConfig(tag: String, person: String) = loadCommandMap(GPuzzle::class.java.getResourceAsStream("gpuzzle/$person/$tag.bld"))
+        fun preInstalledConfig(tag: String, person: String) =
+                GCommands.parse(KCommands.loadFileStream(GPuzzle::class.java.getResourceAsStream("gpuzzle/$person/$tag.bld")))
     }
 }

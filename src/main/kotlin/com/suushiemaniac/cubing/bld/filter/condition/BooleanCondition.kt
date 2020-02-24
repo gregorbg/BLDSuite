@@ -22,7 +22,7 @@ data class BooleanCondition(private var value: Boolean, val isImportant: Boolean
         fun NO(): BooleanCondition = BooleanCondition(value = false, isImportant = true)
 
         fun UNIMPORTANT() = BooleanCondition(value = false, isImportant = false)
-        fun MAYBE() = BooleanCondition.UNIMPORTANT()
+        fun MAYBE() = UNIMPORTANT()
 
         fun STRICT(value: Boolean, isStrict: Boolean = false) = if (value) if (isStrict) YES() else MAYBE() else NO()
     }
