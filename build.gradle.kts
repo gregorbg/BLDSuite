@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.3.41"
+    kotlin("jvm") version "1.3.61"
     `maven-publish`
 }
 
@@ -17,9 +17,9 @@ dependencies {
     implementation(kotlin("stdlib"))
 
     api("com.suushiemaniac:cubing.alglib:2.0")
-    api("org.worldcubeassociation.tnoodle:tnoodle-scrambles:0.15.0")
+    api("org.worldcubeassociation.tnoodle:lib-scrambles:0.17.0")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.3")
 }
 
 tasks {
@@ -27,16 +27,13 @@ tasks {
         kotlinOptions.jvmTarget = "1.8"
     }
 
-    create<Jar>("sourcesJar") {
-        archiveClassifier.set("sources")
-        from(sourceSets["main"].allSource)
-        dependsOn("classes")
+    configure<JavaPluginExtension> {
+        withSourcesJar()
     }
 }
 
 publishing.publications {
     create<MavenPublication>("mavenJava") {
         from(components["java"])
-        artifact(tasks["sourcesJar"])
     }
 }
