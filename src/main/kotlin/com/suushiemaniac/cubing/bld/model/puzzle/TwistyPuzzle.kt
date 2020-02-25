@@ -4,8 +4,8 @@ import com.suushiemaniac.cubing.alglib.alg.Algorithm
 import com.suushiemaniac.cubing.alglib.lang.NotationReader
 import com.suushiemaniac.cubing.bld.gsolve.GPuzzle
 import com.suushiemaniac.cubing.bld.gsolve.KPuzzle
+import com.suushiemaniac.cubing.bld.model.puzzledef.CommandMap
 import com.suushiemaniac.cubing.bld.model.puzzledef.GCommands
-import com.suushiemaniac.cubing.bld.model.puzzledef.KCommands
 import org.worldcubeassociation.tnoodle.scrambles.Puzzle
 import java.io.File
 
@@ -22,8 +22,7 @@ interface TwistyPuzzle {
     val kTag: String
 
     val kPuzzle: KPuzzle
-        get() = KPuzzle(this.antlrReader, KPuzzle.preInstalledConfig(this.kTag))
+        get() = KPuzzle(KPuzzle.preInstalledConfig(this.kTag, this.antlrReader))
 
-    fun gPuzzle(bldFile: File) = GPuzzle(this.antlrReader, KPuzzle.preInstalledConfig(this.kTag), GCommands.parse(KCommands.loadFile(bldFile)))
-    fun gPuzzle(personTag: String) = GPuzzle(this.antlrReader, KPuzzle.preInstalledConfig(this.kTag), GPuzzle.preInstalledConfig(this.kTag, personTag))
+    fun gPuzzle(personTag: String) = GPuzzle(GPuzzle.preInstalledConfig(this.kTag, personTag, this.antlrReader))
 }

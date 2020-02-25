@@ -9,4 +9,8 @@ data class PieceType(val name: String, val permutations: Int, val orientations: 
 
     val humanName: String
         get() = this.name.split("_").joinToString("") { it.toLowerCase().capitalize() }
+
+    companion object {
+        fun Iterable<PieceType>.findByName(name: String) = find { it.name == name }
+    }
 }

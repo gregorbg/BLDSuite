@@ -23,6 +23,7 @@ class BldAnalysis(private val reader: NotationReader,
                   val orientationPreMoves: Algorithm,
                   val solutionTargets: Map<PieceType, List<StickerTarget>>,
                   val letterSchemes: Map<PieceType, Array<String>>,
+                  val parityFirstPieceTypes: List<PieceType>,
                   val algSource: AlgSource? = null) {
     val pieceTypes = this.solutionTargets.keys
 
@@ -34,7 +35,8 @@ class BldAnalysis(private val reader: NotationReader,
         val misOrientMap = this.getGroupedMisOrientPieces(type)
         val permTargets = targets.filter { GPuzzle.targetToPerm(type, it.target) !in misOrientMap.values.flatten() }
 
-        val permCycles = this.groupTargetsToCycles(permTargets)
+        val shiftParityOffset = type in parityFirstPieceTypes
+        val permCycles = this.groupTargetsToCycles(permTargets, shiftParityOffset)
 
         return permCycles to misOrientMap.filterValues { it.isNotEmpty() }
     }

@@ -4,18 +4,20 @@ import com.suushiemaniac.cubing.alglib.alg.Algorithm
 import com.suushiemaniac.cubing.alglib.lang.NotationReader
 import com.suushiemaniac.cubing.alglib.move.Move
 import com.suushiemaniac.cubing.bld.model.PieceType
+import com.suushiemaniac.cubing.bld.model.puzzledef.CommandMap
 import com.suushiemaniac.cubing.bld.model.puzzledef.KCommands
 import com.suushiemaniac.cubing.bld.util.*
 
-open class KPuzzle(val reader: NotationReader, val kCommands: KCommands) {
+open class KPuzzle(protected val kCommands: KCommands) {
     val pieceTypes get() = kCommands.pieceTypes
+    val moveDefinitions get() = kCommands.moveDefinitions
 
     val solvedState = this.loadSolvedState().toMutableMap()
     val puzzleState = this.solvedState.toMutableMap()
 
-    val moveDefinitions get() = kCommands.moveDefinitions
-
     protected fun loadSolvedState() = kCommands.solvedState
+
+    val reader get() = kCommands.reader
 
     fun applyScramble(scramble: Algorithm) = scramblePuzzle(this.puzzleState, scramble, this.moveDefinitions).let { this }
     fun hypotheticalScramble(scramble: Algorithm) = scramblePuzzle(this.puzzleState.deepCopy(), scramble, this.moveDefinitions)
@@ -79,7 +81,7 @@ open class KPuzzle(val reader: NotationReader, val kCommands: KCommands) {
             return moveDefs
         }
 
-        fun preInstalledConfig(tag: String) =
-                KCommands.parse(KCommands.loadFileStream(KPuzzle::class.java.getResourceAsStream("kpuzzle/$tag.def")))
+        fun preInstalledConfig(tag: String, reader: NotationReader) =
+                KCommands.parse(CommandMap.loadFileStream(KPuzzle::class.java.getResourceAsStream("kpuzzle/$tag.def")), reader)
     }
 }

@@ -7,7 +7,6 @@ data class Piece(val permutation: Int, val orientation: Int = 0)
 
 typealias PieceState = Array<Piece>
 typealias PuzzleState = Map<PieceType, PieceState>
-typealias CommandMap = Map<String, List<List<String>>>
 
 data class StickerTarget(val target: Int, val buffer: Int, val isCycleBreak: Boolean = false)
 

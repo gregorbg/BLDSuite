@@ -6,14 +6,12 @@ import com.suushiemaniac.cubing.bld.filter.condition.BooleanCondition.Companion.
 import com.suushiemaniac.cubing.bld.filter.condition.IntegerCondition.Companion.STRICT_MAX
 import com.suushiemaniac.cubing.bld.filter.condition.IntegerCondition.Companion.STRICT_MIN
 import com.suushiemaniac.cubing.bld.gsolve.GPuzzle
+import com.suushiemaniac.cubing.bld.model.PieceType.Companion.findByName
 import com.suushiemaniac.cubing.bld.model.puzzle.TwistyPuzzle
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.asyncList
 import com.suushiemaniac.cubing.bld.util.CollectionUtil.filledList
 
-import java.io.File
-
 class BldScramble(val analyzer: GPuzzle, val conditions: List<ConditionsBundle>, val randomScramble: () -> Algorithm) {
-    constructor(puzzle: TwistyPuzzle, config: File, conditions: List<ConditionsBundle>) : this(puzzle.gPuzzle(config), conditions, puzzle::randomScramble)
     constructor(puzzle: TwistyPuzzle, tag: String, conditions: List<ConditionsBundle>) : this(puzzle.gPuzzle(tag), conditions, puzzle::randomScramble)
 
     private val scrambleSupplier: Sequence<Algorithm>
@@ -50,7 +48,7 @@ class BldScramble(val analyzer: GPuzzle, val conditions: List<ConditionsBundle>,
     companion object {
         // TODO for the below two cloning methods: cleverly "infer" where this gConfig comes from?
 
-        fun cloneFrom(analysis: BldAnalysis, puzzle: TwistyPuzzle, config: File, isStrict: Boolean = false): BldScramble {
+        fun cloneFrom(analysis: BldAnalysis, puzzle: TwistyPuzzle, isStrict: Boolean = false): BldScramble {
             val conditions = analysis.pieceTypes.map {
                 ConditionsBundle(
                         it,
@@ -64,10 +62,10 @@ class BldScramble(val analyzer: GPuzzle, val conditions: List<ConditionsBundle>,
                 )
             }
 
-            return BldScramble(puzzle, config, conditions)
+            return BldScramble(puzzle, "__POS_NOTATION", conditions)
         }
 
-        fun fromStatString(statString: String, puzzle: TwistyPuzzle, config: File, isStrict: Boolean = false): BldScramble {
+        fun fromStatString(statString: String, puzzle: TwistyPuzzle, isStrict: Boolean = false): BldScramble {
             val statStringParts = statString.split("|").dropLastWhile { it.isEmpty() }
             val statPattern = "([A-Za-z]+?):(_?)(0|[1-9][0-9]*)(\\*?)(#*)(~*)(\\+*)".toRegex()
 
@@ -76,7 +74,7 @@ class BldScramble(val analyzer: GPuzzle, val conditions: List<ConditionsBundle>,
 
                 statPattern.matchEntire(squashed)?.let {
                     ConditionsBundle(
-                            puzzle.kPuzzle.findPieceTypeByName(it.groupValues[1]),
+                            puzzle.kPuzzle.pieceTypes.findByName(it.groupValues[1])!!,
                             STRICT_MAX(it.groupValues[3].toInt(), isStrict),
                             STRICT_MAX(it.groupValues[5].length, isStrict),
                             STRICT_MIN(it.groupValues[7].length, isStrict),
@@ -87,7 +85,7 @@ class BldScramble(val analyzer: GPuzzle, val conditions: List<ConditionsBundle>,
                 }
             }
 
-            return BldScramble(puzzle, config, conditions)
+            return BldScramble(puzzle, "__POS_NOTATION", conditions)
         }
     }
 }
