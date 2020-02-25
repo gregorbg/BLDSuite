@@ -155,26 +155,45 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
                     .filter { targetToPerm(type, it) !in targetedPerms }
 
             for (availableFloat in availableFloats) {
-                val currentlyAtFloat = this.currentlyAtTarget(type, availableFloat)
-
-                if (!this.isCycleBreakTarget(type, currentBuffer, lastTarget, targetedPerms)) {
+                if (!this.targetCurrentlyPermuted(type, availableFloat)) {
+                    val currentlyAtFloat = this.currentlyAtTarget(type, availableFloat)
                     return StickerTarget(currentlyAtFloat, availableFloat, true)
                 }
             }
 
-            return this.getBreakInTargets(type, currentBuffer, history).firstOrNull()
-                    ?.let { StickerTarget(it, currentBuffer, true) }
+            val breakInContinuation = this.getBreakInTargets(type, currentBuffer, history)
+            return generatePrioritisedTarget(type, currentBuffer, history, breakInContinuation, true)
         }
 
-        return getContinuationAfterTarget(type, lastTarget).firstOrNull()
-                ?.let { StickerTarget(it, currentBuffer, false) }
+        val continuation = getContinuationAfterTarget(type, lastTarget) - currentBuffer
+        return generatePrioritisedTarget(type, currentBuffer, history, continuation)
+    }
+
+    private fun generatePrioritisedTarget(type: PieceType, buffer: Int, history: List<StickerTarget>, continuation: List<Int>, cycleBreak: Boolean = false): StickerTarget? {
+        val targetedPerms = history.map { targetToPerm(type, it.target) }
+
+        val openBreakInPerms = history
+                .filter { it.isCycleBreak && it.buffer == buffer }
+                .map { targetToPerm(type, it.target) }
+                .filter { targetedPerms.countOf(it) == 1 }
+
+        val unsolvedTargets = continuation.filter { !this.targetCurrentlySolved(type, it) }
+        val notTargeted = unsolvedTargets.filter { targetToPerm(type, it) !in (targetedPerms - openBreakInPerms) }
+
+        val favorableTargets = notTargeted
+                .filter { buffer !in this.getSolutionSpots(type, this.currentlyAtTarget(type, it)) }
+                .filter { targetToPerm(type, it) !in openBreakInPerms }
+
+        val chosenTarget = favorableTargets.firstOrNull()
+                ?: notTargeted.firstOrNull()
+
+        return chosenTarget?.let { StickerTarget(it, buffer, cycleBreak) }
     }
 
     protected open fun getContinuationAfterTarget(type: PieceType, target: Int): List<Int> {
         val inBuffer = this.currentlyAtTarget(type, target)
 
         return this.getSolutionSpots(type, inBuffer)
-                .filter { !this.targetCurrentlySolved(type, it) }
                 .sortedBy { this.targetToLetter(type, it) }
     }
 
