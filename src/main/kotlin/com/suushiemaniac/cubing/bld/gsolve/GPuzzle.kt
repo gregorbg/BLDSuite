@@ -87,13 +87,13 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
 
     // TODO mark buffer float in model?
     protected tailrec fun compileTargetChain(type: PieceType, history: List<StickerTarget> = emptyList()): List<StickerTarget> {
-        val maxTargets = ((type.permutationsNoBuffer / 2) * 3) + (type.permutationsNoBuffer % 2)
+        val maxTargets = type.permutationsNoBuffer * 2 // re-orient each piece via individual targeting
 
         if (history.size > maxTargets) {
             error("Accumulated more targets than mathematically possible for $type")
         }
 
-        val next = this.getNextTarget(type, history) ?: return history.mapIndexed { i, t -> t.copy(isCycleBreak = history.getOrNull(i - 1)?.isCycleBreak ?: false) }
+        val next = this.getNextTarget(type, history) ?: return history
         return compileTargetChain(type, history + next)
     }
 
@@ -139,60 +139,50 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
 
     protected fun getNextTarget(type: PieceType, history: List<StickerTarget>): StickerTarget? {
         val usedBuffers = history.map { it.buffer }.toList().distinct()
-        val lastBuffer = usedBuffers.lastOrNull() ?: this.getBufferTargets(type).first()
-
         val targetedPerms = history.map { targetToPerm(type, it.target) }
-        val lastTarget = history.lastOrNull()?.target ?: lastBuffer
 
-        val cycleBreak = history.lastOrNull()?.isCycleBreak
-                ?: this.isCycleBreakTarget(type, lastBuffer, lastTarget, targetedPerms)
+        val currentBuffer = usedBuffers.lastOrNull() ?: this.getBufferTargets(type).first()
+        val lastTarget = history.lastOrNull()?.target ?: currentBuffer
 
-        val nextBuffer = if (cycleBreak) {
-            val availableBuffers = this.getBufferTargets(type) - usedBuffers
+        val startsNewCycle = this.isCycleBreakTarget(type, currentBuffer, lastTarget, targetedPerms)
+        val closesOldCycle = this.isClosingCycleTarget(type, currentBuffer, lastTarget, history)
 
-            val reasonableFloat = availableBuffers
+        if (startsNewCycle || closesOldCycle) {
+            // we are targeting our current buffer.
+            val nextFloatingBuffers = this.getBufferTargets(type) - usedBuffers - currentBuffer
+
+            val availableFloats = nextFloatingBuffers
                     .filter { targetToPerm(type, it) !in targetedPerms }
-                    .firstOrNull { !this.targetCurrentlyPermuted(type, it) }
 
-            reasonableFloat ?: lastBuffer
-        } else lastBuffer
+            for (availableFloat in availableFloats) {
+                val currentlyAtFloat = this.currentlyAtTarget(type, availableFloat)
 
-        val nextTargetChoice = if (cycleBreak) {
-            if (nextBuffer != lastBuffer) this.getContinuationTargets(type, nextBuffer) else
-                this.getBreakInTargets(type, lastBuffer, history)
-        } else this.getContinuationTargets(type, lastTarget)
+                if (!this.isCycleBreakTarget(type, currentBuffer, lastTarget, targetedPerms)) {
+                    return StickerTarget(currentlyAtFloat, availableFloat, true)
+                }
+            }
 
-        val unsolvedTargets = nextTargetChoice.filter { !this.targetCurrentlySolved(type, it) }
-
-        val openBreakInPerms = history.zipWithNext()
-                .filter { it.first.isCycleBreak && it.second.buffer == nextBuffer }
-                .map { targetToPerm(type, it.second.target) }
-                .filter { targetedPerms.countOf(it) == 1 }
-
-        val notTargeted = unsolvedTargets.filter { targetToPerm(type, it) !in (targetedPerms - openBreakInPerms) }
-        val favorableTargets = notTargeted.filter { nextBuffer !in this.getSolutionSpots(type, this.currentlyAtTarget(type, it)) }
-                .filter { targetToPerm(type, it) !in openBreakInPerms }
-
-        val nextTarget = favorableTargets.firstOrNull() ?: notTargeted.firstOrNull()
-
-        return nextTarget?.let {
-            val targetingBuffer = this.isCycleBreakTarget(type, nextBuffer, it, targetedPerms)
-            val closingCycle = targetToPerm(type, it) in targetedPerms
-
-            StickerTarget(it, nextBuffer, targetingBuffer || closingCycle)
+            return this.getBreakInTargets(type, currentBuffer, history).firstOrNull()
+                    ?.let { StickerTarget(it, currentBuffer, true) }
         }
+
+        return getContinuationAfterTarget(type, lastTarget).firstOrNull()
+                ?.let { StickerTarget(it, currentBuffer, false) }
     }
 
-    protected open fun getContinuationTargets(type: PieceType, lastTarget: Int): List<Int> {
-        val inBuffer = this.currentlyAtTarget(type, lastTarget)
-        return this.getSolutionSpots(type, inBuffer).sortedBy { this.targetToLetter(type, it) }
+    protected open fun getContinuationAfterTarget(type: PieceType, target: Int): List<Int> {
+        val inBuffer = this.currentlyAtTarget(type, target)
+
+        return this.getSolutionSpots(type, inBuffer)
+                .filter { !this.targetCurrentlySolved(type, it) }
+                .sortedBy { this.targetToLetter(type, it) }
     }
 
     protected open fun getBreakInTargets(type: PieceType, buffer: Int, history: List<StickerTarget>): List<Int> {
         val preSolved = type.numTargets.countingList().filter { this.targetCurrentlySolved(type, it) }
         val alreadyShot = history.flatMap { adjacentTargets(type, it.target) }.distinct()
 
-        if (this.algSource == null || history.size % 2 == 1) {
+        if (this.algSource == null || history.isEmpty() || history.size % 2 == 1) {
             val selection = type.numTargets.countingList() - adjacentTargets(type, buffer) - alreadyShot - preSolved
             return selection.sortedBy { this.targetToLetter(type, it) }
         }
@@ -208,6 +198,17 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
 
         val targetingBuffer = this.currentlyAtTarget(type, target) in this.getSolutionAdjacency(type, buffer)
         return targetingBuffer && !targetHasAlternative
+    }
+
+    protected fun isClosingCycleTarget(type: PieceType, buffer: Int, target: Int, history: List<StickerTarget> = listOf()): Boolean {
+        val targetedPerms = history.map { targetToPerm(type, it.target) }
+
+        val closedCycleBreaks = history
+                .filter { it.isCycleBreak && it.buffer == buffer }
+                .map { targetToPerm(type, it.target) }
+                .filter { targetedPerms.countOf(it) == 2 }
+
+        return targetToPerm(type, target) in closedCycleBreaks
     }
 
     protected fun getReorientationMoves() = when (this.reorientMethod) {
