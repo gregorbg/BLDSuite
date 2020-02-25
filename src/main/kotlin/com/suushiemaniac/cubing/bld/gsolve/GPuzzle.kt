@@ -77,6 +77,7 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
     protected fun getSolutionAdjacency(type: PieceType, target: Int) = this.getSolutionSpots(type, target).flatMap { adjacentTargets(type, it) }
 
     protected fun targetCurrentlySolved(type: PieceType, target: Int) = target in this.getSolutionSpots(type, this.currentlyAtTarget(type, target))
+    protected fun targetCurrentlyPermuted(type: PieceType, target: Int) = target in this.getSolutionAdjacency(type, this.currentlyAtTarget(type, target))
 
     // BUFFER HELPERS
 
@@ -84,30 +85,16 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
 
     // CYCLE BUILDERS
 
-    protected fun compileTargetChain(type: PieceType, history: List<StickerTarget>? = null): List<StickerTarget> {
-        if (history.isNullOrEmpty()) {
-            val mainBuffer = this.getBufferTargets(type).first()
+    // TODO mark buffer float in model?
+    protected tailrec fun compileTargetChain(type: PieceType, history: List<StickerTarget> = emptyList()): List<StickerTarget> {
+        val maxTargets = ((type.permutationsNoBuffer / 2) * 3) + (type.permutationsNoBuffer % 2)
 
-            val bufferCycleBreak = this.isCycleBreakTarget(type, mainBuffer, mainBuffer)
-
-            val defaultTarget = StickerTarget(mainBuffer, mainBuffer, bufferCycleBreak)
-
-            return compileTargetChain(type, listOf(defaultTarget))
+        if (history.size > maxTargets) {
+            error("Accumulated more targets than mathematically possible for $type")
         }
 
-        // TODO mark/use buffer float?
-        val accumulate = history.toMutableList()
-
-        // +1 at the end because the accu starts off with buffer pseudo-target
-        val maxTargets = ((type.permutationsNoBuffer / 2) * 3) + (type.permutationsNoBuffer % 2) + 1
-
-        return generateSequence {
-            if (accumulate.size > maxTargets) {
-                error("Accumulated more targets than mathematically possible for $type")
-            }
-
-            this.getNextTarget(type, accumulate)?.also { accumulate += it }
-        }.toList().mapIndexed { i, t -> t.copy(isCycleBreak = accumulate[i].isCycleBreak) } // FIXME (long-term) not shift isCycleBreak
+        val next = this.getNextTarget(type, history) ?: return history.mapIndexed { i, t -> t.copy(isCycleBreak = history.getOrNull(i - 1)?.isCycleBreak ?: false) }
+        return compileTargetChain(type, history + next)
     }
 
     fun dumpTargets(): Map<PieceType, List<String>> {
@@ -145,37 +132,40 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
             parityRelevantCycles[type] = solutionCycles
         }
 
-        val cycles = this.executionPieceTypes.associateWith { parityRelevantCycles.getOrDefault(it, this.compileTargetChain(it)) }
+        val cycles = this.executionPieceTypes.associateWith { parityRelevantCycles.getOrElse(it) { this.compileTargetChain(it) } }
 
         return BldAnalysis(this.reader, reorient, cycles, this.letterSchemes, this.parityFirstPieceTypes, this.algSource)
     }
 
-    fun getNextTarget(type: PieceType, history: List<StickerTarget>): StickerTarget? {
+    protected fun getNextTarget(type: PieceType, history: List<StickerTarget>): StickerTarget? {
         val usedBuffers = history.map { it.buffer }.toList().distinct()
-        val lastBuffer = usedBuffers.last()
+        val lastBuffer = usedBuffers.lastOrNull() ?: this.getBufferTargets(type).first()
 
         val targetedPerms = history.map { targetToPerm(type, it.target) }
+        val lastTarget = history.lastOrNull()?.target ?: lastBuffer
 
-        val nextBuffer = if (history.last().isCycleBreak) {
-            val availableBuffers = this.buffers.getValue(type) - usedBuffers
+        val cycleBreak = history.lastOrNull()?.isCycleBreak
+                ?: this.isCycleBreakTarget(type, lastBuffer, lastTarget, targetedPerms)
+
+        val nextBuffer = if (cycleBreak) {
+            val availableBuffers = this.getBufferTargets(type) - usedBuffers
+
             val reasonableFloat = availableBuffers
                     .filter { targetToPerm(type, it) !in targetedPerms }
-                    .firstOrNull { this.currentlyAtTarget(type, it) !in this.getSolutionAdjacency(type, it) }
+                    .firstOrNull { !this.targetCurrentlyPermuted(type, it) }
 
             reasonableFloat ?: lastBuffer
         } else lastBuffer
 
-        val nextTargetChoice = if (history.last().isCycleBreak) {
+        val nextTargetChoice = if (cycleBreak) {
             if (nextBuffer != lastBuffer) this.getContinuationTargets(type, nextBuffer) else
                 this.getBreakInTargets(type, lastBuffer, history)
-        } else {
-            this.getContinuationTargets(type, history.last().target)
-        }
+        } else this.getContinuationTargets(type, lastTarget)
 
         val unsolvedTargets = nextTargetChoice.filter { !this.targetCurrentlySolved(type, it) }
 
         val openBreakInPerms = history.zipWithNext()
-                .filter { it.first.isCycleBreak && it.first.buffer == it.second.buffer }
+                .filter { it.first.isCycleBreak && it.second.buffer == nextBuffer }
                 .map { targetToPerm(type, it.second.target) }
                 .filter { targetedPerms.countOf(it) == 1 }
 
@@ -213,7 +203,7 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
     protected fun isCycleBreakTarget(type: PieceType, buffer: Int, target: Int, targetedPerms: List<Int> = listOf()): Boolean {
         val targetSpots = this.getSolutionSpots(type, this.currentlyAtTarget(type, target))
 
-        val targetAlternatives = targetSpots - adjacentTargets(type, target) - targetedPerms.flatMap { permToTargets(type, it) }
+        val targetAlternatives = targetSpots - adjacentTargets(type, buffer) - adjacentTargets(type, target) - targetedPerms.flatMap { permToTargets(type, it) }
         val targetHasAlternative = targetAlternatives.any { !this.targetCurrentlySolved(type, it) }
 
         val targetingBuffer = this.currentlyAtTarget(type, target) in this.getSolutionAdjacency(type, buffer)
