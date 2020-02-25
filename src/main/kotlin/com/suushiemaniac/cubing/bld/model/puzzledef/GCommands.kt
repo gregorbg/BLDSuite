@@ -67,7 +67,7 @@ data class GCommands(
 
         fun loadMisOrientMethod(commandMap: CommandMap): MisOrientMethod {
             val methodRaw = commandMap.getValue("MisOrient").first().first()
-            return MisOrientMethod.valueOf(methodRaw)
+            return MisOrientMethod.valueOf(methodRaw.toUpperCase())
         }
 
         fun loadParityDependencyFixes(commandMap: CommandMap, pieceTypes: Set<PieceType>): Map<PieceType, PuzzleState> {

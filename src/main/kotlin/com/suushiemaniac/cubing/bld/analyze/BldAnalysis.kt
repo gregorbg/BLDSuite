@@ -54,7 +54,7 @@ class BldAnalysis(private val reader: NotationReader,
         return perm + orientCycleGroups.values.flatten()
     }
 
-    protected fun groupTargetsToCycles(targets: List<StickerTarget>, shiftParityOffset: Boolean = false, step: Int = 2): List<PieceCycle> { // fixme actually call with the last 2 params
+    protected fun groupTargetsToCycles(targets: List<StickerTarget>, shiftParityOffset: Boolean = false, step: Int = 2): List<PieceCycle> {
         return if (shiftParityOffset)
             targets.reversed().chunked(step).reversed().map { it.reversed() } else
             targets.chunked(step)
@@ -174,7 +174,7 @@ class BldAnalysis(private val reader: NotationReader,
     // HELPERS
 
     fun getMainBuffer(type: PieceType): Int {
-        return this.solutionTargets.getValue(type).first().buffer
+        return this.solutionTargets.getValue(type).firstOrNull()?.buffer ?: 0 // FIXME better default
     }
 
     fun getMainBufferPerm(type: PieceType): Int {
@@ -297,7 +297,8 @@ class BldAnalysis(private val reader: NotationReader,
             return this.pieceTypes.sumBy(this::getBufferFloatNum)
         }
 
-        return this.solutionTargets.getValue(type).map { it.buffer }.distinct().size - 1
+        val regularCount = this.solutionTargets.getValue(type).map { it.buffer }.distinct().size - 1
+        return regularCount.coerceAtLeast(0) // prevent -1 when there are no cycles at all
     }
 
     fun hasBufferFloat(type: PieceType? = null): Boolean {
