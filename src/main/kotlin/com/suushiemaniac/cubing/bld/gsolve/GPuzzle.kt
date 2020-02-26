@@ -28,7 +28,8 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
     val parityFirstPieceTypes get() = gCommands.parityFirstPieceTypes
     val executionPieceTypes get() = gCommands.executionPieceTypes
     val skeletonReorientationMoves get() = gCommands.skeletonReorientationMoves
-    val weakSwapPermutations get() = gCommands.weakSwapPermutations
+    val parityCompensationPerms get() = gCommands.parityCompensationPerms
+    val weakSwapTypes get() = gCommands.weakSwapTypes
 
     var algSource: AlgSource? = null
 
@@ -136,7 +137,7 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
             this.compileTargetChain(type).also { cycles ->
                 this.parityDependencyFixes[type]?.let { fix ->
                     val ownParity = cycles.size % 2 == 1
-                    val parityFixes = fix.filterKeys { ownParity || it in this.weakSwapPermutations }
+                    val parityFixes = fix.filterKeys { it in this.weakSwapTypes || (ownParity && it !in this.parityCompensationPerms) }
 
                     movePuzzle(this.solvedState, parityFixes)
                 }
@@ -148,13 +149,10 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
         val solutionCycles = baseCycleMap[type].orEmpty()
         val ownParity = solutionCycles.size % 2 == 1
 
-        if (type in this.weakSwapPermutations) {
-            val parityDeps = this.parityDependencyFixes.filterValues { type in it }.keys
-            val depsNoParity = parityDeps.all { baseCycleMap[it].orEmpty().size % 2 == 0 } // FIXME any or all?
-
-            if (depsNoParity && ownParity) {
+        if (type in this.parityCompensationPerms) {
+            if (ownParity) {
                 val lastBuffer = solutionCycles.lastOrNull()?.buffer ?: this.getBufferTargets(type).first()
-                val weakTarget = pieceToTarget(type, this.weakSwapPermutations.getValue(type), targetToOrient(type, lastBuffer))
+                val weakTarget = pieceToTarget(type, this.parityCompensationPerms.getValue(type), targetToOrient(type, lastBuffer))
 
                 return solutionCycles + StickerTarget(weakTarget, lastBuffer)
             }

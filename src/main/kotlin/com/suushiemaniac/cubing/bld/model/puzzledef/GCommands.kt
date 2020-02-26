@@ -19,7 +19,8 @@ data class GCommands(
         val parityFirstPieceTypes: List<PieceType>,
         val executionPieceTypes: List<PieceType>,
         val skeletonReorientationMoves: Algorithm,
-        val weakSwapPermutations: Map<PieceType, Int>
+        val parityCompensationPerms: Map<PieceType, Int>,
+        val weakSwapTypes: Set<PieceType>
 ) {
     companion object {
         fun parse(commandMap: CommandMap, kCommands: KCommands): GCommands {
@@ -37,7 +38,8 @@ data class GCommands(
                     loadParityFirstPieceTypes(commandMap, pieceTypes),
                     loadExecutionPieceTypes(commandMap, pieceTypes),
                     loadSkeletonReorientationMoves(commandMap, reader),
-                    loadWeakSwapTargets(commandMap, pieceTypes)
+                    loadParityCompensationPerms(commandMap, pieceTypes),
+                    loadWeakSwapTypes(commandMap, pieceTypes)
             )
         }
 
@@ -96,12 +98,15 @@ data class GCommands(
             return reader.parse(skeletonOrientation)
         }
 
-        fun loadWeakSwapTargets(commandMap: CommandMap, pieceTypes: Set<PieceType>): Map<PieceType, Int> {
-            val bufferCommands = commandMap["WeakSwap"].orEmpty()
+        fun loadParityCompensationPerms(commandMap: CommandMap, pieceTypes: Set<PieceType>): Map<PieceType, Int> {
+            val bufferCommands = commandMap["ParityCompensation"].orEmpty()
 
             return bufferCommands.associateBy(
                     { pieceTypes.findByName(it[0])!! },
                     { it[1].toInt() - 1 })
         }
+
+        fun loadWeakSwapTypes(commandMap: CommandMap, pieceTypes: Set<PieceType>) =
+                commandMap["WeakSwap"]?.firstOrNull()?.mapNotNull { pieceTypes.findByName(it) }?.toSet() ?: emptySet()
     }
 }
