@@ -1,8 +1,11 @@
 Name 4x4x4
 
 Buffer CORNER 1 0
+Buffer CORNER 3 0
 Buffer WING 1 0
+Buffer WING 17 0
 Buffer X_CENTER 1 0
+Buffer X_CENTER 3 0
 
 Orientation Dynamic
 X_CENTER

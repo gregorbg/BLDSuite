@@ -1,7 +1,9 @@
 Name 3x3x3
 
 Buffer CORNER 1 0
+Buffer CORNER 3 0
 Buffer EDGE 1 0
+Buffer EDGE 9 0
 
 Orientation Fixed
 CENTER

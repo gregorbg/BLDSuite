@@ -1,10 +1,15 @@
 Name 5x5x5
 
 Buffer CORNER 1 0
+Buffer CORNER 3 0
 Buffer EDGE 1 0
+Buffer EDGE 9 0
 Buffer WING 1 0
+Buffer WING 17 0
 Buffer X_CENTER 1 0
+Buffer X_CENTER 3 0
 Buffer T_CENTER 1 0
+Buffer T_CENTER 21 0
 
 Orientation Fixed
 CENTER
