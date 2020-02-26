@@ -148,16 +148,17 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
         val closesOldCycle = this.isClosingCycleTarget(type, currentBuffer, lastTarget, history)
 
         if (startsNewCycle || closesOldCycle) {
-            // we are targeting our current buffer.
-            val nextFloatingBuffers = this.getBufferTargets(type) - usedBuffers - currentBuffer
+            if (history.size % 2 == 0) { // TODO floating buffer twisted
+                val nextFloatingBuffers = this.getBufferTargets(type) - usedBuffers - currentBuffer
 
-            val availableFloats = nextFloatingBuffers
-                    .filter { targetToPerm(type, it) !in targetedPerms }
+                val availableFloats = nextFloatingBuffers
+                        .filter { targetToPerm(type, it) !in targetedPerms }
 
-            for (availableFloat in availableFloats) {
-                if (!this.targetCurrentlyPermuted(type, availableFloat)) {
-                    val currentlyAtFloat = this.currentlyAtTarget(type, availableFloat)
-                    return StickerTarget(currentlyAtFloat, availableFloat, true)
+                for (availableFloat in availableFloats) {
+                    if (!this.targetCurrentlyPermuted(type, availableFloat)) {
+                        val floatContinuation = this.getContinuationAfterTarget(type, availableFloat)
+                        return generatePrioritisedTarget(type, availableFloat, history, floatContinuation, true)
+                    }
                 }
             }
 
@@ -165,7 +166,7 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
             return generatePrioritisedTarget(type, currentBuffer, history, breakInContinuation, true)
         }
 
-        val continuation = getContinuationAfterTarget(type, lastTarget) - currentBuffer
+        val continuation = this.getContinuationAfterTarget(type, lastTarget) - currentBuffer
         return generatePrioritisedTarget(type, currentBuffer, history, continuation)
     }
 
