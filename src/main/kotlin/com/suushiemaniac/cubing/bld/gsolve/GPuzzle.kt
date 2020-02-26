@@ -133,9 +133,7 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
     }
 
     private fun solveWithParityFixes(parityPieceTypes: List<PieceType>, weak: Boolean, baseCycleMap: Map<PieceType, List<StickerTarget>> = emptyMap()): Map<PieceType, List<StickerTarget>> {
-        val parityRelevantCycles = mutableMapOf<PieceType, List<StickerTarget>>()
-
-        for (type in parityPieceTypes) {
+        return parityPieceTypes.associateWith { type ->
             val solutionCycles = baseCycleMap[type] ?: this.compileTargetChain(type)
             val ownParity = solutionCycles.size % 2 == 1
 
@@ -143,23 +141,20 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
                 applyParityFix(type, weak)
             }
 
-            if (weak) {
+            if (weak && type in this.weakSwapPermutations) {
                 val parityDeps = this.parityDependencyFixes.filterValues { type in it }.keys
+                val depsNoParity = parityDeps.all { baseCycleMap[it].orEmpty().size % 2 == 0 } // FIXME any or all?
 
-                for (parityDep in parityDeps) {
-                    val depCycle = baseCycleMap[parityDep].orEmpty()
-                    val depHasParity = depCycle.size % 2 == 1
+                if (depsNoParity && ownParity) {
+                    val lastBuffer = solutionCycles.lastOrNull()?.buffer ?: this.getBufferTargets(type).first()
+                    val weakTarget = pieceToTarget(type, this.weakSwapPermutations.getValue(type), targetToOrient(type, lastBuffer))
 
-                    if (depHasParity != ownParity) {
-                        applyParityFix(parityDep, true)
-                    }
+                    return@associateWith solutionCycles + StickerTarget(weakTarget, lastBuffer)
                 }
             }
 
-            parityRelevantCycles[type] = solutionCycles
+            return@associateWith solutionCycles
         }
-
-        return parityRelevantCycles
     }
 
     private fun applyParityFix(type: PieceType, weak: Boolean) {
