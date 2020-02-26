@@ -28,7 +28,7 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
     val parityFirstPieceTypes get() = gCommands.parityFirstPieceTypes
     val executionPieceTypes get() = gCommands.executionPieceTypes
     val skeletonReorientationMoves get() = gCommands.skeletonReorientationMoves
-    val weakSwapTargets get() = gCommands.weakSwapTargets
+    val weakSwapPermutations get() = gCommands.weakSwapPermutations
 
     var algSource: AlgSource? = null
 
@@ -137,11 +137,22 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
 
         for (type in parityPieceTypes) {
             val solutionCycles = baseCycleMap[type] ?: this.compileTargetChain(type)
+            val ownParity = solutionCycles.size % 2 == 1
 
-            if (solutionCycles.size % 2 == 1) {
-                this.parityDependencyFixes[type]?.let {
-                    val strongFixes = it.filterKeys { k -> (k in this.weakSwapTargets) == weak }
-                    movePuzzle(this.solvedState, strongFixes)
+            if (ownParity) {
+                applyParityFix(type, weak)
+            }
+
+            if (weak) {
+                val parityDeps = this.parityDependencyFixes.filterValues { type in it }.keys
+
+                for (parityDep in parityDeps) {
+                    val depCycle = baseCycleMap[parityDep].orEmpty()
+                    val depHasParity = depCycle.size % 2 == 1
+
+                    if (depHasParity != ownParity) {
+                        applyParityFix(parityDep, true)
+                    }
                 }
             }
 
@@ -149,6 +160,15 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
         }
 
         return parityRelevantCycles
+    }
+
+    private fun applyParityFix(type: PieceType, weak: Boolean) {
+        val potentialFix = this.parityDependencyFixes[type]
+
+        if (potentialFix != null) {
+            val parityFixes = potentialFix.filterKeys { k -> (k in this.weakSwapPermutations) == weak }
+            movePuzzle(this.solvedState, parityFixes)
+        }
     }
 
     protected fun getNextTarget(type: PieceType, history: List<StickerTarget>): StickerTarget? {
@@ -179,7 +199,23 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
                 }
             }
 
-            val breakInContinuation = this.getBreakInTargets(type, currentBuffer, history)
+            val breakInContinuation = this.getBreakInTargets(type, currentBuffer, lastTarget, history)
+
+            if (type in this.weakSwapPermutations) {
+                val lastTargetOrient = targetToOrient(type, this.currentlyAtTarget(type, lastTarget))
+                val weakPreference = pieceToTarget(type, this.weakSwapPermutations.getValue(type), lastTargetOrient)
+
+                if (weakPreference in breakInContinuation) {
+                    val parityDeps = this.parityDependencyFixes.filterValues { type in it }.keys
+
+                    for (parityType in parityDeps) {
+                        this.applyParityFix(parityType, true)
+                    }
+
+                    return getNextTarget(type, history)
+                }
+            }
+
             return generatePrioritisedTarget(type, currentBuffer, history, breakInContinuation, true)
         }
 
@@ -215,17 +251,24 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
                 .sortedBy { this.targetToLetter(type, it) }
     }
 
-    protected open fun getBreakInTargets(type: PieceType, buffer: Int, history: List<StickerTarget>): List<Int> {
+    protected open fun getBreakInTargets(type: PieceType, buffer: Int, lastTarget: Int, history: List<StickerTarget>): List<Int> {
         val preSolved = type.numTargets.countingList().filter { this.targetCurrentlySolved(type, it) }
         val alreadyShot = history.flatMap { adjacentTargets(type, it.target) }.distinct()
 
-        if (this.algSource == null || history.isEmpty() || history.size % 2 == 1) {
-            val selection = type.numTargets.countingList() - adjacentTargets(type, buffer) - alreadyShot - preSolved
-            return selection.sortedBy { this.targetToLetter(type, it) }
-        }
+        val rawSelection = type.numTargets.countingList() - adjacentTargets(type, buffer)
+        val sortedRawSelection = rawSelection.sortedBy { this.targetToLetter(type, it) }
 
-        // TODO respect parity appendix target w/ respect to orientation!
-        return BreakInOptimizer(this.algSource!!, this.reader).optimizeBreakInTargetsAfter(history.last().target, buffer, type) - alreadyShot - preSolved
+        val breakInCandidates = sortedRawSelection.takeIf { history.isEmpty() || history.size % 2 == 1 }
+                ?: computeOptimisedBreakIns(type, buffer, history.last().target)
+                ?: sortedRawSelection
+
+        return breakInCandidates - alreadyShot - preSolved
+    }
+
+    private fun computeOptimisedBreakIns(type: PieceType, buffer: Int, lastTarget: Int): List<Int>? {
+        return this.algSource?.let {
+            BreakInOptimizer(it, this.reader).optimizeBreakInTargetsAfter(lastTarget, buffer, type)
+        }
     }
 
     protected fun isCycleBreakTarget(type: PieceType, buffer: Int, target: Int, targetedPerms: List<Int> = listOf()): Boolean {

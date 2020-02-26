@@ -19,7 +19,7 @@ data class GCommands(
         val parityFirstPieceTypes: List<PieceType>,
         val executionPieceTypes: List<PieceType>,
         val skeletonReorientationMoves: Algorithm,
-        val weakSwapTargets: Map<PieceType, Int>
+        val weakSwapPermutations: Map<PieceType, Int>
 ) {
     companion object {
         fun parse(commandMap: CommandMap, kCommands: KCommands): GCommands {
@@ -97,12 +97,11 @@ data class GCommands(
         }
 
         fun loadWeakSwapTargets(commandMap: CommandMap, pieceTypes: Set<PieceType>): Map<PieceType, Int> {
-            val bufferCommands = commandMap["WeakSwapTarget"].orEmpty()
+            val bufferCommands = commandMap["WeakSwap"].orEmpty()
 
             return bufferCommands.associateBy(
                     { pieceTypes.findByName(it[0])!! },
-                    { it.drop(1).map(String::toInt) })
-                    .mapValues { (pt, b) -> GPuzzle.pieceToTarget(pt, b[0] - 1, b[1]) }
+                    { it[1].toInt() - 1 })
         }
     }
 }
