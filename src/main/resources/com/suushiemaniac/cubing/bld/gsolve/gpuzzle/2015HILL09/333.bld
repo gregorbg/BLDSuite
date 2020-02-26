@@ -1,0 +1,38 @@
+Name 3x3x3
+
+Buffer CORNER 1 0
+Buffer CORNER 4 0
+Buffer CORNER 2 0
+Buffer CORNER 3 0
+Buffer CORNER 5 2
+Buffer CORNER 8 1
+Buffer EDGE 1 0
+Buffer EDGE 3 0
+Buffer EDGE 4 0
+Buffer EDGE 2 0
+Buffer EDGE 9 0
+Buffer EDGE 11 0
+Buffer EDGE 5 0
+Buffer EDGE 6 0
+Buffer EDGE 12 0
+Buffer EDGE 10 0
+
+Orientation Fixed
+CENTER
+1 ? 3 ? ? ?
+End
+
+Lettering
+CORNER
+? ? ? D E F C M J B R N V K P A G L Z S H W O T
+EDGE
+C I D E A Q B M J P L F R H T N U K X G W S V O
+End
+
+ParityDependency CORNER
+EDGE
+4 2 3 1 5 6 7 8 9 10 11 12
+End
+
+MisOrient Compound
+Execution EDGE CORNER
