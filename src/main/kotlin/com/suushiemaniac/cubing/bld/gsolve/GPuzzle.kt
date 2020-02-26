@@ -28,6 +28,7 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
     val parityFirstPieceTypes get() = gCommands.parityFirstPieceTypes
     val executionPieceTypes get() = gCommands.executionPieceTypes
     val skeletonReorientationMoves get() = gCommands.skeletonReorientationMoves
+    val weakSwapTargets get() = gCommands.weakSwapTargets
 
     var algSource: AlgSource? = null
 
@@ -118,23 +119,36 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
         val parityDepKeys = this.parityDependencyFixes.mapValues { it.value.keys }
         val parityDependents = parityDepKeys.values.flatten().associateWith { parityDepKeys.filterValues { v -> it in v }.keys }
 
+        val parityExecution = parityDependents.topologicalSort()
+        val parityRelevantCycles = this.solveWithParityFixes(parityExecution, false)
+
+        val preCycles = this.executionPieceTypes.associateWith {
+            parityRelevantCycles.getOrElse(it) { this.compileTargetChain(it) }
+        }
+
+        val strongCycles = this.solveWithParityFixes(this.executionPieceTypes, true, preCycles)
+        val cycles = strongCycles.mapValues { this.compileTargetChain(it.key, it.value) }
+
+        return BldAnalysis(this.reader, reorient, cycles, this.letterSchemes, this.parityFirstPieceTypes, this.algSource)
+    }
+
+    private fun solveWithParityFixes(parityPieceTypes: List<PieceType>, weak: Boolean, baseCycleMap: Map<PieceType, List<StickerTarget>> = emptyMap()): Map<PieceType, List<StickerTarget>> {
         val parityRelevantCycles = mutableMapOf<PieceType, List<StickerTarget>>()
 
-        for (type in parityDependents.topologicalSort()) {
-            val solutionCycles = this.compileTargetChain(type)
+        for (type in parityPieceTypes) {
+            val solutionCycles = baseCycleMap[type] ?: this.compileTargetChain(type)
 
-            if (solutionCycles.size % 2 != 0) {
-                if (type in this.parityDependencyFixes) {
-                    movePuzzle(this.solvedState, this.parityDependencyFixes.getValue(type))
+            if (solutionCycles.size % 2 == 1) {
+                this.parityDependencyFixes[type]?.let {
+                    val strongFixes = it.filterKeys { k -> (k in this.weakSwapTargets) == weak }
+                    movePuzzle(this.solvedState, strongFixes)
                 }
             }
 
             parityRelevantCycles[type] = solutionCycles
         }
 
-        val cycles = this.executionPieceTypes.associateWith { parityRelevantCycles.getOrElse(it) { this.compileTargetChain(it) } }
-
-        return BldAnalysis(this.reader, reorient, cycles, this.letterSchemes, this.parityFirstPieceTypes, this.algSource)
+        return parityRelevantCycles
     }
 
     protected fun getNextTarget(type: PieceType, history: List<StickerTarget>): StickerTarget? {
@@ -148,7 +162,7 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
         val closesOldCycle = this.isClosingCycleTarget(type, currentBuffer, lastTarget, history)
 
         if (startsNewCycle || closesOldCycle) {
-            if (history.size % 2 == 0) { // TODO floating buffer twisted
+            if (history.size % 2 == 0) { // TODO floating buffer twisted R U2 F2 D F2 D R2 D2 U' B U2 F2 D' L D' L2 B' L2 U' Fw Uw'
                 val nextFloatingBuffers = this.getBufferTargets(type) - usedBuffers - currentBuffer
 
                 val availableFloats = nextFloatingBuffers
@@ -207,6 +221,7 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
             return selection.sortedBy { this.targetToLetter(type, it) }
         }
 
+        // TODO respect parity appendix target w/ respect to orientation!
         return BreakInOptimizer(this.algSource!!, this.reader).optimizeBreakInTargetsAfter(history.last().target, buffer, type) - alreadyShot - preSolved
     }
 

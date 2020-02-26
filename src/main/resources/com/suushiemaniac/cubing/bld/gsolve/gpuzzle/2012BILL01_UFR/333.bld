@@ -22,5 +22,7 @@ EDGE
 4 2 3 1 5 6 7 8 9 10 11 12
 End
 
+WeakSwapTarget EDGE 4 0
+
 MisOrient Compound
 Execution EDGE CORNER
