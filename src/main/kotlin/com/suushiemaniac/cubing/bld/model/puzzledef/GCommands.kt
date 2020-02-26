@@ -19,7 +19,6 @@ data class GCommands(
         val parityFirstPieceTypes: List<PieceType>,
         val executionPieceTypes: List<PieceType>,
         val skeletonReorientationMoves: Algorithm,
-        val lateParities: Set<PieceType>,
         val weakSwapTypes: Set<PieceType>
 ) {
     companion object {
@@ -38,7 +37,6 @@ data class GCommands(
                     loadParityFirstPieceTypes(commandMap, pieceTypes),
                     loadExecutionPieceTypes(commandMap, pieceTypes),
                     loadSkeletonReorientationMoves(commandMap, reader),
-                    loadLateParities(commandMap, pieceTypes),
                     loadWeakSwapTypes(commandMap, pieceTypes)
             )
         }
@@ -97,9 +95,6 @@ data class GCommands(
 
             return reader.parse(skeletonOrientation)
         }
-
-        fun loadLateParities(commandMap: CommandMap, pieceTypes: Set<PieceType>) =
-                commandMap["LateParity"]?.firstOrNull()?.mapNotNull { pieceTypes.findByName(it) }?.toSet() ?: emptySet()
 
         fun loadWeakSwapTypes(commandMap: CommandMap, pieceTypes: Set<PieceType>) =
                 commandMap["WeakSwap"]?.firstOrNull()?.mapNotNull { pieceTypes.findByName(it) }?.toSet() ?: emptySet()
