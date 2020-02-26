@@ -162,16 +162,19 @@ open class GPuzzle(val gCommands: GCommands) : KPuzzle(gCommands.baseCommands) {
         val closesOldCycle = this.isClosingCycleTarget(type, currentBuffer, lastTarget, history)
 
         if (startsNewCycle || closesOldCycle) {
-            if (history.size % 2 == 0) { // TODO floating buffer twisted R U2 F2 D F2 D R2 D2 U' B U2 F2 D' L D' L2 B' L2 U' Fw Uw'
-                val nextFloatingBuffers = this.getBufferTargets(type) - usedBuffers - currentBuffer
+            if (history.size % 2 == 0) {
+                // FIXME allow floating when hitting twisted buffer R U2 F2 D F2 D R2 D2 U' B U2 F2 D' L D' L2 B' L2 U' Fw Uw'
+                if (history.isEmpty() || this.currentlyAtTarget(type, lastTarget) == currentBuffer) {
+                    val nextFloatingBuffers = this.getBufferTargets(type) - usedBuffers - currentBuffer
 
-                val availableFloats = nextFloatingBuffers
-                        .filter { targetToPerm(type, it) !in targetedPerms }
+                    val availableFloats = nextFloatingBuffers
+                            .filter { targetToPerm(type, it) !in targetedPerms }
 
-                for (availableFloat in availableFloats) {
-                    if (!this.targetCurrentlyPermuted(type, availableFloat)) {
-                        val floatContinuation = this.getContinuationAfterTarget(type, availableFloat)
-                        return generatePrioritisedTarget(type, availableFloat, history, floatContinuation, true)
+                    for (availableFloat in availableFloats) {
+                        if (!this.targetCurrentlyPermuted(type, availableFloat)) {
+                            val floatContinuation = this.getContinuationAfterTarget(type, availableFloat)
+                            return generatePrioritisedTarget(type, availableFloat, history, floatContinuation, true)
+                        }
                     }
                 }
             }
